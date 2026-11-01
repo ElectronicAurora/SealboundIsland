@@ -1,0 +1,3407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>岛屿混战 · SealboundIsland</title>
+<style>
+:root{
+  --bg:#050a14; --sea:#0a1a2e; --panel:rgba(255,255,255,.045);
+  --line:rgba(130,175,255,.16); --text:#e6eeff; --dim:#8494b8;
+  --cyan:#38f0d8; --pink:#ff3d9a; --amber:#ffca3a; --violet:#8b5cf6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:radial-gradient(1000px 700px at 10% -10%,rgba(139,92,246,.22),transparent 60%),
+             radial-gradient(900px 600px at 100% 110%,rgba(56,240,216,.16),transparent 60%),var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  padding:16px;display:flex;justify-content:center;
+}
+#app{width:100%;max-width:1090px}
+
+/* ---------- 顶部 ---------- */
+header{display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+h1{
+  font-size:22px;letter-spacing:.04em;
+  background:linear-gradient(100deg,var(--cyan),#7dd3fc 45%,var(--pink));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.badge{
+  font-size:11.5px;color:var(--dim);border:1px solid var(--line);
+  padding:3px 9px;border-radius:20px;background:var(--panel);
+}
+.round{margin-left:auto;font-size:12.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+.round b{color:var(--amber);font-size:15px}
+
+/* ---------- 布局 ---------- */
+.game{display:grid;grid-template-columns:minmax(0,1fr) 306px;gap:14px;align-items:start}
+@media(max-width:900px){.game{grid-template-columns:1fr}}
+
+.card{
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:16px;backdrop-filter:blur(8px);
+}
+#mapWrap{overflow:hidden;border-radius:16px;position:relative;background:var(--sea)}
+canvas{display:block;width:100%;height:auto}
+#turnbar{
+  position:absolute;left:0;right:0;top:0;padding:9px 14px;
+  background:linear-gradient(180deg,rgba(4,8,18,.92),rgba(4,8,18,0));
+  font-size:13px;display:flex;align-items:center;gap:8px;pointer-events:none;
+}
+#turnbar .dot{width:9px;height:9px;border-radius:50%;box-shadow:0 0 10px currentColor;background:currentColor}
+
+/* ---------- 玩家卡 ---------- */
+.plist{padding:10px;display:flex;flex-direction:column;gap:8px}
+.pcard{
+  border:1px solid rgba(255,255,255,.07);border-radius:12px;
+  padding:9px 10px;background:rgba(0,0,0,.22);transition:.2s;
+}
+.pcard.cur{border-color:var(--cyan);box-shadow:0 0 0 1px rgba(56,240,216,.35),0 8px 24px -12px rgba(56,240,216,.6)}
+.pcard.dead{opacity:.42;filter:grayscale(.7)}
+.pcard .top{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.pcard .nm{font-size:13px;font-weight:600}
+.pcard .tag{font-size:9.5px;color:#04121a;background:var(--dim);border-radius:4px;padding:1px 5px;font-weight:700}
+.pcard .tag.you{background:var(--cyan)}
+.pcard .tag.ai{background:var(--violet);color:#fff}
+.pcard .hpv{margin-left:auto;font-size:11.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+.bar{height:6px;border-radius:4px;background:rgba(255,255,255,.09);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:4px;transition:width .35s}
+.stats{display:flex;gap:10px;margin-top:6px;font-size:10.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+.stats b{color:#c3d2f0;font-weight:600}
+.bag{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
+.chip{
+  font-size:10px;padding:2px 6px;border-radius:6px;
+  border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.05);
+}
+.chip.w{border-color:rgba(255,202,58,.5);color:var(--amber)}
+.chip.eq{background:rgba(56,240,216,.14);border-color:var(--cyan);color:var(--cyan)}
+.chip.draft{border-style:dashed;opacity:.85}
+.bag .none{font-size:10px;color:#5a678a}
+.sealrow,.strow,.smrow{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:6px;font-size:10px;color:var(--dim)}
+.sealrow .sc{
+  padding:1px 6px;border-radius:6px;font-size:9.5px;
+  border:1px solid rgba(139,92,246,.55);color:#c4b5fd;background:rgba(139,92,246,.14);
+}
+.strow .st{
+  padding:1px 6px;border-radius:6px;font-size:9.5px;
+  border:1px solid rgba(255,61,154,.5);color:#ff9ecb;background:rgba(255,61,154,.12);
+}
+.smrow .sm{
+  padding:1px 6px;border-radius:6px;font-size:9.5px;
+  border:1px solid rgba(56,240,216,.45);color:#7ff0e2;background:rgba(56,240,216,.1);
+}
+
+/* ---------- 行动区 ---------- */
+#actZone{margin-top:14px;padding:12px}
+.acts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.abtn{
+  border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text);
+  padding:13px 10px;border-radius:12px;cursor:pointer;font-size:15px;font-weight:600;
+  transition:.16s;font-family:inherit;min-width:0;overflow:hidden;
+}
+.abtn small{
+  display:block;font-weight:400;font-size:11px;color:var(--dim);margin-top:3px;
+  line-height:1.35;white-space:normal;word-break:break-word;
+}
+.abtn:hover:not(:disabled){background:rgba(56,240,216,.13);border-color:rgba(56,240,216,.5);transform:translateY(-1px)}
+.abtn:disabled{opacity:.34;cursor:not-allowed}
+/* 选项面板打开期间：行动栏置灰并封锁点击，防止重复触发行动 */
+body.choosing .abtn{opacity:.34;cursor:not-allowed;pointer-events:none;transform:none}
+body.choosing .abtn:hover{background:rgba(255,255,255,.05);border-color:var(--line);transform:none}
+#choice{margin-top:11px;display:none}
+#choice.on{display:block;animation:fade .2s}
+@keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.ctitle{font-size:11.5px;color:var(--dim);letter-spacing:.1em;margin-bottom:7px;text-transform:uppercase}
+.opts{display:flex;flex-wrap:wrap;gap:7px}
+.opt{
+  border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text);
+  padding:8px 13px;border-radius:9px;cursor:pointer;font-size:12.5px;font-family:inherit;transition:.15s;
+}
+.opt:hover{background:rgba(255,202,58,.13);border-color:rgba(255,202,58,.55)}
+.opt .sub{font-size:10px;color:var(--dim);display:block;margin-top:1px}
+.cancel{
+  margin-left:6px;background:none;border:none;color:#6b7899;cursor:pointer;font-size:12px;font-family:inherit;
+}
+.cancel:hover{color:var(--pink)}
+
+/* ---------- 日志 ---------- */
+#logBox{margin-top:14px;padding:11px 12px;max-height:190px;overflow-y:auto}
+#logBox h4{font-size:11px;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:7px}
+#log{font-size:11.8px;line-height:1.85;color:#a7b6d6}
+#log div{padding:1px 0;border-bottom:1px solid rgba(255,255,255,.035)}
+#log .hl{color:var(--amber)}
+#log .kill{color:var(--pink);font-weight:600}
+#log .sys{color:#5f6d90;font-style:italic}
+
+/* ---------- 设置 / 结算 ---------- */
+.modal{
+  position:fixed;inset:0;display:grid;place-items:center;padding:20px;z-index:50;
+  background:radial-gradient(circle at 50% 40%,rgba(8,12,26,.9),rgba(3,5,12,.97));
+  backdrop-filter:blur(5px);overflow-y:auto;
+}
+.modal.hide{display:none}
+.sheet{
+  width:min(560px,100%);padding:26px;border-radius:18px;
+  background:linear-gradient(160deg,rgba(20,28,50,.96),rgba(8,12,24,.98));
+  border:1px solid var(--line);box-shadow:0 30px 80px -25px rgba(0,0,0,.9);
+  animation:pop .34s cubic-bezier(.2,1.35,.4,1);
+}
+@keyframes pop{from{transform:scale(.93);opacity:0}to{transform:scale(1);opacity:1}}
+.sheet h2{
+  font-size:23px;margin-bottom:4px;
+  background:linear-gradient(100deg,var(--cyan),#7dd3fc 45%,var(--pink));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.sheet .sub{color:var(--dim);font-size:12px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:18px}
+.row{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.row label{font-size:13px;min-width:76px;color:#c3d2f0}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+/* 宽度按内容自适应：人数按钮（2~6）收成 38px，模式名（单人混战 / 自定义分队 / BOSS 战）自动撑开，不再溢出 */
+.seg button{
+  min-width:40px;height:36px;padding:0 13px;border-radius:9px;cursor:pointer;
+  font-size:14px;font-weight:600;white-space:nowrap;line-height:1;
+  border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text);font-family:inherit;transition:.15s;
+}
+.seg button:hover{background:rgba(255,255,255,.12)}
+.seg button.on{background:var(--cyan);color:#04121a;border-color:var(--cyan)}
+input[type=number],input[type=text]{
+  width:92px;padding:7px 10px;border-radius:8px;font-size:13px;font-family:inherit;
+  background:rgba(0,0,0,.35);border:1px solid var(--line);color:var(--text);
+}
+.prow{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap}
+.prow .sw{width:15px;height:15px;border-radius:5px;flex:none}
+.prow .pn{font-size:12.5px;min-width:52px}
+.prow .mode{
+  font-size:12px;padding:5px 12px;border-radius:8px;cursor:pointer;font-family:inherit;
+  border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--dim);transition:.15s;
+}
+.prow .mode.human{background:rgba(56,240,216,.16);border-color:rgba(56,240,216,.55);color:var(--cyan)}
+.prow .mode.bot{background:rgba(139,92,246,.2);border-color:rgba(139,92,246,.6);color:#c4b5fd}
+.prow .mode.team{background:rgba(255,202,58,.16);border-color:rgba(255,202,58,.55);color:var(--amber);min-width:34px}
+.prow .mode.locked{opacity:.45;cursor:default}
+.sysbtns{display:flex;gap:8px;margin-top:10px}
+.sysbtn{
+  flex:1;padding:8px 4px;border-radius:9px;cursor:pointer;font-size:11.5px;font-family:inherit;
+  border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--dim);transition:.15s;
+}
+.sysbtn:hover{border-color:rgba(255,61,154,.6);color:#ff9ecb}
+.sysbtn.warn{border-color:var(--pink);color:#ff9ecb;background:rgba(255,61,154,.14)}
+.modehint{font-size:11px;color:var(--dim);line-height:1.6;margin-top:-4px}
+.pcard .teamtag{
+  font-size:9.5px;padding:1px 6px;border-radius:6px;margin-left:2px;
+  border:1px solid rgba(255,202,58,.5);color:var(--amber);background:rgba(255,202,58,.12);
+}
+/* 刻印 8 凌波 · 蓄闪：已蓄闪 / 冷却中 */
+.pcard .dodgetag{
+  font-size:9.5px;padding:1px 6px;border-radius:6px;margin-left:2px;
+  border:1px solid rgba(56,240,216,.55);color:var(--cyan);background:rgba(56,240,216,.13);
+}
+.pcard .dodgecd{
+  font-size:9.5px;padding:1px 6px;border-radius:6px;margin-left:2px;
+  border:1px solid rgba(124,138,174,.5);color:#8494b8;background:rgba(124,138,174,.12);
+}
+.pcard .bosstag{
+  font-size:9.5px;padding:1px 6px;border-radius:6px;margin-left:2px;
+  border:1px solid rgba(255,61,154,.55);color:#ff9ecb;background:rgba(255,61,154,.14);
+}
+.big{
+  width:100%;margin-top:8px;padding:13px;border-radius:11px;cursor:pointer;
+  border:none;font-size:14.5px;font-weight:700;letter-spacing:.06em;color:#04121a;font-family:inherit;
+  background:linear-gradient(100deg,var(--cyan),#7dd3fc);
+  box-shadow:0 12px 30px -10px rgba(56,240,216,.7);transition:.15s;
+}
+.big:hover{transform:translateY(-2px)}
+.winner{font-size:30px;font-weight:700;margin:6px 0 14px}
+.rules{
+  margin-top:16px;padding-top:14px;border-top:1px solid var(--line);
+  font-size:11.5px;color:#7c8aae;line-height:1.8;
+}
+.rules b{color:#a7b6d6}
+/* 规则弹窗 */
+.rules-sheet{width:min(700px,100%);max-height:84vh;display:flex;flex-direction:column}
+.rules-sheet h2{margin-bottom:14px}
+#rulesBody{
+  margin-top:0;padding-top:0;border-top:none;flex:1;overflow-y:auto;
+  font-size:12.5px;line-height:1.95;color:#8d9bbd;padding-right:8px;
+}
+#rulesBody b{color:#c3d2f0}
+/* 规则弹窗：分页标签 */
+.rtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;position:sticky;top:0;z-index:2;
+  padding:2px 0 10px;background:linear-gradient(180deg,#131a2b 70%,rgba(19,26,43,0))}
+.rtab{padding:6px 13px;border-radius:8px;cursor:pointer;font-family:inherit;
+  font-size:12px;font-weight:600;letter-spacing:.03em;
+  border:1px solid var(--line);background:rgba(255,255,255,.04);color:#8d9bbd;transition:.15s}
+.rtab:hover{border-color:rgba(56,240,216,.45);color:#c3d2f0}
+.rtab.on{border-color:rgba(56,240,216,.7);background:rgba(56,240,216,.14);color:var(--cyan)}
+.rpane{display:none}
+.rpane.on{display:block}
+/* 规则小标题 */
+.rsec{margin:16px 0 7px;padding-left:9px;font-size:13px;font-weight:700;color:var(--cyan);
+  border-left:3px solid rgba(56,240,216,.65);line-height:1.4}
+.rpane > .rsec:first-child{margin-top:0}
+.rnote{margin:0 0 10px;font-size:12px;color:#8d9bbd}
+/* 规则内表格 */
+.rtb{width:100%;border-collapse:collapse;margin:6px 0 4px;font-size:12px;line-height:1.7}
+.rtb td{padding:5px 9px;vertical-align:top;border-bottom:1px solid rgba(255,255,255,.07)}
+.rtb td:first-child{width:34%;color:#a7b6d6;font-weight:600;white-space:nowrap}
+.rtb.seal td:first-child{width:34px;color:var(--amber);font-weight:700}
+.rtb.seal td.nm{width:66px;color:#c3d2f0;font-weight:700;white-space:nowrap}
+.rtb.seal tr.sub td{border-bottom-color:rgba(255,255,255,.04)}
+.rtb.seal tr.sub td.nm{padding-left:12px;color:#8d9bbd;font-weight:400}
+.rtb.seal tr.sub td:last-child{color:#8494b8}
+/* FAQ 折叠 */
+.faq{border:1px solid rgba(255,255,255,.08);border-radius:9px;margin-bottom:7px;
+  padding:9px 12px;background:rgba(255,255,255,.025)}
+.faq summary{cursor:pointer;font-weight:600;color:#c3d2f0;font-size:12.5px;line-height:1.6;list-style:none}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::before{content:'＋ ';color:var(--cyan);font-weight:700}
+.faq[open] summary::before{content:'－ '}
+.faq[open] summary{margin-bottom:5px}
+.faq p{margin:0;color:#8d9bbd;font-size:12px;line-height:1.85}
+.rules-fold{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:11.5px;color:#7c8aae}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>岛屿混战</h1>
+    <span class="badge">SealboundIsland</span>
+    <span class="badge" id="modeBadge">单人混战</span>
+    <span class="badge">2-6 人 · 回合制生存</span>
+    <div class="round">第 <b id="rRound">1</b> 轮 · 共 <b id="rPlayers">0</b> 人存活</div>
+  </header>
+
+  <div class="game">
+    <div>
+      <div class="card" id="mapWrap">
+        <canvas id="cv"></canvas>
+        <div id="turnbar"><span class="dot"></span><span id="turnTxt"></span></div>
+      </div>
+
+      <div class="card" id="actZone">
+        <div class="acts">
+          <button class="abtn" data-a="move">1 · 移动<small>前往相连的岛</small></button>
+          <button class="abtn" data-a="box">2 · 开箱<small>随机获得一件物品</small></button>
+          <button class="abtn" data-a="atk">3 · 攻击<small>ATK − DEF</small></button>
+          <button class="abtn" data-a="skill" disabled>4 · 技能<small>规则待定</small></button>
+          <button class="abtn" data-a="item">5 · 道具<small>使用背包物品</small></button>
+          <button class="abtn" data-a="enchant">附魔<small>回合外 · 限 1 次</small></button>
+          <button class="abtn" data-a="seal7">蹑景<small>刻印 7 · 额外回合</small></button>
+          <button class="abtn" data-a="dodge">蓄闪<small>刻印 8 · 必定闪避</small></button>
+          <button class="abtn" data-a="precept">敕禁<small>刻印 4 · 自由行动</small></button>
+          <button class="abtn" data-a="machine">天工<small>刻印 6 · 建造/发射</small></button>
+        </div>
+        <div id="choice">
+          <div class="ctitle" id="cTitle"></div>
+          <div class="opts" id="cOpts"></div>
+        </div>
+        <div class="sysbtns">
+          <button class="sysbtn" id="rulesBtn">规则</button>
+          <button class="sysbtn" id="forceEndBtn">强制结束</button>
+          <button class="sysbtn" id="backBtn">返回主页面</button>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card plist" id="plist"></div>
+      <div class="card" id="logBox">
+        <h4>战斗日志</h4>
+        <div id="log"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 设置 -->
+<div class="modal" id="setup">
+  <div class="sheet">
+    <h2>岛屿混战 · SealboundIsland</h2>
+    <div class="sub">对局设置</div>
+    <div class="row">
+      <label>对战模式</label>
+      <div class="seg" id="segMode"></div>
+    </div>
+    <div class="row">
+      <label></label>
+      <div class="modehint" id="modeHint"></div>
+    </div>
+    <div class="row">
+      <label>玩家人数</label>
+      <div class="seg" id="segN"></div>
+    </div>
+    <div class="row" id="hpRow">
+      <label>HP 上限</label>
+      <input type="number" id="inpHP" value="30" min="5" max="999" step="5">
+      <span style="font-size:11px;color:var(--dim)" id="hpHint">出生时满 HP</span>
+    </div>
+    <div class="row" style="align-items:flex-start">
+      <label style="padding-top:5px">玩家</label>
+      <div style="flex:1;min-width:200px" id="pconf"></div>
+    </div>
+    <button class="big" id="goBtn">开始游戏</button>
+    <div class="rules-fold">
+      <span>规则较长，可在对局中随时查看。</span>
+      <button class="sysbtn" id="rulesBtn2" style="flex:none;padding:8px 14px">查看完整规则</button>
+    </div>
+  </div>
+</div>
+
+<!-- 结算 -->
+<div class="modal hide" id="over">
+  <div class="sheet">
+    <div class="sub">Game Over</div>
+    <div class="winner" id="winTxt"></div>
+    <div id="winSub" style="color:#a7b6d6;font-size:13px;line-height:1.9;margin-bottom:16px"></div>
+    <button class="big" id="againBtn">再来一局</button>
+    <button class="big" id="resetBtn" style="background:linear-gradient(100deg,#8494b8,#a9b6d6);box-shadow:none;margin-top:8px">重新设置</button>
+  </div>
+</div>
+
+<!-- 规则说明 -->
+<div class="modal hide" id="rulesModal">
+  <div class="sheet rules-sheet">
+    <div class="sub">Rules</div>
+    <h2>规则说明</h2>
+    <div class="rules" id="rulesBody">
+      <div class="rtabs">
+        <button class="rtab on" data-tab="quick">速查表</button>
+        <button class="rtab" data-tab="seal">刻印目录</button>
+        <button class="rtab" data-tab="rule">完整规则</button>
+        <button class="rtab" data-tab="faq">常见问题</button>
+      </div>
+
+      <!-- ============ 速查表 ============ -->
+      <div class="rpane on" data-pane="quick">
+        <div class="rsec">数值</div>
+        <table class="rtb">
+          <tr><td>初始属性</td><td>ATK 1 / DEF 0 / 射程 0（射程 0 = 仅同岛）</td></tr>
+          <tr><td>伤害</td><td>ATK − DEF，低于 0 则无伤害（仍记 1 次受击）</td></tr>
+          <tr><td>护甲</td><td>背包内 +4 DEF，默认只算一件（⑬盈箧后可叠）</td></tr>
+          <tr><td>药水</td><td>+10 HP（回响附魔 +5）</td></tr>
+          <tr><td>剑 / 弓箭 / 三叉戟</td><td>+7 / +8（蓄力后射程 ∞）/ +9（近战）</td></tr>
+          <tr><td>炮台 箭矢 / TNT</td><td>8 ATK 单体（自动 ×2） / 16 ATK 全岛（自动 ×1）</td></tr>
+          <tr><td>陷阱</td><td>3 点无视 DEF，触发即销毁</td></tr>
+          <tr><td>蓄闪 / 蹑景</td><td>1 主要行动换 1 次必闪，冷却 1 轮 / +1 额外回合，冷却 2 轮</td></tr>
+          <tr><td>每岛箱子</td><td>外岛 3 个，中心岛无限</td></tr>
+        </table>
+
+        <div class="rsec">召唤物</div>
+        <table class="rtb">
+          <tr><td>巨兽</td><td>100 HP / 20 ATK · 近战 · 索敌 HP 最高 · 命中后休息 1 回合</td></tr>
+          <tr><td>游侠</td><td>6 HP / 4 ATK · 射程 ∞ · 索敌 HP 最低 · 召唤师换岛则跟随</td></tr>
+          <tr><td>幽灵</td><td>4 HP / 4 ATK · 近战 · 索敌 HP 最低 · 固有 50% 闪避</td></tr>
+        </table>
+
+        <div class="rsec">开箱概率</div>
+        <table class="rtb">
+          <tr><td>药水 10 · 护甲 10 · 剑 10</td><td>进背包</td></tr>
+          <tr><td>传送器 10 · 三叉戟 10 · 附魔 10（×3） · 自选武器 10</td><td>进背包 / 附魔给 3 个道具 / 自选武器二选一</td></tr>
+          <tr><td><b>刻印 15</b></td><td><b>立即自选，不入背包</b></td></tr>
+          <tr><td>弓箭 5 · 召唤物 5 · 神器 5</td><td>弓箭进背包；召唤物使用后自选生物；神器当场布陷阱</td></tr>
+        </table>
+
+        <div class="rsec">行动消耗</div>
+        <table class="rtb">
+          <tr><td>移动 / 开箱 / 攻击 / 道具 / 机械</td><td>主要行动</td></tr>
+          <tr><td>附魔</td><td><b>不占</b>主要行动，每回合 1 次</td></tr>
+          <tr><td>④敕禁</td><td>自由行动，每回合 1 次</td></tr>
+          <tr><td>⑦蹑景</td><td>免费声明</td></tr>
+          <tr><td>⑧蓄闪</td><td>主要行动</td></tr>
+        </table>
+      </div>
+
+      <!-- ============ 刻印目录 ============ -->
+      <div class="rpane" data-pane="seal">
+        <p class="rnote">开箱 / 钓鱼开出刻印时<b>立即自选</b>一项永久强化——<b>不入背包、不占回合、死亡不掉落</b>。一般不可叠加，可叠加的只有 ③丰穰 与 ⑧凌波各分支。</p>
+        <table class="rtb seal">
+          <tr><td class="no">①</td><td class="nm">劫雷</td><td>攻击 50% 暴击，倍率 2~20 随机取整，伤害 = ATK × 倍率 − DEF</td></tr>
+          <tr><td class="no">②</td><td class="nm">同契</td><td>与队友共享全部刻印（混战无效；BOSS 战非 BOSS 算一队）</td></tr>
+          <tr><td class="no">③</td><td class="nm">丰穰</td><td>开箱同一项物品数量翻倍，<b>可叠加</b>（×2 / ×4 / ×8）</td></tr>
+          <tr><td class="no">④</td><td class="nm">敕禁</td><td>每回合 1 次自由行动：对任一实体施加【戒律】禁一类行动</td></tr>
+          <tr><td class="no">⑤</td><td class="nm">残锋</td><td>HP 每比 5 低 1 点，ATK +1、DEF +1</td></tr>
+          <tr><td class="no">⑥</td><td class="nm">天工</td><td>解锁炮台：构建 / 装填 / 自动化 / 手动发射</td></tr>
+          <tr><td class="no">⑦</td><td class="nm">蹑景</td><td>声明后主要行动结束追加 1 个额外回合（<b>冷却 2 轮</b>）</td></tr>
+          <tr><td class="no">⑧</td><td class="nm">凌波</td><td><b>可重复选</b>，二选一分支 ↓</td></tr>
+          <tr class="sub"><td></td><td class="nm">⑧a</td><td><b>+30% 闪避</b>（可叠加，封顶 100%），并可花 1 个主要行动<b>蓄闪</b></td></tr>
+          <tr class="sub"><td></td><td class="nm">⑧b</td><td>闪避成功立即获 <b>N 个额外回合</b>（N = ⑧a 层数；<b>⑧a 为 0 层时完全无效</b>，无保底）</td></tr>
+          <tr><td class="no">⑨</td><td class="nm">裂帛</td><td>所有进攻类能力额外施加 1 层【撕裂】</td></tr>
+          <tr><td class="no">⑩</td><td class="nm">御灵</td><td>自身召唤物 HP/ATK +50%、可手动操控、并共享你的刻印</td></tr>
+          <tr><td class="no">⑪</td><td class="nm">点染</td><td>攻击命中可自选附加【红】/【蓝】/【黄】之一</td></tr>
+          <tr><td class="no">⑫</td><td class="nm">尘梦</td><td>回合开始前未受伤则 +1 层【尘】（每层减伤 1），受伤即清空</td></tr>
+          <tr><td class="no">⑬</td><td class="nm">盈箧</td><td>背包内护甲 DEF 可叠加、武器 ATK 可叠加</td></tr>
+        </table>
+
+        <div class="rsec">刻印 ⑧a ·【蓄闪】</div>
+        <table class="rtb">
+          <tr><td>使用</td><td>花 <b>1 个主要行动</b>，蓄完立即生效、无时限，一直挂到被消耗</td></tr>
+          <tr><td>效果</td><td>下一次受击<b>必定闪避成功</b>，不走概率</td></tr>
+          <tr><td>消耗</td><td>闪避成功后蓄闪消失，并<b>冷却 1 轮</b>——下个自己的回合不能再蓄，再下一个回合恢复</td></tr>
+          <tr><td>重复</td><td>已经蓄着时不能再蓄（按钮置灰）</td></tr>
+          <tr><td>戒律</td><td>被【戒律·禁止使用刻印】时：<b>不能蓄闪</b>，⑧a 的 30% 与蓄闪<b>都不触发</b>；<b>已蓄的闪原样保留</b>，戒律解除后继续有效</td></tr>
+          <tr><td>真实伤害</td><td>只对「攻击」生效；【撕裂】、陷阱、坠入虚空<b>不吃闪避</b></td></tr>
+          <tr><td>联动</td><td>蓄闪闪避同样算「闪避成功」，⑧b <b>照常触发</b>额外回合</td></tr>
+          <tr><td>⑧b 前提</td><td>⑧b 的 N 取 ⑧a <b>当前层数</b>，没有 ⑧a（0 层）时 ⑧b 不触发、不给任何额外回合；之后再叠 ⑧a，N 同步提高</td></tr>
+        </table>
+      </div>
+
+      <!-- ============ 完整规则 ============ -->
+      <div class="rpane" data-pane="rule">
+        <div class="rsec">对局设置与胜负</div>
+        <p>①<b>单人混战</b>：各自为战，全员相同 HP 上限，最后存活者胜。<br>
+           ②<b>自定义分队</b>：指定队伍，同队不能互相攻击（含陷阱），最后存活的队伍胜。<br>
+           ③<b>BOSS 战</b>：玩家 1 为 BOSS，HP = max(10, (人数−1)×10)，其余挑战者各 1 HP。</p>
+        <p><b>胜负判定</b>：混战＝存活 ≤ 1 时结束；分队＝只剩一队时结束；<b>BOSS 战按阵营判</b>——BOSS 阵亡即<b>英雄方获胜</b>（不论还剩几名挑战者），挑战者全灭则 BOSS 胜，同归于尽为无人生还。<b>不按存活人数判定</b>。伤害结算后立即判胜负。</p>
+
+        <div class="rsec">地图与移动</div>
+        <p>中心岛 + n 个外岛（n = 人数），星型相连：外岛只连中心岛，<b>外岛之间不互通</b>。每个外岛 3 个箱子，中心岛无限。移动 1 次走 1 格。传送器无视连接可去任意岛（被禁止移动时仍可用）。</p>
+        <p><b>击退</b>沿「攻击者 → 目标」再推 1 格：目标在<b>外岛</b> → 坠入虚空<b>直接死亡</b>；目标在<b>中心岛</b> → 飞进另一侧外岛（不会是攻击者所在岛）。</p>
+
+        <div class="rsec">战斗</div>
+        <p>伤害 = ATK − DEF，低于 0 无伤害（仍记 1 次【受击】）。每次被击打记 1 次受击。攻击目标可为玩家或召唤物。</p>
+        <p><b>武器</b>：剑 +7；击退棒 ATK 0 但命中后击退 1 格；钓竿 ATK 0，射程 +1、命中后拉近 1 格，并可当道具钓鱼；弓箭 +8，蓄力 1 回合后射程 ∞；三叉戟 +9，近战无需蓄力，投掷需蓄力 1 回合、射程 ∞，投出后<b>只能本人</b>到落点岛捡回。</p>
+        <p><b>蓄力会被任何位移打断</b>——主动的移动 / 开箱 / 传送，被动的被击退 / 被钓竿拉走，都算，需重新蓄力。</p>
+
+        <div class="rsec">物品与掉落</div>
+        <p>HP ≤ 0 死亡，背包物品掉落在原地，<b>下一个在该岛行动的玩家自动捡拾</b>。<b>坠入虚空例外</b>：背包物品、投在外的三叉戟、布置的陷阱<b>一并消失</b>（已建成的炮台保留）。</p>
+        <p><b>刻印不入背包</b>，死亡不掉落。<b>召唤物是背包道具</b>：未使用就阵亡会随掉落物留在原地，他人可拾获；已召唤的生物死亡直接消失。</p>
+
+        <div class="rsec">附魔</div>
+        <p><b>回合外</b>限 1 次，不占主要行动。自选一种附魔附加到<b>指定某一件</b>物品上（可附魔物品带独立编号 #N，给一把剑附魔不影响另一把）。<b>不同附魔可叠加</b>（锋利 + 轻盈 = ATK +3 且射程 +1）；<b>同一种附魔在同一件物品上只能有一次</b>。刻印、神器、附魔、传送器本身不能被附魔，因此不带编号。</p>
+        <p>锋利＝武器 ATK +3；坚固＝护甲 DEF +2；轻盈＝武器射程 +1；回响＝药水额外恢复 5 HP。</p>
+
+        <div class="rsec">召唤物</div>
+        <p>使用「召唤物」道具后自选生物，出现在你所在的岛。在你的主要回合之后获得独立的召唤物回合，每只<b>只行动 1 次</b>：能打到就打，打不到就移动 1 步追击，<b>绝不主动走进虚空</b>。</p>
+        <p><b>召唤当回合不行动</b>：刚召唤的生物「正在现身」，本回合的召唤物回合与召唤物额外回合都跳过（凌波给的额外行动也作废），从<b>你的下一个回合</b>起才行动；在额外回合里召唤的，本轮已过召唤物回合，下轮正常行动。</p>
+        <p>召唤师阵亡后<b>保留原回合位继续行动</b>；人头记给召唤师。DEF 恒为 0，可被攻击 / 击退 / 施加状态。<b>没有⑩御灵时只能自动索敌</b>（人类玩家也一样，不弹操控面板），且不享受召唤师刻印。召唤物不能被传送器传送。</p>
+
+        <div class="rsec">机械（⑥天工）</div>
+        <p>「建造机械」消耗主要行动：<b>构建炮台</b>（当前岛，固定、无上限）／<b>装填弹药</b>（箭矢 8 ATK 单体、TNT 16 ATK 全岛，装填后<b>弹药无限</b>）／<b>自动化</b>（每主要回合开始前 TNT×1、箭矢×2）／<b>手动发射</b>（1 发）。</p>
+        <p><b>发射目标一律可自选</b>：箭矢从全场敌方实体中选 1 个；TNT 从中心岛 + 全部外岛中选 1 个，该岛<b>全部实体</b>挨打（<b>可以选自己所在岛</b>）。每次都有「跳过」，跳过则不开火、<b>手动发射不消耗主要行动</b>。AI 自动索敌，不炸自己人，也不打没有敌人的岛。</p>
+        <p>发射视为「机械来源」攻击：<b>不吃 ①劫雷 / ⑨裂帛 / ⑪点染</b>。炮台<b>不可被攻击</b>。<b>打光敌人立即结算</b>，不再继续后续发射。</p>
+
+        <div class="rsec">戒律（④敕禁）</div>
+        <p>每回合 1 次自由行动，对任一实体（玩家或召唤物）施加一条，持续到<b>施加者下回合开始前</b>：禁止攻击 / 禁止移动（传送器仍可用）/ 禁止开箱 / 禁止使用道具 / 禁止使用神器 / 禁止使用刻印主动能力。同类戒律不能叠加。</p>
+
+        <div class="rsec">状态效果</div>
+        <p><b>【撕裂】</b>每层在回合开始时（【尘】之前）扣 1 点<b>真实伤害</b>（无视 DEF）。<b>【红】就是撕裂 +1 层</b>，与 ⑨裂帛 走同一套层数相加。</p>
+        <p><b>【尘】</b>每层减伤 1（含真实伤害），受到 1 点以上伤害即<b>清空</b>。<b>【蓝】</b>下次受击前无法攻击。<b>【黄】</b>使用药水前无法移动，最多 3 回合自动解除。【蓝】【黄】在受到攻击时解除。</p>
+        <p><b>结算顺序</b>：回合开始 → 清空自己施加的旧戒律 → 炮台自动发射 → 撕裂 → 尘 → 黄兜底。</p>
+
+        <div class="rsec">回合结构</div>
+        <p>主要回合（含回合开始结算与主要行动）<b>→</b> 召唤物回合 <b>→</b> 召唤物额外回合 <b>→</b> 玩家额外回合 <b>→</b> 下一位玩家。</p>
+        <p>额外回合<b>不再触发</b>召唤物回合，也<b>不重复结算</b>回合开始效果。「谁的回合结算谁」：玩家在自己的主要回合开始结算自己的状态，召唤物在召唤物回合开始结算自己的。阵亡但有存活召唤物的玩家仍占回合位。</p>
+
+        <div class="rsec">其他</div>
+        <p><b>神器</b>：在当前岛布置陷阱，其他玩家（非同队）进入时受 3 点无视 DEF 伤害，触发即销毁；主动走入与被动落地都会触发。</p>
+        <p><b>技能</b>：技能伤害<b>不属于「攻击」</b>——不计入受击次数，也不触发攻击类效果（击退、拉近、投掷等）。技能按钮暂未开放。</p>
+        <p>全游戏数值<b>一律下取整</b>。界面提供「强制结束」「返回主页面」，对局中随时可点开本规则，不影响回合状态。</p>
+      </div>
+
+      <!-- ============ 常见问题 ============ -->
+      <div class="rpane" data-pane="faq">
+        <details class="faq"><summary>开箱开出刻印，为什么背包里没有？</summary><p>刻印是<b>永久被动</b>，开出即选立即生效，不占背包、不占回合、死亡不掉落，因此不会出现在「道具」列表里。</p></details>
+        <details class="faq"><summary>为什么选完刻印，回合就结束了？</summary><p>开箱本身消耗了主要行动，选刻印的过程才是免费的。只有「回合开始捡拾」这类不消耗行动来源才是选完继续行动。</p></details>
+        <details class="faq"><summary>同一个刻印能选两次吗？</summary><p>只有 ③丰穰 与 ⑧凌波（各分支）能叠加。其他刻印已拥有时再选会提示「重复不叠加」；一次性刻印全拿满后，面板只列出可叠加项，不会卡死。</p></details>
+        <details class="faq"><summary>只有 ⑧b 没有 ⑧a，闪避成功还能拿额外回合吗？</summary><p>不能。⑧b 的 N 就是 ⑧a 的当前层数，<b>⑧a 为 0 层时 ⑧b 完全不生效</b>，一个额外回合都不给（没有保底）。想要追击流，得先叠 ⑧a。</p></details>
+        <details class="faq"><summary>蓄闪是不是按了就一定躲得掉？</summary><p>是，下一次受击<b>必定闪避</b>，不看概率。但它只管<b>攻击</b>——【撕裂】、陷阱、坠入虚空照样掉血。</p></details>
+        <details class="faq"><summary>蓄闪之后按钮为什么是灰的？</summary><p>两种情况：① 已经蓄着了，不能重复蓄；② 刚消耗完，<b>冷却 1 轮</b>，你下个回合仍然灰，再下一个回合恢复。玩家卡会显示「蓄闪」或「闪冷却」徽标。</p></details>
+        <details class="faq"><summary>中了「禁止使用刻印」，已经蓄好的闪会消失吗？</summary><p><b>不会</b>。蓄闪原样保留（不消耗、不解散），但戒律期间不能触发；戒律一解除，下一次受击立刻生效。</p></details>
+        <details class="faq"><summary>幽灵有 50% 闪避，被戒律封了刻印为什么还能闪？</summary><p>幽灵的 50% 是<b>生物固有特性</b>，不是刻印效果，因此不受戒律影响。⑧a 的 30% 与蓄闪才是刻印效果，会被封掉。</p></details>
+        <details class="faq"><summary>弓箭为什么打不出去？</summary><p>弓箭与三叉戟投掷都要<b>先蓄力</b>（占 1 个主要行动）。另外任何位移都会打断蓄力，包括自己移动、开箱、传送，以及被击退、被钓竿拉走。</p></details>
+        <details class="faq"><summary>三叉戟投出去，队友能帮我捡吗？</summary><p>不能。只有<b>投出的本人</b>走到落点岛才会自动捡回，别人站上去也拿不走。</p></details>
+        <details class="faq"><summary>在外岛被击退会怎样？</summary><p><b>直接死亡</b>。外岛外面就是虚空，且背包物品、投在外的三叉戟、布置的陷阱会<b>一并消失</b>（已建成的炮台保留）。</p></details>
+        <details class="faq"><summary>护甲能叠加吗？捡了两件为什么只 +4 DEF？</summary><p>默认<b>不叠加</b>，多件只按一件算（取附魔加成最高的那件）。拿到 ⑬盈箧 之后才按件数全叠加。</p></details>
+        <details class="faq"><summary>BOSS 死了我方还有好几个人，为什么直接结束了？</summary><p>BOSS 战<b>按阵营判定</b>，不按存活人数。BOSS 一倒下，英雄方立即获胜。</p></details>
+        <details class="faq"><summary>炮台会误伤自己人吗？</summary><p>TNT <b>会</b>——命中该岛全部实体，包括自己、队友与召唤物。手动发射可以选择跳过或避开自己所在岛；AI 会主动避开自己人。</p></details>
+        <details class="faq"><summary>炮台能暴击、能附加撕裂吗？</summary><p>不能。发射视为「机械来源」，<b>不吃 ①劫雷 / ⑨裂帛 / ⑪点染</b>。</p></details>
+        <details class="faq"><summary>炮台装填的弹药会用完吗？</summary><p>不会。装填一次即<b>弹药无限</b>，之后只需决定自动化开关与何时手动发射。</p></details>
+        <details class="faq"><summary>召唤物刚召唤出来这回合为什么不动？</summary><p>刚召唤的生物处于「正在现身」状态，<b>当回合的召唤物回合与额外回合都跳过</b>，从你的下一个回合起才行动。</p></details>
+        <details class="faq"><summary>怎么手动操控召唤物？</summary><p>需要 ⑩御灵。没有 ⑩御灵时，无论人类还是 AI，召唤物都<b>只能自动索敌</b>，不会弹操控面板。</p></details>
+        <details class="faq"><summary>召唤物会跟着我换岛吗？</summary><p>只有<b>游侠</b>会跟随（移动、传送、被打飞、被钓竿拉走都算）。巨兽与幽灵按自己的索敌逻辑行动。召唤物本身不能被传送器传送。</p></details>
+        <details class="faq"><summary>队友的陷阱会伤到我吗？</summary><p>不会。分队模式同队陷阱不伤自己人。混战模式没有队友，人人都会中招。</p></details>
+        <details class="faq"><summary>物品后面的 #编号是什么意思？</summary><p>只有<b>能被附魔</b>的物品（武器 / 护甲 / 药水）才有独立编号，因为附魔绑定到具体那一件。给一把剑附魔不会影响另一把剑。</p></details>
+        <details class="faq"><summary>附魔能叠加吗？占回合吗？</summary><p>不同附魔<b>可以叠加</b>（锋利 + 轻盈 = ATK +3 且射程 +1），同一种在同一件上只能有一次。附魔是<b>回合外</b>行动，每回合限 1 次，用完还能继续主要行动。</p></details>
+        <details class="faq"><summary>对局卡住了 / 想重开怎么办？</summary><p>界面上有「强制结束」与「返回主页面」。「强制结束」直接结算当前对局；「返回主页面」回到开局设置，可重新配置模式与人数。</p></details>
+      </div>
+    </div>
+    <button class="big" id="rulesCloseBtn">关闭</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* =========================================================
+   岛屿混战 SealboundIsland —— 依据《基础规则.docx》实现
+   规则中标注"后面再加"的部分（技能/刻印/神器/附魔）为草案实现
+   ========================================================= */
+
+/* ---------------- 物品定义 ----------------
+   ench:true —— 可以被附魔的物品（武器 / 护甲 / 药水）。
+   刻印、神器、附魔、传送器本身不能当附魔目标，也就不需要 #实例编号。 */
+const ITEMS = {
+  potion:   {name:'药水',   icon:'\u{1F9EA}', type:'consume', ench:true, desc:'使用后恢复 10 HP'},
+  armor:    {name:'护甲',   icon:'\u{1F6E1}', type:'passive', def:4, ench:true, desc:'留在背包即自动 DEF +4（不可叠加：多件只计一次）'},
+  sword:    {name:'剑',     icon:'\u{1F5E1}', type:'weapon', atk:7,  rng:0, ench:true, desc:'近战武器，攻击时 ATK +7'},
+  teleport: {name:'传送器', icon:'\u{1F300}', type:'consume', desc:'使用后传送到任意一个岛'},
+  /* ranged:true —— 武器自带的 rng 只在「投掷 / 释放蓄力」时生效；近战时只用基础射程 + 附魔加成 */
+  bow:      {name:'弓箭',   icon:'\u{1F3F9}', type:'weapon', atk:8,  rng:Infinity, ranged:true, charge:true, ench:true, desc:'蓄力 1 回合后释放：射程无限、ATK +8'},
+  trident:  {name:'三叉戟', icon:'\u{1F531}', type:'weapon', atk:9,  rng:Infinity, ranged:true, throwable:true, charge:true, ench:true, desc:'近战 ATK+9（无需蓄力）；投掷需蓄力 1 回合，射程∞，投出后需到落点岛由本人捡回'},
+  seal:     {name:'刻印',   icon:'\u{1F4DC}', type:'consume', desc:'获得时立即自选一项永久强化：13 选 1，不占回合（重复选一般不叠加；不入背包、死亡不掉落）'},
+  summon:   {name:'召唤物', icon:'\u{1F47B}', type:'consume', desc:'使用后自选一种生物召唤（巨兽 / 游侠 / 幽灵）· 召唤当回合不行动，下个自己的回合起行动'},
+  artifact: {name:'神器',   icon:'\u{1F3FA}', type:'consume', draft:true, desc:'[草案] 在当前岛布置陷阱：其他玩家进入时受 3 点无视 DEF 伤害'},
+  enchant:  {name:'附魔',   icon:'\u2728', type:'enchant', draft:true, desc:'[草案] 回合外使用：自选一种附魔附加到一件物品上'},
+  kb:       {name:'击退棒', icon:'\u{1F528}', type:'weapon', atk:0, rng:0, knock:1, ench:true, desc:'攻击可将目标击退 1 个区域'},
+  rod:      {name:'钓竿',   icon:'\u{1F3A3}', type:'weapon', atk:0, rng:1, pull:true, fish:true, ench:true, desc:'射程 +1，命中后将目标拉近 1 个区域；也可用来钓鱼'},
+};
+/* 能否被附魔 */
+function canEnchant(id){ return !!(ITEMS[id] && ITEMS[id].ench); }
+
+/* 开箱概率表（合计 100，即每项权重 = 百分比） */
+const DROP_TABLE = [
+  {id:'potion',    w:10},
+  {id:'armor',     w:10},
+  {id:'sword',     w:10},
+  {id:'teleport',  w:10},
+  {id:'bow',       w:5 },
+  {id:'trident',   w:10},
+  {id:'seal',      w:15},
+  {id:'summon',    w:5 },
+  {id:'artifact',  w:5 },
+  {id:'enchant',   w:10},   // 附魔 ×3
+  {id:'kb_or_rod', w:10},   // 自选击退棒或钓竿
+];
+
+const ENCHANTS = [
+  {id:'sharp', name:'锋利', desc:'武器 ATK +3'},
+  {id:'tough', name:'坚固', desc:'护甲 DEF +2'},
+  {id:'light', name:'轻盈', desc:'武器射程 +1'},
+  {id:'echo',  name:'回响', desc:'药水额外恢复 5 HP'},
+];
+
+const PCOLORS = ['#ff3d9a','#38f0d8','#ffca3a','#8b5cf6','#fb923c','#4ade80'];
+
+/* =========================================================
+   刻印（13 项）—— 获得即选（不入背包）；一般不可叠加；死亡不掉落
+   ========================================================= */
+const SEALS = [
+  {id:'1',  name:'劫雷', icon:'\u{1F4A5}', desc:'攻击 50% 触发暴击：倍率在 2~20 间随机取整，伤害 = ATK × 倍率 − DEF'},
+  {id:'2',  name:'同契', icon:'\u{1F91D}', desc:'与队友共享全部刻印（混战无效；BOSS 战里非 BOSS 玩家算同一队）'},
+  {id:'3',  name:'丰穰', icon:'\u{1F4E6}', desc:'开箱时同一项物品数量翻倍（可叠加：×2 / ×4 / ×8 …）'},
+  {id:'4',  name:'敕禁', icon:'\u{1F6D1}', desc:'回合开始获 1 次自由行动：对任一实体施加【戒律】禁止一类行动，持续到你下回合开始前'},
+  {id:'5',  name:'残锋', icon:'\u{1F525}', desc:'HP 每比临界值（5）低 1 点，ATK +1 且 DEF +1'},
+  {id:'6',  name:'天工', icon:'\u{1F9F0}', desc:'解锁「建造机械」行动：构建炮台 / 装填弹药 / 自动化 / 手动发射（每次发射都可自选目标）'},
+  {id:'7',  name:'蹑景', icon:'\u{26A1}',    desc:'回合开始主动使用：主要行动后追加 1 个额外回合（冷却 2 轮）'},
+  {id:'8',  name:'凌波', icon:'\u{1F4A8}', desc:'可重复选。分支① +30% 闪避（可叠加），并可花 1 个主要行动【蓄闪】：下一次受击必定闪避成功（闪避后蓄闪消耗并冷却 1 回合）；分支② 闪避成功立即获 N 个额外回合（N = 分支①层数；没有分支①时分支②无效）。被戒律禁止使用刻印时不能蓄闪、闪避也不触发，已蓄的闪保留'},
+  {id:'9',  name:'裂帛', icon:'\u{1FA79}', desc:'所有进攻类能力额外施加 1 层【撕裂】'},
+  {id:'10', name:'御灵', icon:'\u{1F451}', desc:'自身召唤物 HP/ATK +50%，可操控其行动，且召唤物共享你的刻印并享受加成'},
+  {id:'11', name:'点染', icon:'\u{1F9EA}', desc:'攻击命中可自选附加【红】/【蓝】/【黄】之一'},
+  {id:'12', name:'尘梦', icon:'\u{1F32B}', desc:'回合开始前若未受伤则 +1 层【尘】（每层减伤 1，含真实伤害），受伤即清空'},
+  {id:'13', name:'盈箧', icon:'\u{1F392}', desc:'背包内护甲 DEF 可叠加、武器 ATK 可叠加'},
+];
+const SEAL_BY_ID = {}; SEALS.forEach(s => SEAL_BY_ID[s.id] = s);
+
+/* 召唤物三种生物（玩家口径：巨兽 / 游侠 / 幽灵） */
+const SUMMON_TYPES = {
+  1:{key:1, name:'巨兽', icon:'\u{1F984}', hp:100, atk:20, rng:0,        aim:'max', rest:true,  desc:'100HP / 20ATK · 近战 · 索敌 HP 最高 · 命中后休息 1 回合'},
+  2:{key:2, name:'游侠', icon:'\u{1F3F9}', hp:6,   atk:4,  rng:Infinity, aim:'min', follow:true, desc:'6HP / 4ATK · 射程无限 · 索敌 HP 最低 · 召唤师移动时跟随'},
+  3:{key:3, name:'幽灵', icon:'\u{1F47B}', hp:4,   atk:4,  rng:0,        aim:'min', dodge:0.5,  desc:'4HP / 4ATK · 50% 闪避 · 近战 · 索敌 HP 最低'},
+};
+
+/* 戒律可禁止的行动 */
+const BANS = [
+  {id:'atk',      name:'禁止攻击'},
+  {id:'move',     name:'禁止移动（传送器仍可用）'},
+  {id:'box',      name:'禁止开箱'},
+  {id:'item',     name:'禁止使用道具'},
+  {id:'artifact', name:'禁止使用神器'},
+  {id:'seal',     name:'禁止使用刻印主动能力'},
+];
+const BAN_NAME = {}; BANS.forEach(b => BAN_NAME[b.id] = b.name);
+
+/* 状态效果名（玩家卡 / 提示用） */
+const ST_NAME = {tear:'撕裂', dust:'尘', red:'红', blue:'蓝', yellow:'黄'};
+
+/* ---------------- 工具 ---------------- */
+const $ = id => document.getElementById(id);
+const randInt = (a,b) => Math.floor(a + Math.random()*(b-a+1));
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+
+function rollItem(){
+  const total = DROP_TABLE.reduce((s,d)=>s+d.w,0);
+  let r = Math.random()*total;
+  for (const d of DROP_TABLE){
+    if ((r -= d.w) < 0) return d.id;
+  }
+  return DROP_TABLE[DROP_TABLE.length-1].id;
+}
+
+/* ---------------- 画布 ---------------- */
+const cv = $('cv'), ctx = cv.getContext('2d');
+const MW = 720, MH = 620;
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+cv.width = MW*dpr; cv.height = MH*dpr;
+cv.style.aspectRatio = MW + ' / ' + MH;
+ctx.scale(dpr,dpr);
+
+const CX = MW/2, CY = MH/2 - 6;
+const RING = 205, R_OUT = 46, R_MID = 64;
+
+function islandXY(i){
+  if (i === 0) return {x:CX, y:CY};
+  const a = -Math.PI/2 + (i-1) * (Math.PI*2 / G.n);
+  return {x: CX + Math.cos(a)*RING, y: CY + Math.sin(a)*RING};
+}
+/* 星型拓扑距离：同岛 0；一外一中心 1；两外岛 2 */
+function islandDist(a,b){
+  if (a === b) return 0;
+  if (a === 0 || b === 0) return 1;
+  return 2;
+}
+
+/* ---------------- 游戏状态 ---------------- */
+let G = null;
+let fx = [];              // 粒子 / 飘字
+let anim = [];            // 抛物线飞行物
+
+function createPlayer(i, name, isAI, maxHp){
+  return {
+    i, name, isAI,
+    hp: maxHp, maxHp,
+    baseAtk: 1, baseDef: 0, baseRng: 0,
+    island: i + 1,          // 出生在外岛 1..n（0 = 中心岛）
+    bag: [], weapon: null, hits: 0,
+    alive: true, charging: null, enchantUsed: false,
+    ench: {},               // itemUid -> enchant 列表
+    team: null,             // 分队模式下的队伍（A/B/C/D）
+    isBoss: false,          // BOSS 战里玩家 1
+    color: PCOLORS[i % PCOLORS.length],
+    kills: 0,
+    /* ---- 刻印 ---- */
+    seals: {},              // 刻印 id -> 层数（一般 1；3 与 8a 可叠）
+    /* ---- 状态效果 ---- */
+    st: mkState(),
+    hurtSince: false,       // 上次回合结束以来是否受过伤（【尘】用）
+    /* ---- 回合内标记 ---- */
+    seal7cd: -99,           // 刻印 7 上次使用的轮序号
+    freeActUsed: false,     // 刻印 4 的自由行动是否已用
+    extraUsed: false,       // 本回合是否已声明刻印 7
+    movedThisTurn: false,   // 本主要回合是否移动过（游侠跟随用）
+    turnSeq: 0,             // 本人主要回合序号（冷却计时基准）
+    /* ---- 刻印 8 凌波 · 蓄闪 ---- */
+    dodgeReady: false,      // 是否已蓄闪（下一次受击必定闪避）
+    dodgeCdRound: 0,        // 蓄闪冷却：G.round 需大于该值才能再次蓄闪
+  };
+}
+/* 状态效果容器 */
+function mkState(){
+  return {tear:0, dust:0, red:0, blue:false, yellow:0, precepts:[]};
+}
+
+/* 敌对目标：分队模式下同队不算敌人；召唤物也算实体（归属其召唤师阵营） */
+function foesOf(p){
+  if (!G) return [];
+  return foesOfEnt(p);
+}
+/* 是否已分出胜负 */
+function checkWinner(){
+  const alive = G.players.filter(p=>p.alive);
+  if (!alive.length) return {over:true, winner:null, team:null};
+  /* BOSS 战按阵营判：BOSS 阵亡 → 英雄方获胜（哪怕还有多个英雄存活）；
+     英雄全灭 → BOSS 获胜。不能按存活人数判，否则 BOSS 死了也不结束。 */
+  if (G.mode === 'boss'){
+    const boss   = alive.find(p => p.isBoss);
+    const heroes = alive.filter(p => !p.isBoss);
+    if (!boss)          return {over:true, winner:null, team:'HERO'};
+    if (!heroes.length) return {over:true, winner:boss, team:null};
+    return {over:false};
+  }
+  if (G.mode === 'team'){
+    const teams = [...new Set(alive.map(p=>p.team))];
+    if (teams.length <= 1) return {over:true, winner:null, team:teams[0] || null};
+    return {over:false};
+  }
+  if (alive.length <= 1) return {over:true, winner:alive[0] || null, team:null};
+  return {over:false};
+}
+
+function newGame(cfg){
+  const mode = cfg.mode || 'ffa';
+  G = {
+    mode: mode,
+    n: cfg.n,
+    round: 1,
+    turn: 0,
+    players: cfg.players.map((p,i)=>{
+      const pl = createPlayer(i, p.name, p.isAI, hpFor(mode, i, cfg.n, cfg.maxHp));
+      pl.team = (mode === 'team') ? (p.team || 'A') : null;
+      pl.isBoss = (mode === 'boss' && i === 0);
+      return pl;
+    }),
+    boxes: new Array(cfg.n).fill(3),   // 每个外岛 3 个箱子
+    drops: {},                          // islandIndex -> [itemId]
+    traps: {},                          // islandIndex -> ownerIdx（神器陷阱）
+    thrown: [],                         // {owner, island, item}
+    summons: [],                        // 召唤物实体
+    machines: [],                       // 刻印 6 天工的炮台
+    phase: 'play',
+    sub: 'main',                        // main / summon / summonExtra / extra
+    extraLeft: 0,                       // 玩家剩余额外回合数
+    summonExtraQueue: [],               // 本轮待行动的「召唤物额外回合」
+    log: [],
+    animating: false,                   // 飞行物动画中，锁定输入
+  };
+  fx = []; anim = [];
+  $('setup').classList.add('hide');
+  $('over').classList.add('hide');
+  addLog('对局开始 · 模式：' + modeDef(mode).name, 'sys');
+  if (mode === 'team'){
+    const byTeam = {};
+    G.players.forEach(p => { (byTeam[p.team] || (byTeam[p.team] = [])).push(p.name); });
+    addLog('分队：' + Object.keys(byTeam).sort().map(t => t + ' 队（' + byTeam[t].join('、') + '）').join(' / '), 'sys');
+    addLog('同队之间不能互相攻击。', 'sys');
+  } else if (mode === 'boss'){
+    addLog('BOSS 登场：' + G.players[0].name + '（' + G.players[0].maxHp + ' HP），其余玩家各 1 HP。', 'sys');
+  } else {
+    addLog(G.n + ' 名玩家，HP 上限 ' + cfg.maxHp + '。', 'sys');
+  }
+  startTurn();
+}
+
+/* ---------------- 物品实例 ----------------
+   背包里每拿到的东西都是一个「实例」{uid, id}，
+   附魔按 uid 绑定，所以给其中一把剑附魔不会影响另一把同名物品。      */
+let ITEM_UID = 1;
+function mkItem(id){ return { uid: ITEM_UID++, id: id }; }
+function itemOf(p, uid){ return p && uid ? (p.bag.find(it => it.uid === uid) || null) : null; }
+function itemIdOf(p, uid){ const it = itemOf(p, uid); return it ? it.id : null; }
+function itemDef(p, uid){ const it = itemOf(p, uid); return it ? ITEMS[it.id] : null; }
+function hasItem(p, id){ return p.bag.some(it => it.id === id); }
+function itemUidOf(p, id){ const it = p.bag.find(x => x.id === id); return it ? it.uid : null; }
+function addItem(p, id){ const it = mkItem(id); p.bag.push(it); return it.uid; }
+function removeUid(p, uid){ const i = p.bag.findIndex(it => it.uid === uid); if (i >= 0) p.bag.splice(i,1); }
+
+/* ---------------- 派生属性 ---------------- */
+// 护甲不可叠加：多件只按一件计算（取附魔加成最高的那件）
+// 刻印 13「盈箧」解锁后可叠加；召唤物 DEF 由 summonStats 给出
+function getDef(p){
+  if (p && p.isSummon) return summonStats(p).def;
+  if (hasSeal(p, '13')){
+    const armors = p.bag.filter(it => it.id === 'armor');
+    const sum = armors.reduce((s,a) => s + 4 + (bonusOf(p,a.uid).def || 0), 0);
+    return p.baseDef + sum + seal5Bonus(p);
+  }
+  const armors = p.bag.filter(it => it.id === 'armor');
+  if (!armors.length) return p.baseDef + seal5Bonus(p);
+  const best = armors.reduce((a,b)=> (bonusOf(p,b.uid).def||0) > (bonusOf(p,a.uid).def||0) ? b : a);
+  return p.baseDef + 4 + (bonusOf(p, best.uid).def || 0) + seal5Bonus(p);
+}
+function getAtk(p, uid){
+  if (p && p.isSummon) return summonStats(p).atk;
+  const d = itemDef(p, uid);
+  let atk = p.baseAtk + (d ? (d.atk || 0) : 0) + (d ? (bonusOf(p, uid).atk || 0) : 0);
+  // 刻印 13「盈箧」：背包内武器 ATK 可叠加
+  if (hasSeal(p, '13')){
+    const all = weaponsOf(p).reduce((s,w) => s + (itemDef(p, w.uid).atk || 0), 0);
+    if (d && d.type === 'weapon') atk += all - (d.atk || 0);
+    else atk += all;
+  }
+  return atk + seal5Bonus(p);
+}
+function getRng(p, uid, mode){
+  const d = itemDef(p, uid);
+  if (!d) return p.baseRng;
+  const released = (mode === 'throw' || mode === 'release');
+  // 远程武器近战挥舞时：只用基础射程 + 附魔加成（轻盈 +1 可打到相邻区域）
+  if (d.ranged && !released) return p.baseRng + (bonusOf(p, uid).rng || 0);
+  return p.baseRng + (d.rng || 0) + (bonusOf(p, uid).rng || 0);
+}
+/* 附魔效果可叠加：同一件物品上的多个附魔会累加 */
+function bonusOf(p, uid){
+  const b = {atk:0, def:0, rng:0};
+  for (const e of (p.ench[uid] || [])){
+    if (e === 'sharp')      b.atk += 3;
+    else if (e === 'tough') b.def += 2;
+    else if (e === 'light') b.rng += 1;
+  }
+  return b;
+}
+/* 某件物品是否带指定附魔（药水「回响」用） */
+function hasEnch(p, uid, id){ return (p.ench[uid] || []).indexOf(id) >= 0; }
+function enchNames(p, uid){ return (p.ench[uid] || []).map(enchantName).join('+'); }
+function enchantName(id){ const e = ENCHANTS.find(x=>x.id===id); return e ? e.name : ''; }
+function weaponsOf(p){
+  return p.bag.filter(it => ITEMS[it.id] && ITEMS[it.id].type === 'weapon');
+}
+function inRange(p, uid, t, mode){
+  return islandDist(p.island, t.island) <= getRng(p, uid, mode);
+}
+
+/* =========================================================
+   实体层：玩家 + 召唤物
+   ========================================================= */
+function allEnts(){
+  if (!G) return [];
+  return G.players.filter(p=>p.alive).concat(G.summons.filter(s=>s.alive));
+}
+function summonsOf(p){ return G.summons.filter(s => s.alive && s.owner === p.i); }
+function entLabel(e){
+  if (!e) return '?';
+  return e.isSummon ? (e.name + '（' + G.players[e.owner].name + '的召唤物）') : e.name;
+}
+/* 阵营：召唤物归属其召唤师；BOSS 战非 BOSS 玩家算同一队 */
+function teamKeyOf(e){
+  const p = e.isSummon ? G.players[e.owner] : e;
+  if (G.mode === 'team') return p.team;
+  if (G.mode === 'boss') return p.isBoss ? null : 'HERO';
+  return null;
+}
+function isEnemyOf(a, b){
+  if (!a || !b || a === b) return false;
+  const pa = a.isSummon ? G.players[a.owner] : a;
+  const pb = b.isSummon ? G.players[b.owner] : b;
+  if (pa === pb) return false;
+  if (G.mode === 'team') return pa.team !== pb.team;
+  if (G.mode === 'boss') return pa.isBoss !== pb.isBoss;
+  return true;
+}
+/* 敌对实体（含敌方召唤物） */
+function foesOfEnt(e){ return allEnts().filter(t => isEnemyOf(e, t)); }
+
+/* =========================================================
+   刻印查询（含刻印 2 同契：队伍池化，层数相加）
+   ========================================================= */
+function shareMates(p){
+  const k = teamKeyOf(p);
+  if (k === null) return [p];                 // 混战：无队友
+  const mates = G.players.filter(q => teamKeyOf(q) === k);
+  const anyShare = mates.some(q => (q.seals['2'] || 0) > 0);
+  return anyShare ? mates : [p];
+}
+function sealCount(p, id){
+  return shareMates(p).reduce((s,q) => s + (q.seals[id] || 0), 0);
+}
+function hasSeal(p, id){ return sealCount(p, id) > 0; }
+/* 实体是否享受某项刻印（召唤物需刻印 10 御灵） */
+function entHasSeal(e, id){
+  if (e.isSummon){
+    const o = G.players[e.owner];
+    return hasSeal(o, '10') && hasSeal(o, id);
+  }
+  return hasSeal(e, id);
+}
+function entSealCount(e, id){
+  if (e.isSummon){
+    const o = G.players[e.owner];
+    return hasSeal(o,'10') ? sealCount(o, id) : 0;
+  }
+  return sealCount(e, id);
+}
+function sealListOf(p){
+  return SEALS.filter(s => sealCount(p, s.id) > 0)
+    .map(s => s.name + (sealCount(p,s.id) > 1 ? '×' + sealCount(p,s.id) : ''));
+}
+/* 刻印 5 残锋：HP 每比临界值低 1 → ATK+1、DEF+1 */
+function seal5Bonus(e){
+  if (!entHasSeal(e, '5')) return 0;
+  return Math.max(0, 5 - e.hp);
+}
+
+/* =========================================================
+   召唤物属性（刻印 10 御灵的 +50%，一律下取整）
+   ========================================================= */
+function summonStats(s){
+  const T = SUMMON_TYPES[s.type];
+  const owner = G.players[s.owner];
+  const boost = (owner && hasSeal(owner,'10')) ? 1.5 : 1;
+  const atk = Math.floor(T.atk * boost) + seal5Bonus(s);
+  const def = 0 + seal5Bonus(s);
+  return {atk:atk, def:def, maxHp: Math.floor(T.hp * boost)};
+}
+function summonAtk(s){ return summonStats(s).atk; }
+
+/* =========================================================
+   状态效果
+   ========================================================= */
+function addPrecept(tgt, ban, by){
+  if (hasBan(tgt, ban)) return false;
+  tgt.st.precepts.push({ban:ban, by:by.i});
+  addLog(entLabel(tgt) + ' 被施加【戒律·' + BAN_NAME[ban] + '】（' + by.name + ' 施加，持续到其下回合开始前）', 'hl');
+  return true;
+}
+function hasBan(e, ban){ return e.st.precepts.some(x => x.ban === ban); }
+function clearPreceptsBy(p){
+  allEnts().forEach(e => { e.st.precepts = e.st.precepts.filter(x => x.by !== p.i); });
+}
+/* 刻印 ⑧凌波 · 蓄闪（gathered dodge）
+   - 只有分支①（8a 闪避流）能蓄闪；消耗一个主要行动，蓄完立即生效、无时限，挂着直到被消耗
+   - 蓄闪中受击：闪避必定成功 → 消耗蓄闪，并进入冷却（下个自己的回合不能再蓄）
+   - 被戒律「禁止使用刻印」：不能蓄闪、刻印⑧带来的闪避也不触发；已蓄的闪保留（不消耗、不解散）
+   - 召唤物的固有闪避（幽灵 50%）是生物特性不是刻印，不受戒律影响 */
+function dodgeSealed(e){ return hasBan(e, 'seal'); }
+function canChargeDodge(p){
+  if (!p || p.isSummon) return false;
+  if (G.sub !== 'main' && G.sub !== 'extra') return false;   // 只能在自己能行动的回合（主要 / 额外）
+  if (!hasSeal(p, '8a')) return false;                  // 只有分支①能蓄闪
+  if (p.dodgeReady) return false;                       // 已经蓄着了
+  if (dodgeSealed(p)) return false;                     // 戒律期间不能蓄闪
+  if (G.round <= (p.dodgeCdRound || 0)) return false;   // 冷却中（下个自己的回合内不能再蓄）
+  return true;
+}
+function dodgeRate(e){
+  let d = 0;
+  if (e.isSummon){
+    d = SUMMON_TYPES[e.type].dodge || 0;
+    if (!dodgeSealed(e)) d += 0.3 * entSealCount(e, '8a');
+  } else {
+    d = dodgeSealed(e) ? 0 : 0.3 * sealCount(e, '8a');
+  }
+  return Math.min(1, d);
+}
+function tryDodge(e){ return Math.random() < dodgeRate(e); }
+/* 受击闪避判定（含蓄闪）；返回 true 表示躲开了，内部已处理蓄闪的消耗与冷却 */
+function resolveDodge(e){
+  if (dodgeSealed(e)) return false;        // 戒律封刻印：闪避不触发，已蓄的闪保留
+  if (e.dodgeReady){
+    e.dodgeReady = false;
+    e.dodgeCdRound = G.round + 1;          // 冷却：下个自己的回合内不能再蓄闪
+    return true;
+  }
+  return tryDodge(e);
+}
+/* 【红】＝撕裂 +1 层（与刻印 9 走同一套层数；每回合开始扣 1×层数真实伤害） */
+function applyHitEffect(tgt, effect){
+  if (effect === 'red'){ tgt.st.tear += 1; addLog(entLabel(tgt) + ' 受到【红】：【撕裂】+1（当前 ' + tgt.st.tear + ' 层）'); }
+  else if (effect === 'blue'){ tgt.st.blue = true; addLog(entLabel(tgt) + ' 受到【蓝】：下次受击前无法攻击'); }
+  else if (effect === 'yellow'){ tgt.st.yellow = 3; addLog(entLabel(tgt) + ' 受到【黄】：使用药水前无法移动（最多 3 回合自动解除）'); }
+}
+/* 状态摘要文字（玩家卡用） */
+function stateText(e){
+  const s = e.st, out = [];
+  if (s.tear > 0)    out.push('撕裂' + s.tear);
+  if (s.dust > 0)    out.push('尘' + s.dust);
+  if (s.blue)        out.push('蓝');
+  if (s.yellow > 0)  out.push('黄' + s.yellow);
+  s.precepts.forEach(x => out.push('禁' + BAN_NAME[x.ban].replace('禁止','')));
+  return out.join(' · ');
+}
+
+/* =========================================================
+   统一伤害管线
+   ========================================================= */
+/* dealDamage：返回实际造成的伤害。opt:{trueDmg, srcEnt, tag} */
+function dealDamage(tgt, raw, opt){
+  opt = opt || {};
+  let dmg = Math.max(0, Math.floor(raw));
+  const dust = tgt.st.dust || 0;
+  if (dust > 0) dmg = Math.max(0, dmg - dust);      // 【尘】每层减伤 1（含真实伤害）
+  const pos = islandXY(tgt.island);
+  if (dmg > 0){
+    tgt.st.dust = 0;                                // 每次受伤清空【尘】
+    tgt.hurtSince = true;                           // 记入"本回合段是否受伤"
+    tgt.hp -= dmg;
+    floatText(pos.x, pos.y - 28, '-' + dmg + (opt.tag ? ' ' + opt.tag : ''), opt.trueDmg ? '#ff3d9a' : '#ff3d9a');
+    sparks(pos.x, pos.y, '#ff3d9a', 14);
+    addLog(entLabel(tgt) + ' 受到 ' + dmg + ' 点' + (opt.trueDmg ? '真实' : '') + '伤害' +
+           (opt.tag ? '（' + opt.tag + '）' : '') + '，剩余 ' + Math.max(0, tgt.hp) + ' HP');
+  } else {
+    floatText(pos.x, pos.y - 28, '免疫', '#8494b8');
+    if (opt.tag) addLog(entLabel(tgt) + ' 免疫了' + opt.tag + '伤害。');
+  }
+  // 【蓝】/【黄】：受到攻击（下次受击）即解除
+  if (tgt.st.blue){
+    tgt.st.blue = false;
+    addLog(entLabel(tgt) + ' 的【蓝】解除（下次受击）。');
+  }
+  if (tgt.st.yellow > 0){
+    tgt.st.yellow = 0;
+    addLog(entLabel(tgt) + ' 的【黄】解除（下次受击）。');
+  }
+  if (tgt.hp <= 0) killEnt(tgt, opt.srcEnt || null);
+  return dmg;
+}
+
+/* 一次「攻击」结算：src 可以是玩家或召唤物 */
+function attackResolve(src, tgt, opt){
+  opt = opt || {};
+  const owner = src.isSummon ? G.players[src.owner] : src;
+  const share = src.isSummon ? hasSeal(owner, '10') : true;   // 召唤物默认不吃刻印，刻印 10 御灵才共享
+  const atk = src.isSummon ? summonAtk(src) : getAtk(src, opt.weapon);
+  const def = getDef(tgt);
+  let dmg = atk - def, crit = false, mult = 1;
+
+  // 刻印 1 劫雷（暴击）：50%，倍率 2~20 均匀取整
+  if (share && hasSeal(owner,'1') && Math.random() < 0.5){
+    mult = randInt(2, 20);
+    dmg = atk * mult - def;
+    crit = true;
+  }
+  // 闪避（受击前判定；蓄闪在此消耗并进入冷却）
+  const gathered = !dodgeSealed(tgt) && !!tgt.dodgeReady;
+  if (resolveDodge(tgt)){
+    addLog('【闪避】' + entLabel(tgt) + ' 躲开了 ' + entLabel(src) + ' 的攻击！' +
+           (gathered ? '（蓄闪必定闪避）' : ''), 'hl');
+    const dpos = islandXY(tgt.island);
+    floatText(dpos.x, dpos.y - 30, '闪避', '#38f0d8');
+    // 刻印 8 凌波 分支 2：闪避成功立即获 N 个额外回合
+    // N = 分支①（8a）层数，没有分支①时分支②完全无效（无保底 N=1）
+    const b2 = entSealCount(tgt, '8b');
+    const nA = entSealCount(tgt, '8a');
+    if (b2 > 0 && nA > 0){
+      const n = nA;
+      if (tgt.isSummon){ tgt.extraPending = (tgt.extraPending || 0) + n; }
+      else { G.extraLeft += n; }
+      addLog(entLabel(tgt) + ' 触发刻印·凌波：立即获得 ' + n + ' 个额外回合！', 'hl');
+    } else if (b2 > 0){
+      addLog(entLabel(tgt) + ' 的刻印·凌波分支② 未生效（需要先拥有分支①）。', 'sys');
+    }
+    if (gathered) addLog(entLabel(tgt) + ' 的【蓄闪】已消耗，下个自己的回合内不能再次蓄闪。', 'sys');
+    return {evaded:true, dmg:0};
+  }
+  if (crit) addLog('【暴击 ×' + mult + '】' + entLabel(src) + ' 打出暴击！', 'hl');
+  const dealt = dealDamage(tgt, dmg, {srcEnt:src});
+  // 刻印 9 裂帛：所有进攻类能力额外 +1 层
+  if (share && hasSeal(owner,'9') && dealt >= 0){
+    tgt.st.tear += 1;
+    addLog(entLabel(tgt) + ' 获得 1 层【撕裂】（当前 ' + tgt.st.tear + ' 层）');
+  }
+  // 刻印 11 点染 命中效果
+  if (share && hasSeal(owner,'11') && opt.effect) applyHitEffect(tgt, opt.effect);
+  // 巨兽：命中后休息 1 回合（含 0 伤害命中）
+  if (src.isSummon && SUMMON_TYPES[src.type].rest) src.resting = true;
+  return {evaded:false, dmg:dealt, crit:crit, mult:mult};
+}
+
+/* 回合开始结算：谁的回合结算谁（撕裂 → 红 → 尘 → 黄兜底） */
+function turnStartTick(e){
+  if (!e.alive) return true;
+  // 【撕裂】（含【红】叠加的部分）：每回合开始扣 1×层数真实伤害，在【尘】判定之前
+  if (e.st.tear > 0) dealDamage(e, e.st.tear, {trueDmg:true, tag:'撕裂'});
+  if (!e.alive || e.hp <= 0) return false;
+  // 刻印 12 尘梦：上回合结束至今未受伤 → +1 层【尘】
+  if (entHasSeal(e, '12') && !e.hurtSince){
+    e.st.dust += 1;
+    addLog(entLabel(e) + ' 未受伤，获得 1 层【尘】（当前 ' + e.st.dust + ' 层，减伤 ' + e.st.dust + '）');
+  }
+  // 【黄】兜底：3 次自己的回合开始后自动解除
+  if (e.st.yellow > 0){
+    e.st.yellow -= 1;
+    if (e.st.yellow <= 0){ e.st.yellow = 0; addLog(entLabel(e) + ' 的【黄】到期解除。'); }
+  }
+  e.hurtSince = false;
+  return true;
+}
+
+/* 击杀分发（召唤物不算存活玩家，人头记给召唤师） */
+function killEnt(victim, killer, toVoid){
+  if (victim.isSummon){
+    victim.alive = false;
+    const pos = islandXY(victim.island);
+    sparks(pos.x, pos.y, '#8b5cf6', 22);
+    ring(pos.x, pos.y, '#8b5cf6');
+    addLog(entLabel(victim) + ' 被消灭。', 'kill');
+    if (killer){
+      const k = killer.isSummon ? G.players[killer.owner] : killer;
+      k.kills++;
+    }
+    return;
+  }
+  kill(victim, killer, !!toVoid);
+}
+
+/* ---------------- 日志 ---------------- */
+function addLog(text, cls){
+  G.log.push({text, cls: cls || ''});
+  const box = $('log');
+  if (!box) return;
+  const d = document.createElement('div');
+  if (cls) d.className = cls;
+  d.textContent = text;
+  box.appendChild(d);
+  box.parentElement.scrollTop = box.parentElement.scrollHeight;
+}
+
+/* ---------------- 特效 ---------------- */
+function floatText(x, y, txt, color){
+  fx.push({t:'text', x, y, txt, color: color || '#fff', life:1, vy:-1.1});
+}
+function ring(x, y, color){
+  fx.push({t:'ring', x, y, color: color || '#fff', life:1, r:6});
+}
+function sparks(x, y, color, n){
+  n = n || 12;
+  for (let i=0;i<n;i++){
+    const a = Math.random()*Math.PI*2, s = 1 + Math.random()*4;
+    fx.push({t:'p', x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, color, life:1, r:1.5+Math.random()*2});
+  }
+}
+function updateFx(){
+  for (let i=fx.length-1;i>=0;i--){
+    const f = fx[i];
+    if (f.t === 'text'){ f.y += f.vy; f.vy *= .96; f.life -= .016; }
+    else if (f.t === 'ring'){ f.r += 2.6; f.life -= .035; }
+    else { f.x += f.vx; f.y += f.vy; f.vx*=.96; f.vy = f.vy*.96 + .12; f.life -= .028; }
+    if (f.life <= 0) fx.splice(i,1);
+  }
+  for (let i=anim.length-1;i>=0;i--){
+    const a = anim[i];
+    a.p += a.speed;
+    if (a.p >= 1){
+      a.done && a.done();
+      anim.splice(i,1);
+    }
+  }
+}
+
+/* ---------------- 回合流程 ---------------- */
+function cur(){ return G.players[G.turn]; }
+
+function startTurn(){
+  if (G.phase !== 'play') return;
+  G.turnEnded = false;          // 回合交接守卫，防止重复推进
+  G.sub = 'main';
+  const p = cur();
+  if (!p.alive){
+    // 召唤师阵亡后保留回合位：其召唤物照常获得召唤物回合（刻印 10 御灵的操控随之失效，改自动）
+    if (summonsOf(p).length){ afterMainAction(p); }
+    else nextPlayer();
+    return;
+  }
+
+  p.turnSeq++;
+  p.extraUsed = false;
+  p.freeActUsed = false;
+  p.movedThisTurn = false;
+  p.enchantUsed = false;
+  clearPreceptsBy(p);           // 自己施加的【戒律】到自己下回合开始前解除
+  hideChoice();
+
+  // 刻印 6 天工：机械自动发射（建造者主要回合开始、进行主要行动前；人类逐发自选目标）
+  machineAutoFire(p, () => {
+    if (G.phase !== 'play' || settleWin()) return;   // 自动发射可能已经打光敌人
+    if (!p.alive){ afterMainAction(p); return; }
+
+    // 回合开始结算：撕裂 → 红 → 尘 → 【黄】兜底
+    if (!turnStartTick(p)){ afterMainAction(p); return; }
+
+    // 自动捡拾本岛掉落物
+    pickup(p);
+
+    // 检查神器陷阱（返回 true 表示已死亡，回合不再继续）
+    if (checkTrap(p)){ afterMainAction(p); return; }
+
+    render();
+    if (p.isAI){
+      later(()=>{ aiAct(p); }, 150);
+    }
+  });
+}
+
+/* ---------- 阶段机：主要 → 召唤物 → 召唤物额外 → 玩家额外 → 下一位 ---------- */
+function afterMainAction(p){
+  if (G.phase !== 'play') return;
+  runSummonPhase(p);
+}
+/* 当前行动结束：额外回合直接回到额外回合队列，主要回合才进召唤物阶段 */
+function endCurrentAction(p){
+  if (G.phase !== 'play') return;
+  if (G.sub === 'extra') runPlayerExtra(p);
+  else afterMainAction(p);
+}
+
+function runSummonPhase(p){
+  if (G.phase !== 'play') return;
+  G.sub = 'summon';
+  const list = summonsOf(p);
+  if (!list.length){ afterSummonPhase(p); return; }
+  // 本回合刚召唤的召唤物"正在现身"，不行动（凌波给的额外行动也随之作废）
+  const ready = list.filter(s => !isSpawning(s));
+  addLog('—— ' + p.name + ' 的召唤物回合（' + ready.length + '/' + list.length + ' 只行动）——', 'sys');
+  for (const s of list) if (isSpawning(s)){
+    s.extraPending = 0;
+    addLog(entLabel(s) + ' 本回合刚被召唤，正在现身，不行动。', 'sys');
+  }
+  render();
+  let idx = 0;
+  const step = () => {
+    if (G.phase !== 'play') return;
+    if (idx >= ready.length){ afterSummonPhase(p); return; }
+    const s = ready[idx++];
+    if (!s.alive){ step(); return; }
+    runOneSummon(s, p, step);
+  };
+  step();
+}
+
+function afterSummonPhase(p){
+  if (G.phase !== 'play') return;
+  const q = G.summonExtraQueue.slice().filter(s => !isSpawning(s));   // 刚召唤的当回合连额外回合也不走
+  G.summonExtraQueue = [];
+  G.sub = 'summonExtra';
+  if (!q.length){ runPlayerExtra(p); return; }
+  addLog('—— 召唤物额外回合 ——', 'sys');
+  let idx = 0;
+  const step = () => {
+    if (G.phase !== 'play') return;
+    if (idx >= q.length){ runPlayerExtra(p); return; }
+    const s = q[idx++];
+    if (!s.alive){ step(); return; }
+    summonDoAction(s, G.players[s.owner], step);   // 额外回合：只行动，不再结算/不再用刻印 7 蹑景
+  };
+  step();
+}
+
+function runPlayerExtra(p){
+  if (G.phase !== 'play') return;
+  if (G.extraLeft > 0 && p.alive){
+    G.extraLeft--;
+    G.sub = 'extra';
+    G.turnEnded = false;
+    addLog('—— ' + p.name + ' 的额外回合（还剩 ' + G.extraLeft + '）——', 'sys');
+    render();
+    if (p.isAI){ later(()=>{ aiAct(p); }, 140); }
+    return;
+  }
+  G.extraLeft = 0;
+  G.sub = 'main';
+  nextPlayer();
+}
+
+function pickup(p){
+  if (!p || !p.bag) return;        // 召唤物没有背包：被击退到有掉落物的岛也不拾获
+  const list = G.drops[p.island];
+  if (list && list.length){
+    // 刻印不入背包：地上若意外出现刻印道具，则立即自选且不消耗行动
+    const seals = list.filter(it => it.id === 'seal');
+    const rest  = list.filter(it => it.id !== 'seal');
+    if (rest.length){
+      for (const it of rest) p.bag.push(it);
+      addLog(p.name + ' 在岛上拾获：' + rest.map(it=>ITEMS[it.id].name).join('、'), 'hl');
+      const pos = islandXY(p.island);
+      floatText(pos.x, pos.y - 34, '拾获 ×' + rest.length, '#38f0d8');
+    }
+    delete G.drops[p.island];
+    if (seals.length) grantSeal(p, seals.length, true);
+  }
+}
+
+/* 延迟回调：只在"同一局"内生效——中途开新局时，旧局残留的定时器一律作废 */
+function later(fn, delay){
+  const g = G;
+  setTimeout(() => { if (!G || G !== g) return; fn(); }, delay || 140);
+}
+
+/* 行动收尾：AI 留一点表演时间，人类立即交接 */
+function finishTurn(p, delay){
+  G.animating = false;
+  render();
+  if (p.isAI){
+    later(()=>{ if (G.phase === 'play') endCurrentAction(p); }, delay || 140);
+  } else {
+    endCurrentAction(p);
+  }
+}
+
+/* 蓄力中断：任何位移都打断——主动的移动 / 开箱 / 传送，被动的被击退 / 被钓竿拉近 */
+function breakCharge(p, why){
+  if (!p || p.isSummon || !p.charging) return false;   // 召唤物不蓄力
+  const cd = itemDef(p, p.charging);
+  p.charging = null;
+  addLog(p.name + why + '，' + (cd ? cd.name : '') + '蓄力中断。');
+  return true;
+}
+
+/* 蓄力：占用本回合主要行动；任何位移都会打断，下回合释放 */
+function beginCharge(p, uid){
+  const d = itemDef(p, uid);
+  if (!d) return;
+  p.charging = uid;                // 记录具体哪一件在蓄力（换成别的武器则蓄力作废）
+  addLog(p.name + ' 开始为' + d.name + ' #' + uid + '蓄力……（下回合释放）');
+  finishTurn(p, 170);
+}
+
+/* 旧调用点兼容：结束当前行动（按阶段分流） */
+function endTurn(){ if (G) endCurrentAction(cur()); }
+
+function nextPlayer(){
+  if (G.turnEnded) return;      // 同一回合只交接一次
+  G.turnEnded = true;
+  // 检查胜负（分队模式按存活队伍，其余按存活人数）
+  const w = checkWinner();
+  if (w.over){ gameOver(w); return; }
+  let guard = 0;
+  do {
+    G.turn = (G.turn + 1) % G.n;
+    if (G.turn === 0) G.round++;
+    guard++;
+    // 阵亡但有存活召唤物的玩家仍占回合位（召唤物继续行动）
+  } while (!G.players[G.turn].alive && !summonsOf(G.players[G.turn]).length && guard < 50);
+  render();
+  startTurn();
+}
+
+function gameOver(res){
+  res = res || {over:true, winner:null, team:null};
+  G.phase = 'over';
+  const winner = res.winner || null;
+  const team = res.team || null;
+  if (G.mode === 'boss' && team === 'HERO'){
+    $('winTxt').textContent = '英雄方获胜！';
+    $('winTxt').style.color = '#7dd3fc';
+  } else if (team){
+    $('winTxt').textContent = team + ' 队获胜！';
+    $('winTxt').style.color = TEAM_COLORS[team] || '#ffca3a';
+  } else {
+    $('winTxt').textContent = winner ? (winner.name + ' 获胜！') : '无人生还';
+    $('winTxt').style.color = winner ? winner.color : '#8494b8';
+  }
+  const rank = G.players.slice().sort((a,b)=> (b.alive?1:0)-(a.alive?1:0) || b.kills-a.kills || b.hp-a.hp);
+  $('winSub').innerHTML = rank.map((p,idx)=>
+    (idx+1) + '. ' + p.name +
+    (G.mode === 'team' ? '（' + p.team + ' 队）' : '') +
+    (G.mode === 'boss' ? (p.isBoss ? '［BOSS］' : '［英雄］') : '') +
+    '（击杀 ' + p.kills + ' · 受击 ' + p.hits + '）' + (p.alive?'':' · 已阵亡')
+  ).join('<br>');
+  $('over').classList.remove('hide');
+  const tail = res.forced ? '（强制结束）' : '';
+  addLog('===== 对局结束：' + winWhoText(res) + tail + ' =====', 'sys');
+}
+/* 结算文案：BOSS 战的「HERO」不是普通队伍，单独说人话 */
+function winWhoText(res){
+  const team = res && res.team || null, winner = res && res.winner || null;
+  if (G.mode === 'boss' && team === 'HERO') return '英雄方存活到最后';
+  if (team) return team + ' 队存活到最后';
+  if (winner) return winner.name + ' 存活到最后';
+  return '无人生还';
+}
+/* 伤害结算后立刻判胜负。用于「回合开始就可能团灭」的路径（炮台自动发射），
+   这些地方不走 nextPlayer，否则打光了敌人还停在 play 阶段。 */
+function settleWin(){
+  if (!G || G.phase !== 'play') return false;
+  const w = checkWinner();
+  if (!w.over) return false;
+  gameOver(w);
+  return true;
+}
+
+/* 神器陷阱：进入他人布置的陷阱岛时触发 3 点无视 DEF 伤害 */
+function checkTrap(p){
+  const owner = G.traps[p.island];
+  if (owner === undefined || owner === p.i) return false;
+  const o = G.players[owner];
+  if (!o || !o.alive) return false;
+  // 分队模式：队友布下的陷阱不伤自己人
+  if (G.mode === 'team' && o.team === p.team) return false;
+
+  delete G.traps[p.island];
+  p.hp -= 3;
+  addLog(p.name + ' 触发了 ' + o.name + ' 布置的神器陷阱，受到 3 点无视 DEF 伤害！', 'hl');
+  const pos = islandXY(p.island);
+  floatText(pos.x, pos.y - 20, '-3 陷阱', '#ff3d9a');
+  sparks(pos.x, pos.y, '#ffca3a', 14);
+
+  if (p.hp <= 0){ kill(p, null, false); return true; }
+  return false;
+}
+
+/* ---------------- 行动：移动 ---------------- */
+/* 换过岛就置位（主动移动 / 传送 / 被击退 / 被钓竿拉走都算），供「游侠跟随」判定 */
+function markMoved(e){ if (e && !e.isSummon) e.movedThisTurn = true; }
+function canMoveTo(p){
+  if (p.island === 0) return G.players.map((_,i)=>i+1);
+  return [0];
+}
+function doMove(p, target){
+  const from = p.island;
+  p.movedThisTurn = true;
+  p.island = target;
+  breakCharge(p, ' 移动了');
+  const name = target === 0 ? '中心岛' : ('外岛 ' + target);
+  addLog(p.name + ' 从 ' + islandName(from) + ' 移动到 ' + name + '。');
+  pickup(p);
+  checkTrap(p);        // 主动走进陷阱岛也会触发
+  checkRetrieve(p);
+}
+
+/* ---------------- 行动：开箱 ---------------- */
+function doOpenBox(p, autoPick){
+  if (p.island !== 0){
+    if (G.boxes[p.island-1] <= 0){
+      addLog(p.name + ' 想开箱，但这个外岛的箱子已经空了。');
+      return false;
+    }
+    G.boxes[p.island-1]--;
+  }
+  breakCharge(p, ' 转而开箱');
+
+  const raw = rollItem();
+  const pos = islandXY(p.island);
+  // 刻印 3（丰穰）：开箱同一项物品翻倍，可叠加 → ×2 / ×4 / ×8 …
+  const mult = Math.pow(2, sealCount(p, '3'));
+  const times = n => (n > 1 ? ' ×' + n : '');
+
+  if (raw === 'kb_or_rod'){
+    // AI 直接自选，人类弹出二选一
+    if (autoPick){
+      const c = pick(['kb','rod']);
+      for (let k=0;k<mult;k++) addItem(p, c);
+      afterItem(p, ITEMS[c].name + times(mult), pos);
+      return true;
+    }
+    addLog(p.name + ' 开出：击退棒 / 钓竿（二选一）' + times(mult));
+    showChoice('选择要拿走的武器', [
+      {label:'击退棒 \u{1F528}', sub:'击退目标 1 区域', run:()=>{ for(let k=0;k<mult;k++) addItem(p,'kb'); afterItem(p, '击退棒' + times(mult), pos); }},
+      {label:'钓竿 \u{1F3A3}', sub:'射程+1 · 拉近目标 · 可钓鱼', run:()=>{ for(let k=0;k<mult;k++) addItem(p,'rod'); afterItem(p, '钓竿' + times(mult), pos); }},
+    ], () => {
+      // 取消：箱子已经开了，武器作废，但本次行动要正常结束
+      addLog(p.name + ' 放弃了这把武器（击退棒 / 钓竿），箱子已空。', 'sys');
+      if (G.phase === 'play') finishTurn(p);
+    });
+    return 'wait';
+  }
+  if (raw === 'enchant'){
+    for (let k=0;k<3*mult;k++) addItem(p, 'enchant');
+    afterItem(p, '附魔 ×' + (3*mult), pos);
+    return true;
+  }
+  // 刻印：不入背包，获得即选；开箱本身已消耗主要行动，选择过程不额外占回合
+  if (raw === 'seal'){
+    addLog(p.name + ' 开出 刻印' + times(mult) + '，立即自选强化（不占回合）。', 'hl');
+    floatText(pos.x, pos.y - 30, '+ 刻印' + times(mult), '#ffca3a');
+    sparks(pos.x, pos.y, '#ffca3a', 14);
+    return grantSeal(p, mult, false);
+  }
+  for (let k=0;k<mult;k++) addItem(p, raw);
+  afterItem(p, ITEMS[raw].name + times(mult), pos);
+  return true;
+}
+function afterItem(p, label, pos){
+  addLog(p.name + ' 开出 ' + label + '，存入背包。', 'hl');
+  floatText(pos.x, pos.y - 30, '+ ' + label, '#ffca3a');
+  sparks(pos.x, pos.y, '#ffca3a', 14);
+  equipAuto(p);
+  finishTurn(p);
+}
+
+/* ---------------- 行动：攻击 ---------------- */
+/* 攻击结算。注意：只有「攻击」才 +1 受击；
+   后续加入的技能伤害走独立函数，不计入受击、也不触发攻击类效果。 */
+function doAttack(p, w, t, mode){
+  const atk = getAtk(p, w);
+  const def = getDef(t);
+  const dmg = Math.max(0, atk - def);
+  t.hits += 1;                      // 无论是否造成伤害都记【受击】
+
+  const pa = islandXY(p.island), pb = islandXY(t.island);
+  const wdef = itemDef(p, w);
+  const wid = wdef ? wdef.id : null;
+  const wname = wdef ? wdef.name : '空手';
+
+  if (w && p.charging === w){     // w 为空手(null)时不能算释放蓄力
+    p.charging = null;
+    addLog(p.name + ' 释放蓄力一击（' + wname + ' · 射程无限 · ATK ' + atk + '）→ ' + t.name);
+  } else {
+    addLog(p.name + ' 用' + wname + '攻击 ' + t.name + '（ATK ' + atk + ' vs DEF ' + def + '）');
+  }
+
+  // 飞行物动画
+  if (islandDist(p.island, t.island) > 0 || wid === 'bow' || mode === 'throw'){
+    anim.push({p:0, speed:.14, from:pa, to:pb, color: p.color, done:()=>{
+      applyHit(p, t, dmg, w, mode, pb);
+    }});
+    G.animating = true;
+    later(()=>{ G.animating = false; render(); }, 190);
+  } else {
+    applyHit(p, t, dmg, w, mode, pb);
+  }
+  return true;
+}
+
+function applyHit(p, t, dmg, w, mode, pb){
+  const wid = itemIdOf(p, w);
+  // 统一攻击结算：暴击 / 闪避 / 撕裂 / 命中效果 / 尘
+  const r = attackResolve(p, t, {weapon:w, effect: p.hitPick || null});
+  if (r.evaded){ finishTurn(p); return; }
+
+  // 击退棒
+  if (wid === 'kb'){
+    if (!t.alive){ finishTurn(p); return; }
+    if (t.island === 0){
+      // 击退方向 = 沿「攻击者 → 目标」继续推进 1 格：
+      //   攻击者在外岛 k → 穿过中心岛飞到另一侧（不能是 k，那是拉近）
+      //   攻击者也在中心岛 → 方向不定，随机飞进某个外岛
+      let dest;
+      if (p.island === 0){
+        dest = randInt(1, G.n);
+      } else {
+        const others = [];
+        for (let i = 1; i <= G.n; i++) if (i !== p.island) others.push(i);
+        dest = others.length ? pick(others) : p.island;
+      }
+      const np = islandXY(dest);
+      t.island = dest;
+      markMoved(t);                                // 被打飞也算"换过岛"，触发其游侠跟随
+      breakCharge(t, ' 被击退');                     // 位移打断蓄力
+      addLog(t.name + ' 被击退到 ' + islandName(dest) + '。', 'hl');
+      floatText(np.x, np.y - 20, '击退！', '#fb923c');
+      checkRetrieve(t);
+      pickup(t);
+    } else {
+      addLog(entLabel(t) + ' 被击落虚空 —— 直接死亡！', 'kill');
+      const np = islandXY(t.island);
+      ring(np.x, np.y, '#ff3d9a');
+      sparks(np.x, np.y, '#ffffff', 26);
+      killEnt(t, p, true);   // 坠入虚空：背包物品一并消失（不掉在地上）
+      finishTurn(p);
+      return;
+    }
+  }
+
+  // 钓竿：拉近
+  if (wid === 'rod' && t.island !== p.island && t.hp > 0){
+    const d = islandDist(p.island, t.island);
+    if (d === 2){ t.island = 0; addLog(t.name + ' 被钓竿拉近到 中心岛。', 'hl'); markMoved(t); breakCharge(t, ' 被钓竿拉走'); }
+    else if (d === 1){ t.island = p.island; addLog(t.name + ' 被钓竿拉到 ' + islandName(p.island) + '。', 'hl'); markMoved(t); breakCharge(t, ' 被钓竿拉走'); }
+    checkRetrieve(t);
+    pickup(t);
+  }
+
+  // 三叉戟投掷：落入目标岛（连同这一件上的附魔一起留在岛上）
+  if (mode === 'throw' && wid === 'trident'){
+    const inst = itemOf(p, w);
+    if (inst) removeUid(p, w);
+    if (p.weapon === w) p.weapon = null;
+    G.thrown.push({owner:p.i, island:t.island, item: inst || mkItem('trident')});
+    addLog('三叉戟落在 ' + islandName(t.island) + '，只能由 ' + p.name + ' 本人前往捡回。');
+  }
+
+  finishTurn(p);          // 无论是否致死都由这里统一收尾（kill 已在伤害管线内处理）
+}
+
+function kill(victim, killer, toVoid){
+  victim.alive = false;
+  const pos = islandXY(victim.island);
+  if (!toVoid && victim.bag.length){
+    const arr = G.drops[victim.island] || (G.drops[victim.island] = []);
+    for (const it of victim.bag) arr.push(it);
+    addLog(victim.name + ' 阵亡，掉落：' + victim.bag.map(it=>ITEMS[it.id].name).join('、') + '（留在' + islandName(victim.island) + '）', 'kill');
+  } else {
+    addLog(victim.name + ' 阵亡' + (toVoid ? '（坠入虚空，物品一并消失）' : '') + '。', 'kill');
+  }
+  victim.bag = [];
+  victim.weapon = null;
+  victim.charging = null;
+  if (toVoid){
+    // 人没了，本人专属的东西一并消失：投在外的三叉戟（别人也捡不回）、布置的神器陷阱
+    for (let i = G.thrown.length-1; i >= 0; i--) if (G.thrown[i].owner === victim.i) G.thrown.splice(i,1);
+    for (const k in G.traps) if (G.traps[k] === victim.i) delete G.traps[k];
+  }
+  if (killer) killer.kills++;
+  sparks(pos.x, pos.y, victim.color, 30);
+  ring(pos.x, pos.y, victim.color);
+  // 回合交接由调用方负责，这里不做跳转
+}
+
+function checkRetrieve(p){
+  for (let i = G.thrown.length-1; i >= 0; i--){
+    const th = G.thrown[i];
+    // 只有投出去的本人能捡回，别人走到落点岛也拿不走
+    if (th.island === p.island && th.owner === p.i){
+      p.bag.push(th.item);
+      equipAuto(p);
+      addLog(p.name + ' 捡回了' + ITEMS[th.item.id].name + '。', 'hl');
+      const pos = islandXY(p.island);
+      floatText(pos.x, pos.y - 34, '捡回 ' + ITEMS[th.item.id].name, '#38f0d8');
+      G.thrown.splice(i,1);
+    }
+  }
+}
+
+function equipAuto(p){
+  if (!p.weapon || !itemOf(p, p.weapon)){
+    const ws = weaponsOf(p);
+    p.weapon = ws.length ? ws[ws.length-1].uid : null;
+  }
+}
+
+/* =========================================================
+   命中效果（刻印 11 点染）
+   ========================================================= */
+const HITFX = {
+  red:   {name:'红', desc:'【撕裂】+1 层（每回合开始按层数扣真实伤害）'},
+  blue:  {name:'蓝', desc:'下次受击前无法攻击'},
+  yellow:{name:'黄', desc:'使用药水前无法移动（最多 3 回合自动解除）'},
+};
+
+/* =========================================================
+   召唤物
+   ========================================================= */
+let SUMMON_UID = 1;
+function doSummon(p, type){
+  const T = SUMMON_TYPES[type];
+  const maxHp = Math.floor(T.hp * (hasSeal(p,'10') ? 1.5 : 1));
+  const s = {
+    isSummon:true, sid:SUMMON_UID++, owner:p.i, type:type,
+    name:T.name, icon:T.icon,
+    hp:maxHp, maxHp:maxHp,
+    island:p.island, alive:true,
+    resting:false, extraPending:0, seal7cd:-99,
+    hitEffect:'red', useSeal7:false,
+    st:mkState(), hurtSince:false,
+    spawnRound:G.round,          // 召唤当回合不行动（"正在现身"），从召唤师下一个回合起才行动
+  };
+  G.summons.push(s);
+  addLog(p.name + ' 召唤了【' + T.name + '】（' + maxHp + ' HP / ' + summonAtk(s) + ' ATK · ' + T.desc + '）', 'hl');
+  addLog('【' + T.name + '】正在现身——本回合不行动，从 ' + p.name + ' 的下一个回合起行动。', 'sys');
+  const pos = islandXY(p.island);
+  floatText(pos.x, pos.y - 46, T.icon + ' ' + T.name, '#8b5cf6');
+  sparks(pos.x, pos.y, '#8b5cf6', 20);
+  return s;
+}
+/* 召唤当回合不行动：本轮刚召唤出来的召唤物，在召唤师本轮的「召唤物回合 / 召唤物额外回合」里全部跳过 */
+function isSpawning(s){ return s.spawnRound === G.round; }
+/* 索敌：射程内优先；否则返回用于追击的目标 */
+function summonFindTarget(s){
+  const T = SUMMON_TYPES[s.type];
+  const foes = foesOfEnt(s);
+  if (!foes.length) return null;
+  const sorted = foes.slice().sort((a,b) => (T.aim === 'max' ? b.hp - a.hp : a.hp - b.hp));
+  const inR = sorted.filter(t => islandDist(s.island, t.island) <= T.rng);
+  return inR.length ? inR[0] : sorted[0];
+}
+/* 移动 1 步（星型拓扑：外岛之间必须经中心岛） */
+function summonStepToward(s, dest){
+  if (s.island === dest) return false;
+  s.island = (s.island !== 0) ? 0 : dest;
+  return true;
+}
+/* 召唤物能否使用刻印 7（需刻印 10 御灵，冷却 2 轮，以召唤师回合序号计） */
+function canSummonUseSeal7(s, owner){
+  return hasSeal(owner,'10') && hasSeal(owner,'7') && (owner.turnSeq - s.seal7cd) > 2;
+}
+function aiSummonWantsSeal7(s, owner){
+  const T = SUMMON_TYPES[s.type];
+  return foesOfEnt(s).some(t => islandDist(s.island, t.island) <= T.rng);
+}
+/* 单次行动：能打到就打，打不到就追（1 步） */
+function summonDoAction(s, owner, done){
+  done = done || function(){};
+  if (!s.alive){ done(); return; }
+  const T = SUMMON_TYPES[s.type];
+  if (s.resting){
+    addLog(entLabel(s) + ' 正在休息（命中后的硬直），无法行动。');
+    s.resting = false;
+    done(); return;
+  }
+  if (hasBan(s,'atk') && hasBan(s,'move')){
+    addLog(entLabel(s) + ' 被【戒律】完全限制，无法行动。'); done(); return;
+  }
+  // 游侠：召唤师本主要回合移动过 → 跟随移动
+  if (T.follow && owner.alive && owner.movedThisTurn && s.island !== owner.island && !hasBan(s,'move') && !(s.st.yellow > 0)){
+    summonStepToward(s, owner.island);
+    addLog(entLabel(s) + ' 跟随 ' + owner.name + ' → ' + islandName(s.island) + '。');
+    done(); return;
+  }
+  const tgt = summonFindTarget(s);
+  if (!tgt){ addLog(entLabel(s) + ' 附近没有敌方目标，原地待命。'); done(); return; }
+  if (islandDist(s.island, tgt.island) <= T.rng && !hasBan(s,'atk')){
+    if (s.st.blue){ addLog(entLabel(s) + ' 处于【蓝】，无法攻击。'); done(); return; }
+    addLog(entLabel(s) + ' 攻击 ' + entLabel(tgt) + '（ATK ' + summonAtk(s) + ' vs DEF ' + getDef(tgt) + '）');
+    attackResolve(s, tgt, {effect: entHasSeal(s,'11') ? (s.hitEffect || 'red') : null});
+    done(); return;
+  }
+  if (!hasBan(s,'move') && !(s.st.yellow > 0)){
+    summonStepToward(s, tgt.island);
+    addLog(entLabel(s) + ' 追击 ' + entLabel(tgt) + ' → ' + islandName(s.island) + '。');
+  } else {
+    addLog(entLabel(s) + ' 被禁止移动（戒律 /【黄】），无法接近 ' + entLabel(tgt) + '。');
+  }
+  done();
+}
+/* 召唤物回合：结算 → （凌波额外行动）→ 主要行动 → （刻印 7 额外行动） */
+function runOneSummon(s, owner, done){
+  if (!turnStartTick(s) || !s.alive){ done(); return; }
+  const pend = s.extraPending || 0; s.extraPending = 0;
+  const runMain = () => {
+    if (!s.alive){ done(); return; }
+    // 只有刻印⑩御灵才能人为操控；否则（含无御灵的人类）一律自动索敌
+    if (!owner.isAI && owner.alive && hasSeal(owner,'10')){ s.useSeal7 = false; summonPanel(s, owner, done); return; }
+    let useSeal7 = false;
+    if (canSummonUseSeal7(s, owner) && aiSummonWantsSeal7(s, owner)){
+      useSeal7 = true; s.seal7cd = owner.turnSeq;
+      addLog(entLabel(s) + ' 使用刻印·蹑景，获得 1 个额外回合！', 'hl');
+    }
+    let count = 1 + (useSeal7 ? 1 : 0);
+    const loop = () => { if (count-- <= 0 || !s.alive){ done(); return; } summonDoAction(s, owner, loop); };
+    loop();
+  };
+  if (pend > 0){
+    let c = pend;
+    const l = () => { if (c-- <= 0 || !s.alive){ runMain(); return; } summonDoAction(s, owner, l); };
+    l();
+  } else runMain();
+}
+/* 人类操控面板（刻印 10 御灵） */
+function summonPanel(s, owner, done){
+  const T = SUMMON_TYPES[s.type];
+  const fxName = HITFX[s.hitEffect || 'red'].name;
+  const title = '召唤物行动 · ' + s.name + '（HP ' + Math.max(0,s.hp) + '/' + s.maxHp +
+                ' · ATK ' + summonAtk(s) + ' · 射程 ' + (T.rng === Infinity ? '∞' : T.rng) +
+                (s.resting ? ' · 休息中' : '') + '）';
+  const opts = [];
+  opts.push({label:'自动行动', sub:'按索敌逻辑执行（推荐）', run:()=>{ summonHumanGo(s, owner, null, done); }});
+  const foes = foesOfEnt(s).filter(t => islandDist(s.island, t.island) <= T.rng);
+  foes.forEach(t => opts.push({
+    label:'攻击 ' + entLabel(t),
+    sub:'HP ' + Math.max(0,t.hp) + ' · DEF ' + getDef(t) + ' · 预计伤害 ' + Math.max(0, summonAtk(s) - getDef(t)),
+    run:()=>{ summonHumanGo(s, owner, {act:'atk', target:t}, done); }
+  }));
+  canMoveTo(s).forEach(isl => opts.push({
+    label:'移动到 ' + islandName(isl),
+    run:()=>{ summonHumanGo(s, owner, {act:'move', island:isl}, done); }
+  }));
+  opts.push({label:'待机', sub:'本回合不行动', run:()=>{ summonHumanGo(s, owner, {act:'idle'}, done); }});
+  if (canSummonUseSeal7(s, owner)){
+    opts.push({label:'⚡ 刻印·蹑景' + (s.useSeal7 ? '（已选 ✓）' : ''),
+      sub:'本回合行动后再行动一次', run:()=>{ s.useSeal7 = !s.useSeal7; summonPanel(s, owner, done); }});
+  }
+  if (entHasSeal(s,'11')){
+    opts.push({label:'命中效果：' + fxName + '（点击切换）', sub:HITFX[s.hitEffect||'red'].desc,
+      run:()=>{ const ks=['red','blue','yellow']; s.hitEffect = ks[(ks.indexOf(s.hitEffect||'red')+1)%3]; summonPanel(s, owner, done); }});
+  }
+  showChoice(title, opts, () => summonHumanGo(s, owner, {act:'idle'}, done));   // 取消＝待机，流程照常推进
+}
+function summonHumanGo(s, owner, choice, done){
+  if (choice && choice.act === 'idle'){ addLog(entLabel(s) + ' 原地待命。'); }
+  else if (choice && choice.act === 'move'){ s.island = choice.island; addLog(entLabel(s) + ' 移动到 ' + islandName(s.island) + '。'); }
+  else if (choice && choice.act === 'atk'){
+    if (s.st.blue){ addLog(entLabel(s) + ' 处于【蓝】，无法攻击。'); }
+    else {
+      addLog(entLabel(s) + ' 攻击 ' + entLabel(choice.target) + '（ATK ' + summonAtk(s) + '）');
+      attackResolve(s, choice.target, {effect: entHasSeal(s,'11') ? (s.hitEffect||'red') : null});
+    }
+  }
+  else { summonDoAction(s, owner, function(){}); }
+  if (s.useSeal7 && canSummonUseSeal7(s, owner) && s.alive){
+    s.seal7cd = owner.turnSeq; s.useSeal7 = false;
+    addLog(entLabel(s) + ' 使用刻印·蹑景，获得 1 个额外回合！', 'hl');
+    summonDoAction(s, owner, done);
+    return;
+  }
+  done();
+}
+
+/* =========================================================
+   刻印 6：天工（炮台）
+   ========================================================= */
+let MACHINE_UID = 1;
+function machinesOf(p){ return G.machines.filter(m => m.owner === p.i); }
+/* 自动发射：逐座炮台、逐发进行；人类每一发都弹面板自选目标，AI 自动索敌 */
+function machineAutoFire(p, done){
+  done = done || function(){};
+  const list = machinesOf(p).filter(m => m.auto && m.ammo);
+  let idx = 0;
+  const step = () => {
+    if (G.phase !== 'play' || settleWin()){ done(); return; }
+    if (idx >= list.length){ done(); return; }
+    const m = list[idx++];
+    const n = (m.ammo === 'tnt') ? 1 : 2;      // 自动：TNT ×1、箭矢 ×2
+    let k = 0;
+    const shoot = () => {
+      if (G.phase !== 'play' || settleWin()){ done(); return; }
+      if (k++ >= n || !m.ammo || !p.alive){ step(); return; }
+      fireMachine(m, shoot);
+    };
+    shoot();
+  };
+  step();
+}
+/* AI 选岛：只在有敌人的岛里挑「敌方最多、自己人最少」的；全场无敌方实体时返回 null（不发射） */
+function aiPickMachineIsland(m, owner){
+  let best = null, bestScore = -Infinity;
+  [0].concat(G.players.map((_,i)=>i+1)).forEach(isl => {
+    const ents = allEnts().filter(e => e.island === isl);
+    const foes = ents.filter(e => isEnemyOf(owner, e));
+    if (!foes.length) return;                    // 打空岛纯属浪费这一发，直接跳过
+    const friends = ents.filter(e => e !== owner && !isEnemyOf(owner, e));
+    const score = foes.length * 10 - friends.length * 12 - (ents.indexOf(owner) >= 0 ? 30 : 0);
+    if (score > bestScore){ bestScore = score; best = isl; }
+  });
+  return best;
+}
+/* 发射视为「机械来源」攻击：不吃刻印 1/9/11，机械本身也不可被攻击
+   目标：TNT 自选岛（全场可达）→ 命中该岛全部实体；箭矢自选敌方实体
+   done(fired)：fired=false 表示没打出去（没弹药 / 没目标 / 主动跳过） */
+function fireMachine(m, done){
+  done = done || function(){};
+  const owner = G.players[m.owner];
+  if (!m.ammo){ addLog('炮台没有装填弹药。'); done(false); return false; }
+  const tagM = '炮台 #' + m.mid + '（' + islandName(m.island) + '）';
+  const skip = () => ({label:'跳过本次发射', sub:'本次不发射，继续主要行动', run:()=>{ addLog('【机械】' + tagM + ' 本次跳过发射。'); done(false); }});
+
+  if (m.ammo === 'tnt'){
+    const fire = (isl) => {
+      const tgts = allEnts().filter(e => e.island === isl);
+      addLog('【机械】' + tagM + ' 向 ' + islandName(isl) + ' 发射 TNT：16 ATK · 该岛全部实体（含自己人）', 'hl');
+      if (!tgts.length) addLog('（该岛没有实体）');
+      tgts.forEach(e => dealDamage(e, 16 - getDef(e), {srcEnt:owner, tag:'TNT'}));
+      settleWin();          // 这一发可能直接团灭，立即判胜负，后续发射不再继续
+      done(true);
+      return true;
+    };
+    if (owner.isAI){
+      const isl = aiPickMachineIsland(m, owner);
+      if (isl == null){ addLog('【机械】' + tagM + ' 没有敌方目标，本次不发射。'); done(false); return false; }
+      return fire(isl);
+    }
+    const opts = [0].concat(G.players.map((_,i)=>i+1)).map(isl => {
+      const who = allEnts().filter(e => e.island === isl);
+      return {
+        label: islandName(isl),
+        sub: who.length ? '会命中：' + who.map(entLabel).join('、') : '（该岛没有实体）',
+        run: () => fire(isl)
+      };
+    });
+    opts.push(skip());
+    showChoice('TNT 射向哪个岛？（16 ATK · 命中该岛全部实体，含自己人）', opts,
+      () => { addLog('【机械】' + tagM + ' 本次跳过发射。'); done(false); });   // 取消＝跳过
+    return true;
+  }
+
+  // 箭矢：8 ATK 单体
+  const foes = allEnts().filter(e => e !== owner && isEnemyOf(owner, e));
+  if (!foes.length){ addLog('【机械】箭矢没有目标。'); done(false); return false; }
+  const fire = (t) => {
+    addLog('【机械】' + tagM + ' 射出箭矢 → ' + entLabel(t) + '（8 ATK）', 'hl');
+    dealDamage(t, 8 - getDef(t), {srcEnt:owner, tag:'箭矢'});
+    settleWin();          // 同上
+    done(true);
+    return true;
+  };
+  if (owner.isAI){ return fire(foes.reduce((a,b)=> a.hp <= b.hp ? a : b)); }
+  const opts = foes.map(e => ({
+    label: entLabel(e),
+    sub: 'HP ' + Math.max(0,e.hp) + ' · DEF ' + getDef(e) + ' · 预计伤害 ' + Math.max(0, 8 - getDef(e)),
+    run: () => fire(e)
+  }));
+  opts.push(skip());
+  showChoice('箭矢射向谁？（8 ATK 单体）', opts,
+    () => { addLog('【机械】' + tagM + ' 本次跳过发射。'); done(false); });   // 取消＝跳过
+  return true;
+}
+
+/* =========================================================
+   行动：道具
+   ========================================================= */
+function useConsume(p, uid){
+  const inst = itemOf(p, uid);
+  if (!inst) return false;
+  const id = inst.id;                  // 附魔按实例（uid）判定，同类物品互不影响
+  const pos = islandXY(p.island);
+
+  if (id === 'potion'){
+    let heal = 10 + (hasEnch(p, uid, 'echo') ? 5 : 0);
+    const before = p.hp;
+    p.hp = Math.min(p.maxHp, p.hp + heal);
+    removeUid(p, uid);
+    // 使用药水同样解除【蓝】/【黄】
+    if (p.st.blue){ p.st.blue = false; addLog(p.name + ' 的【蓝】解除（使用药水）。'); }
+    if (p.st.yellow > 0){ p.st.yellow = 0; addLog(p.name + ' 的【黄】解除（使用药水）。'); }
+    addLog(p.name + ' 喝下药水，恢复 ' + (p.hp - before) + ' HP。', 'hl');
+    floatText(pos.x, pos.y - 30, '+' + (p.hp - before) + ' HP', '#4ade80');
+    sparks(pos.x, pos.y, '#4ade80', 14);
+    finishTurn(p);
+    return true;
+  }
+
+  // 刻印不入背包：开箱 / 钓鱼获得时即刻自选，不走道具使用流程
+  // 召唤物：使用后自选一种生物召唤
+  if (id === 'summon'){
+    removeUid(p, uid);
+    showSummonChoice(p);
+    return true;
+  }
+
+  // 神器：在当前岛布置陷阱，其他玩家进入时受 3 点无视 DEF 伤害
+  if (id === 'artifact'){
+    removeUid(p, uid);
+    G.traps[p.island] = p.i;
+    addLog(p.name + ' 在 ' + islandName(p.island) + ' 布置了神器陷阱。', 'hl');
+    floatText(pos.x, pos.y - 30, '陷阱', '#ffca3a');
+    finishTurn(p);
+    return true;
+  }
+
+  if (id === 'rod'){
+    // 钓竿当道具用：钓鱼
+    addLog(p.name + ' 甩出钓竿，钓到了……');
+    const mult = Math.pow(2, sealCount(p, '3'));
+    const raw = rollItem();                          // 只掷一次，掷两次会丢结果、判定错位
+    const got = raw === 'kb_or_rod' ? pick(['kb','rod']) : raw;
+    // 刻印：不入背包，钓上即选；钓鱼本身已消耗主要行动，选择过程不额外占回合
+    if (got === 'seal'){
+      addLog(p.name + ' 钓上 刻印' + (mult > 1 ? ' ×' + mult : '') + '，立即自选强化（不占回合）。', 'hl');
+      floatText(pos.x, pos.y - 34, '钓到 刻印', '#38f0d8');
+      return grantSeal(p, mult, false);
+    }
+    if (got === 'enchant'){ for(let k=0;k<3*mult;k++) addItem(p, 'enchant'); addLog(p.name + ' 钓上 附魔 ×' + (3*mult) + '！', 'hl'); }
+    else { for(let k=0;k<mult;k++) addItem(p, got); addLog(p.name + ' 钓上 ' + ITEMS[got].name + (mult>1 ? ' ×' + mult : '') + '！', 'hl'); }
+    floatText(pos.x, pos.y - 34, '钓到 ' + ITEMS[got].name, '#38f0d8');
+    equipAuto(p);
+    finishTurn(p);
+    return true;
+  }
+  return false;
+}
+
+/* =========================================================
+   刻印选择 UI（13 选 1）
+   ========================================================= */
+function canStackSeal(id){ return id === '3' || id === '8a' || id === '8b'; }
+function sealDisplayName(id){
+  if (id === '8a') return '凌波·分支①';
+  if (id === '8b') return '凌波·分支②';
+  const s = SEAL_BY_ID[id];
+  return s ? s.name : id;
+}
+function sealDisplayDesc(id){
+  if (id === '8a') return '+30% 闪避（可叠加，当前层数越高闪避越高）';
+  if (id === '8b') return '闪避成功立即获 N 个额外回合（N = 分支①层数；没有分支①时无效）';
+  const s = SEAL_BY_ID[id];
+  return s ? s.desc : '';
+}
+/* 获得刻印：不入背包，立即自选（选择过程不额外占回合）
+   count > 1（丰穰 ×N）→ 逐个弹选择；
+   free = true → 选完不结束回合，继续当前主要回合（用于回合开始捡拾等不消耗行动的来源） */
+function grantSeal(p, count, free){
+  count = count || 1;
+  if (p.isAI){
+    for (let k=0;k<count;k++) applySeal(p, aiPickSeal(p), {silent:true});
+    if (free) render(); else finishTurn(p);
+    return true;
+  }
+  let left = count;
+  // 关闭（取消）时的兜底：整串选择结束，按正常流程交接回合，避免卡住
+  const skipAll = () => { left = 0; if (free) render(); else if (G.phase === 'play') finishTurn(p); };
+  const stepWithCancel = () => {
+    if (left <= 0){ if (free) render(); else finishTurn(p); return; }
+    left--;
+    showSealChoice(p, stepWithCancel, skipAll);
+  };
+  stepWithCancel();
+  return true;
+}
+/* 可无限叠加的刻印：③丰穰 / ⑧凌波（分支各算可叠加） */
+function sealStackable(id){ return canStackSeal(id) || id === '8'; }
+function showSealChoice(p, done, onCancel){
+  if (p.isAI){ applySeal(p, aiPickSeal(p)); if (done) done(); return; }
+  // 兜底：不可叠加项全满时只列可叠加项，避免「重复选不叠加」陷入死路
+  const allFull = SEALS.every(s => sealStackable(s.id) || sealCount(p, s.id) > 0);
+  const list = allFull ? SEALS.filter(s => sealStackable(s.id)) : SEALS;
+  const opts = list.map(s => {
+    const n = sealCount(p, s.id);
+    const owned = n > 0;
+    return {
+      label: s.icon + ' ' + s.id + ' · ' + s.name + (owned ? (canStackSeal(s.id) ? '（×' + n + '）' : '（已有）') : ''),
+      sub: s.desc + (owned && !sealStackable(s.id) ? ' · ⚠ 已拥有，重复选不叠加' : ''),
+      run: () => {
+        if (owned && !sealStackable(s.id)){
+          addLog('已拥有刻印【' + s.name + '】，重复选择不叠加，请另选一项。', 'sys');
+          showSealChoice(p, done, onCancel);
+          return;
+        }
+        if (s.id === '8'){ pickSealBranch(p, done); return; }
+        applySeal(p, s.id, {done: done});
+      }
+    };
+  });
+  showChoice('刻印 · 自选一项永久强化（13 选 1 · 立即生效 · 不占回合）', opts, onCancel);
+}
+function pickSealBranch(p, done){
+  // 分支② 依赖分支①：没有 8a 时选 8b 等于白选，AI 必选 8a
+  if (p.isAI){ applySeal(p, aiPickSealBranch(p), {silent:true}); if (done) done(); return; }
+  const a = sealCount(p, '8a');
+  showChoice('刻印·凌波：选择分支', [
+    {label:'分支① · 闪避 +30%', sub:'可叠加（当前 ' + a + ' 层 → 闪避 ' + Math.round(Math.min(1,0.3*(a+1))*100) + '%）', run:()=>applySeal(p,'8a',{done:done})},
+    {label:'分支② · 闪避成功后获 N 个额外回合', sub: a > 0
+        ? ('N = 分支①当前层数（' + a + '）· 之后再叠 ① 会同步提升 N')
+        : ('⚠ 需要分支①：当前 0 层，选了也不会生效'), run:()=>applySeal(p,'8b',{done:done})},
+  ], () => { if (done) done(); });   // 取消：这一层凌波作废，但选择流程要继续/收尾
+}
+/* opt.done  → 还有后续选择，不收尾；opt.silent → AI 批量，由 grantSeal 收尾 */
+function applySeal(p, id, opt){
+  opt = opt || {};
+  p.seals[id] = (p.seals[id] || 0) + 1;
+  addLog(p.name + ' 激活刻印【' + sealDisplayName(id) + '】' +
+         (p.seals[id] > 1 && canStackSeal(id) ? '（层数 ' + p.seals[id] + '）' : '') +
+         '：' + sealDisplayDesc(id), 'hl');
+  const pos = islandXY(p.island);
+  floatText(pos.x, pos.y - 30, '刻印·' + sealDisplayName(id), '#8b5cf6');
+  sparks(pos.x, pos.y, '#8b5cf6', 20);
+  if (id === '2' && G.mode === 'ffa') addLog('（混战模式没有队友，刻印·同契暂时无效）', 'sys');
+  if (opt.done){ opt.done(); return; }
+  if (opt.silent) return;
+  finishTurn(p);
+}
+/* AI 选刻印：按当前局势给每项打分，取最高；不可叠加的已有项自动排除 */
+function aiPickSeal(p){
+  const owned = id => sealCount(p, id) > 0;
+  const canTake = id => !owned(id) || canStackSeal(id);
+  const sc = [];
+  const add = (id, s) => { if (s > 0 && canTake(id)) sc.push({id:id, s:s}); };
+  const gear = p.bag.filter(it => it.id === 'armor' || (ITEMS[it.id] && ITEMS[it.id].type === 'weapon')).length;
+
+  add('5',  p.maxHp <= 6 ? 130 : 45);                                  // 残锋：血上限越低越逆天
+  add('9',  72);                                                       // 裂帛：稳定附加撕裂
+  add('1',  62);                                                       // 劫雷：暴击期望高
+  add('13', gear >= 2 ? 78 : 28);                                      // 盈箧：装备够多才值
+  add('12', p.maxHp >= 12 ? 58 : 22);                                  // 尘梦：血厚才扛得住叠层
+  add('6',  G.round <= 3 ? 62 : 32);                                   // 天工：越早建台越赚
+  add('10', (summonsOf(p).length || hasItem(p, 'summon')) ? 68 : 16);  // 御灵：有召唤才有用
+  add('2',  G.mode === 'ffa' ? 0 : 74);                                // 同契：混战无效
+  add('7',  48);                                                       // 蹑景：多打一次
+  add('4',  42);                                                       // 敕禁：掐人一手
+  add('11', 38);                                                       // 点染：附加状态
+  add('8a', sealCount(p, '8a') > 0 ? 54 : 40);                         // 凌波①：越叠越能闪
+  add('8b', sealCount(p, '8a') >= 2 ? 58 : 0);                         // 凌波②：没①就是废的
+  add('3',  26);                                                       // 丰穰：可叠加，兜底
+
+  if (!sc.length) return '3';
+  sc.sort((a,b) => b.s - a.s);
+  return sc[0].id;
+}
+/* AI 选凌波分支：⑧b 的 N 取决于 ⑧a 层数，先攒到 2 层再转 ⑧b */
+function aiPickSealBranch(p){
+  return sealCount(p, '8a') >= 2 ? '8b' : '8a';
+}
+/* 召唤物道具：自选一种生物 */
+function showSummonChoice(p){
+  if (p.isAI){ doSummon(p, pick([1,2,3])); finishTurn(p); return; }
+  showChoice('召唤哪种生物？（召唤当回合不行动，下个自己的回合起行动）', [1,2,3].map(k => {
+    const T = SUMMON_TYPES[k];
+    const boost = hasSeal(p,'10') ? 1.5 : 1;
+    return {
+      label: T.icon + ' ' + T.name,
+      sub: Math.floor(T.hp*boost) + 'HP / ' + Math.floor(T.atk*boost) + 'ATK · ' + T.desc,
+      run: () => { doSummon(p, k); finishTurn(p); }
+    };
+  }), () => { if (G.phase === 'play') finishTurn(p); });   // 取消：道具已用掉，动作结束但要交接回合
+}
+
+/* ---------------- 附魔（回合外，限 1 次，自选） ---------------- */
+/* 物品实例名：同名物品靠 #编号 区分（如 剑 #7） */
+function itemLabel(p, uid){
+  const it = itemOf(p, uid);
+  if (!it) return '（已失去的物品）';
+  return ITEMS[it.id].icon + ' ' + ITEMS[it.id].name + ' #' + uid;
+}
+
+/* 附魔只作用于传入的这一件实例（uid），不会影响背包里的其它同类物品。
+   不同附魔可以叠加；同一种附魔在一件物品上只能有一次。 */
+function doEnchant(p, targetUid, enchantId){
+  if (p.enchantUsed) return;
+  const target = itemOf(p, targetUid);
+  if (!target || !canEnchant(target.id)) return;
+  const eu = itemUidOf(p, 'enchant');
+  if (eu == null) return;
+  const e = ENCHANTS.find(x => x.id === enchantId);
+  if (!e) return;
+  if (hasEnch(p, targetUid, enchantId)){
+    addLog(ITEMS[target.id].name + ' #' + targetUid + ' 已经有【' + e.name +
+           '】了 —— 同种附魔不可叠加。', 'sys');
+    render();
+    return false;
+  }
+  removeUid(p, eu);
+  (p.ench[targetUid] || (p.ench[targetUid] = [])).push(e.id);
+  p.enchantUsed = true;
+  const label = ITEMS[target.id].name + ' #' + targetUid;
+  addLog(p.name + ' 为 ' + label + ' 附魔【' + e.name + '】：' + e.desc +
+         '（该件现有：' + enchNames(p, targetUid) + '）', 'hl');
+  const pos = islandXY(p.island);
+  floatText(pos.x, pos.y - 30, e.name, '#8b5cf6');
+  sparks(pos.x, pos.y, '#8b5cf6', 16);
+  render();
+}
+
+/* 第二步：挑选要附加的附魔 */
+function pickEnchant(p, targetUid){
+  const target = itemOf(p, targetUid);
+  if (!target){ render(); return; }
+  const cur = (p.ench[targetUid] || []).length ? enchNames(p, targetUid) : null;
+  const label = ITEMS[target.id].name + ' #' + targetUid;
+  showChoice('为 ' + label + ' 选择附魔' + (cur ? '（当前：' + cur + ' · 不同附魔可叠加）' : ''),
+    ENCHANTS.map(e => {
+      const owned = hasEnch(p, targetUid, e.id);
+      return {
+        label: e.name + (owned ? '（已有）' : ''),
+        sub: e.desc + (owned ? ' · 同种附魔只能附一次' : ''),
+        run: () => doEnchant(p, targetUid, e.id)
+      };
+    }), () => render());   // 取消：附魔未用掉，返回当前回合继续
+}
+
+/* ---------------- AI ---------------- */
+/* =========================================================
+   AI 谋略层：把「能打赢吗 / 会被打死吗」量化成评分
+   ========================================================= */
+/* 实体的有效射程（蓄力完成的弓 / 三叉戟按无限算；游侠本就无限） */
+function aiRngOf(e){
+  if (e.isSummon) return SUMMON_TYPES[e.type].rng === Infinity ? 99 : (SUMMON_TYPES[e.type].rng || 0);
+  const w = e.weapon;
+  if (e.charging && w){
+    const id = itemIdOf(e, w);
+    if (id === 'bow' || id === 'trident') return 99;   // 下回合可无限射程释放
+  }
+  return getRng(e, w, 'normal');
+}
+/* e 打在 me 身上的期望伤害：够不到 0；差一步够到算半威胁；劫雷按暴击期望放大 */
+function aiHitOf(e, me){
+  if (!e || !e.alive) return 0;
+  if (hasBan(e, 'atk') || e.st.blue) return 0;          // 被禁攻击 /【蓝】
+  if (e.isSummon && e.resting) return 0;                // 巨兽命中后休息
+  const d = islandDist(e.island, me.island);
+  const r = aiRngOf(e);
+  const reach = d <= r ? 1 : (d - r <= 1 ? 0.5 : 0);    // 已经够得到 / 再挪一步就够得到
+  if (!reach) return 0;
+  const atk = e.isSummon ? summonAtk(e) : getAtk(e, e.weapon);
+  let dmg = Math.max(0, atk - getDef(me));
+  if (!e.isSummon && hasSeal(e, '1')) dmg *= 3;         // 劫雷暴击期望
+  return dmg * reach;
+}
+/* me 若站在 island，一回合内大概会挨多少伤害 */
+function aiThreatAt(me, island){
+  const bak = me.island; me.island = island;
+  let s = 0;
+  foesOf(me).forEach(t => { s += aiHitOf(t, me); });
+  me.island = bak;
+  return s;
+}
+/* 我（用武器 w）站在 island 时能否打到 t */
+function aiCanHit(p, w, t, island){
+  return islandDist(island, t.island) <= getRng(p, w, 'normal');
+}
+/* 我对 t 的单次伤害 */
+function aiDmgTo(p, w, t){ return Math.max(0, getAtk(p, w) - getDef(t)); }
+/* 攻击目标评分：能秒 > 伤害高 > 残血 > BOSS；打不动返回 -1 */
+function aiAtkScore(p, w, t){
+  const dmg = aiDmgTo(p, w, t);
+  if (dmg <= 0) return -1;
+  let s = dmg * 10;
+  if (dmg >= t.hp) s += 1000;                            // 一击必杀，最优先
+  s += (1 - t.hp / t.maxHp) * 40;                        // 残血优先收人头
+  if (G.mode === 'boss' && t.isBoss) s += 80;            // BOSS 战集火 BOSS
+  if (t.isSummon) s -= 40;                               // 召唤物排后面（能秒除外）
+  const dr = dodgeRate(t);
+  if (dr > 0) s *= (1 - dr * 0.6);                       // 会闪避的目标打折扣
+  return s;
+}
+/* 站点评分：进攻收益 − 受威胁 − 陷阱 + 箱子资源 − 离敌人的距离
+   进攻收益分两档：现在就能打到（全额）/ 再走一步就能打到（半额）——这样 AI 会主动逼近，而不是原地发呆 */
+function aiIslandScore(p, island){
+  if (G.traps[island] != null && G.traps[island] !== p.i) return -1e6;   // 别人的陷阱，不去
+  const w = p.weapon || null;
+  const rng = getRng(p, w, 'normal');
+  let offense = 0, minD = 99;
+  foesOf(p).forEach(t => {
+    const d = islandDist(island, t.island);
+    if (d < minD) minD = d;
+    const v = aiAtkScore(p, w, t);
+    if (v <= 0) return;
+    if (d <= rng) offense += v;                 // 站这儿就能打
+    else if (d - rng <= 1) offense += v * 0.5;  // 再挪一步就能打
+  });
+  if (p.hp / p.maxHp < 0.5) offense *= 0.5;     // 残血时进攻欲望减半，保命优先
+  let s = offense;
+  const threat = aiThreatAt(p, island);
+  s -= threat * (p.hp / p.maxHp < 0.5 ? 14 : 6);         // 残血时更怕挨打
+  if (minD < 99) s -= minD * 5;                          // 主动往人堆里靠
+  const boxes = (island === 0) ? 99 : (G.boxes[island-1] || 0);
+  const needGear = !p.weapon || foesOf(p).every(t => aiDmgTo(p, w, t) <= 0);
+  if (boxes > 0) s += needGear ? 18 : 5;
+  return s;
+}
+/* 刻印 11 点染：按目标挑附加效果 */
+function aiHitEffect(p, t){
+  if (!t) return 'red';
+  if (t.hp <= aiDmgTo(p, p.weapon, t) + 2) return 'red';   // 快打死了 → 撕裂补持续伤害
+  const atk = t.isSummon ? summonAtk(t) : getAtk(t, t.weapon);
+  if (atk >= 8) return 'blue';                              // 高输出 → 禁它下次攻击
+  return 'red';
+}
+/* 回合外的免费增强：附魔不占主要行动，有就先用掉 */
+function aiAutoEnchant(p){
+  if (p.enchantUsed || !hasItem(p, 'enchant') || hasBan(p, 'seal')) return;
+  const ws = weaponsOf(p);
+  const best = ws.length ? ws.reduce((a,b)=> getAtk(p,b.uid) >= getAtk(p,a.uid) ? b : a) : null;
+  if (best && !hasEnch(p, best.uid, 'sharp')){ doEnchant(p, best.uid, 'sharp'); return; }
+  const armors = p.bag.filter(it => it.id === 'armor');
+  const ar = armors.find(it => !hasEnch(p, it.uid, 'tough'));
+  if (ar){ doEnchant(p, ar.uid, 'tough'); return; }
+  if (best && !hasEnch(p, best.uid, 'light')) doEnchant(p, best.uid, 'light');
+}
+/* 传送器：一步到位（逃生 / 追击），用掉并结束主要行动 */
+function aiTeleport(p, dest){
+  const uid = itemUidOf(p, 'teleport');
+  if (uid == null) return false;
+  removeUid(p, uid);
+  const from = p.island;
+  p.island = dest;
+  p.movedThisTurn = true;
+  breakCharge(p, ' 传送了');
+  addLog(p.name + ' 使用传送器：' + islandName(from) + ' → ' + islandName(dest), 'hl');
+  const pos = islandXY(dest);
+  floatText(pos.x, pos.y - 30, '传送', '#38f0d8');
+  sparks(pos.x, pos.y, '#38f0d8', 18);
+  pickup(p); checkRetrieve(p);
+  finishTurn(p);
+  return true;
+}
+/* AI 的机械策略：建台 → 装填 → 开启自动化（配置齐全后返回 false，走正常行动） */
+function aiMachineAct(p){
+  const ms = machinesOf(p);
+  if (!ms.length){
+    G.machines.push({mid:MACHINE_UID++, owner:p.i, island:p.island, ammo:null, auto:false});
+    addLog(p.name + ' 在 ' + islandName(p.island) + ' 构建了炮台。', 'hl');
+    finishTurn(p); return true;
+  }
+  const empty = ms.find(m => !m.ammo);
+  if (empty){
+    empty.ammo = Math.random() < .5 ? 'tnt' : 'arrow';
+    addLog(p.name + ' 为炮台 #' + empty.mid + ' 装填' + (empty.ammo === 'tnt' ? 'TNT' : '箭矢') + '（无限弹药）。', 'hl');
+    finishTurn(p); return true;
+  }
+  const noAuto = ms.find(m => m.ammo && !m.auto);
+  if (noAuto){
+    noAuto.auto = true;
+    addLog(p.name + ' 开启炮台 #' + noAuto.mid + ' 的自动化（每主要回合开始发射）。', 'hl');
+    finishTurn(p); return true;
+  }
+  return false;
+}
+function aiAct(p){
+  if (!G || G.phase !== 'play' || !p.alive) return;
+  const enemies = foesOf(p);
+  const wid = uid => itemIdOf(p, uid);      // 实例编号 → 物品类型
+
+  // 0. 回合外的免费增强：附魔不占主要行动
+  aiAutoEnchant(p);
+
+  // 1. 装备 ATK 最高的武器（后面的所有评估都基于它）
+  const ws = weaponsOf(p);
+  if (ws.length) p.weapon = ws.reduce((a,b)=> getAtk(p,b.uid) > getAtk(p,a.uid) ? b : a).uid;
+  const W = p.weapon || null;
+
+  // 被【蓝】/ 戒律禁止攻击时，AI 不再选择攻击类行动
+  const canAtk = !hasBan(p,'atk') && !p.st.blue;
+
+  // 2. 局势评估：我站在这里有多危险、谁能被我打到、打谁最划算
+  const threatHere = aiThreatAt(p, p.island);
+  const lethal = threatHere >= p.hp;                          // 站着不动可能直接被打死
+  const bestTarget = (island) => {
+    let best = null, bs = 0;
+    enemies.forEach(t => {
+      if (island != null && !aiCanHit(p, W, t, island)) return;
+      const s = aiAtkScore(p, W, t);
+      if (s > bs){ bs = s; best = t; }
+    });
+    return bs > 0 ? best : null;
+  };
+  const tgtHere = canAtk ? bestTarget(p.island) : null;
+
+  // 3. 刻印 7（蹑景）：确认这一回合真能打出伤害才声明，别白给
+  if (G.sub === 'main' && hasSeal(p,'7') && !p.extraUsed &&
+      (p.turnSeq - p.seal7cd) > 2 && (tgtHere || (canAtk && p.charging && enemies.length))){
+    p.seal7cd = p.turnSeq; p.extraUsed = true; G.extraLeft += 1;
+    addLog(p.name + ' 声明使用刻印·蹑景：主要行动后获得 1 个额外回合。', 'hl');
+  }
+  // 4. 刻印 4（敕禁）：自由行动，优先掐掉对我威胁最大的那个
+  if (hasSeal(p,'4') && !p.freeActUsed && enemies.length){
+    const order = enemies.slice().sort((a,b)=> aiHitOf(b, p) - aiHitOf(a, p));
+    for (const t of order){
+      if (aiHitOf(t, p) <= 0) break;
+      if (addPrecept(t, 'atk', p)){ p.freeActUsed = true; break; }
+    }
+  }
+  // 5. 刻印 6（天工）：建台 → 装填 → 自动化
+  if (hasSeal(p,'6') && aiMachineAct(p)) return;
+  // 6. 有召唤物道具 → 局势不危急时用掉（危急时先保命）
+  const sumIt = p.bag.find(it => it.id === 'summon');
+  if (sumIt && enemies.length && !lethal){ useConsume(p, sumIt.uid); return; }
+
+  // 7. 保命：会被一回合打死，或者血线已经很低
+  const pots = () => p.bag.filter(it => it.id === 'potion');
+  if (lethal || p.hp <= p.maxHp * 0.35){
+    // 7a. 喝药最省事：优先喝附了「回响」的那瓶
+    const ps = pots();
+    if (ps.length && (lethal || p.hp <= p.maxHp * 0.35)){
+      const best = ps.find(it => hasEnch(p, it.uid, 'echo')) || ps[0];
+      useConsume(p, best.uid);
+      return;                       // useConsume -> finishTurn 会交接
+    }
+    // 7b. 刻印 8a 蓄闪：没药可喝、又确实有人够得着我时才蓄，别空蓄
+    if (canChargeDodge(p) && threatHere > 0){ actDodgeCharge(p); return; }
+    // 7c. 传送器 / 移动到威胁更低的地方
+    const refuge = aiBestIsland(p, true);
+    if (refuge != null && aiThreatAt(p, refuge) < threatHere){
+      if (itemUidOf(p, 'teleport') != null && aiTeleport(p, refuge)) return;
+      if (!hasBan(p,'move') && !p.st.yellow && islandDist(p.island, refuge) === 1){
+        doMove(p, refuge); finishTurn(p, 150); return;
+      }
+    }
+  }
+
+  // 8. 蓄力完成 → 挑最划算的目标释放（弓箭射程无限；三叉戟投掷后需捡回）
+  if (p.charging && enemies.length && canAtk){
+    const cid = wid(p.charging);
+    const mode = cid === 'bow' ? 'release' : (cid === 'trident' ? 'throw' : null);
+    if (mode){
+      // 蓄力释放是无限射程，全场的敌人都能选
+      let best = null, bs = -1;
+      enemies.forEach(t => { const s = aiAtkScore(p, p.charging, t); if (s > bs){ bs = s; best = t; } });
+      if (best){
+        if (hasSeal(p,'11')) p.hitPick = aiHitEffect(p, best);
+        doAttack(p, p.charging, best, mode);
+        return;
+      }
+    }
+  }
+
+  // 9. 打得到的、打得动的 → 直接开打（能秒的优先）
+  if (canAtk && tgtHere){
+    if (hasSeal(p,'11')) p.hitPick = aiHitEffect(p, tgtHere);
+    // 弓箭必须先蓄力；三叉戟近战够不到才蓄力投掷
+    if (wid(W) === 'bow'){ beginCharge(p, W); return; }
+    doAttack(p, W, tgtHere, 'normal');
+    return;
+  }
+
+  // 10. 手里是弓 / 三叉戟但够不着人 → 蓄力，下回合远程点名
+  //     但别在「站着就会被打死」时空蓄 —— 那回合先跑
+  if (canAtk && enemies.length && !lethal){
+    const id = wid(W);
+    if (id === 'bow' || id === 'trident'){ beginCharge(p, W); return; }
+  }
+
+  // 11. 开箱：打不动任何人时必开（否则双方互相免疫，局面僵死）；否则看局势
+  const hasBox = p.island === 0 || (G.boxes[p.island-1] || 0) > 0;
+  const hopeless = enemies.length && enemies.every(t => aiDmgTo(p, W, t) <= 0);
+  const wantGear = !p.weapon || hopeless;
+  const safeish = threatHere <= p.hp * 0.5;
+  if (hasBox && !hasBan(p,'box') && (wantGear || (safeish && !tgtHere && Math.random() < .7))){
+    const r = doOpenBox(p, true);
+    if (r !== 'wait') return;       // afterItem -> finishTurn 会交接
+  }
+
+  // 12. 走位：按「进攻 − 挨打 + 资源」挑落脚点；被禁移动 /【黄】就原地结束
+  if (hasBan(p,'move') || p.st.yellow > 0){
+    addLog(p.name + ' 被禁止移动（戒律 /【黄】），原地结束回合。');
+    finishTurn(p); return;
+  }
+  const dest = aiBestIsland(p, false);
+  if (dest == null || dest === p.island){
+    // 原地就是最优：无箱可开、无路可走，直接结束
+    if (hasBox && !hasBan(p,'box')){ const r = doOpenBox(p, true); if (r !== 'wait') return; }
+    addLog(p.name + ' 按兵不动，结束回合。');
+    finishTurn(p); return;
+  }
+  // 距离 2（两外岛之间）且局势紧急 → 传送器一步到位
+  if (islandDist(p.island, dest) > 1 && itemUidOf(p, 'teleport') != null &&
+      (lethal || (tgtHere == null && aiThreatAt(p, p.island) > 0))){
+    if (aiTeleport(p, dest)) return;
+  }
+  doMove(p, dest);
+  finishTurn(p, 150);
+}
+/* 选址：候选只能是从当前岛一步能到的岛（外加传送时的全图） */
+function aiBestIsland(p, anyIsland){
+  const cands = anyIsland
+    ? [0].concat(G.players.map((_,i)=>i+1))
+    : canMoveTo(p);
+  if (!cands.length) return null;
+  let best = null, bs = -Infinity;
+  cands.forEach(i => {
+    const s = aiIslandScore(p, i);
+    if (s > bs){ bs = s; best = i; }
+  });
+  // 评分不比原地好就别动（避免来回横跳）
+  if (!anyIsland && best != null && bs <= aiIslandScore(p, p.island)) return p.island;
+  return best;
+}
+
+/* ---------------- 交互 ---------------- */
+/* 当前选择面板的取消回调：面板被「取消」关闭时兜底收尾，避免流程卡住（回合不交接） */
+let choiceCancel = null;
+function showChoice(title, opts, onCancel){
+  choiceCancel = (typeof onCancel === 'function') ? onCancel : null;
+  $('cTitle').textContent = title;
+  const box = $('cOpts');
+  box.innerHTML = '';
+  opts.forEach(o => {
+    const b = document.createElement('button');
+    b.className = 'opt';
+    b.innerHTML = o.label + (o.sub ? '<span class="sub">' + o.sub + '</span>' : '');
+    b.onclick = () => { hideChoice(); o.run(); };
+    box.appendChild(b);
+  });
+  const c = document.createElement('button');
+  c.className = 'cancel';
+  c.textContent = '取消';
+  c.onclick = clickCancel;
+  box.appendChild(c);
+  $('choice').classList.add('on');
+  setChoosing(true);      // 面板打开期间锁住行动栏，避免重复触发（如再点开箱）
+}
+function hideChoice(){
+  $('choice').classList.remove('on');
+  setChoosing(false);
+}
+/* 面板被外部强制关闭（换回合 / 重绘）时，丢掉过期的取消回调 */
+function dropChoiceCancel(){ choiceCancel = null; }
+/* 「取消」按钮的唯一入口：先关面板，再执行兜底收尾（若有），保证流程不会停在半路 */
+function clickCancel(){
+  if (!choiceOpen()) return false;
+  const fn = choiceCancel;
+  choiceCancel = null;
+  hideChoice();
+  if (fn) fn();
+  render();
+  return true;
+}
+/* 面板打开期间置灰并封锁行动栏（body 不可用时静默跳过，不影响逻辑） */
+function setChoosing(on){
+  const bd = (typeof document !== 'undefined') ? document.body : null;
+  if (bd && bd.classList){ bd.classList[on ? 'add' : 'remove']('choosing'); }
+}
+/* 选项面板是否打开（含刻印自选、装填、选目标等所有 showChoice 场景） */
+function choiceOpen(){
+  const c = $('choice');
+  return !!c && c.classList.contains('on');
+}
+
+function isHumanTurn(){
+  return !!G && G.phase === 'play' && !G.animating && cur() && cur().alive && !cur().isAI;
+}
+
+document.querySelectorAll('.abtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    // 已经有面板在等待选择（刻印自选 / 装填 / 选目标……）时，再点行动会重复触发
+    if (!isHumanTurn() || choiceOpen()) return;
+    const a = btn.dataset.a;
+    const p = cur();
+    if (a === 'move') actMove(p);
+    else if (a === 'box') actBox(p);
+    else if (a === 'atk') actAttack(p);
+    else if (a === 'item') actItem(p);
+    else if (a === 'enchant') actEnchant(p);
+    else if (a === 'seal7') actSeal7(p);
+    else if (a === 'dodge') actDodgeCharge(p);
+    else if (a === 'precept') actPrecept(p);
+    else if (a === 'machine') actMachine(p);
+  });
+});
+
+/* =========================================================
+   刻印 8 凌波 · 蓄闪（消耗主要行动，下一次受击必定闪避）
+   ========================================================= */
+function actDodgeCharge(p){
+  if (!canChargeDodge(p)){ render(); return; }
+  p.dodgeReady = true;
+  addLog(p.name + ' 蓄闪：下一次受击【必定闪避成功】（花掉本回合主要行动）。', 'hl');
+  const pos = islandXY(p.island);
+  floatText(pos.x, pos.y - 30, '蓄闪', '#38f0d8');
+  sparks(pos.x, pos.y, '#38f0d8', 16);
+  finishTurn(p);
+}
+
+/* =========================================================
+   刻印 4 · 敕禁（回合开始的自由行动，不占主要行动）
+   ========================================================= */
+function actPrecept(p){
+  if (!hasSeal(p, '4') || p.freeActUsed){ render(); return; }
+  const list = allEnts();
+  showChoice('对谁施加【戒律】？（刻印 4 · 自由行动）', list.map(t => ({
+    label: entLabel(t),
+    sub: 'HP ' + Math.max(0,t.hp) + '/' + t.maxHp + (t.st && t.st.precepts.length ? ' · 已有戒律' : ''),
+    run: () => pickBan(p, t)
+  })), () => render());   // 取消：自由行动未用掉
+}
+function pickBan(p, t){
+  showChoice('禁止 ' + entLabel(t) + ' 哪一类行动？', BANS.map(b => ({
+    label: b.name,
+    sub: hasBan(t, b.id) ? '（已有，重复无效）' : '',
+    run: () => {
+      if (!addPrecept(t, b.id, p)) addLog('该实体已经有这条戒律了。', 'sys');
+      else p.freeActUsed = true;
+      render();
+    }
+  })), () => render());   // 取消：自由行动未用掉
+}
+
+/* =========================================================
+   刻印 7 · 蹑景（回合开始主动声明：主要行动后 +1 额外回合）
+   ========================================================= */
+function actSeal7(p){
+  if (!hasSeal(p,'7')){ render(); return; }
+  if (G.sub !== 'main'){ addLog('额外回合里不能再次声明疾行。'); render(); return; }
+  if (p.extraUsed){ addLog('本回合已经声明过疾行了。'); render(); return; }
+  if ((p.turnSeq - p.seal7cd) <= 2){ addLog('刻印·蹑景仍在冷却（2 轮）。', 'sys'); render(); return; }
+  p.seal7cd = p.turnSeq;
+  p.extraUsed = true;
+  G.extraLeft += 1;
+  addLog(p.name + ' 声明使用刻印·蹑景：主要行动后获得 1 个额外回合。', 'hl');
+  render();
+}
+
+/* =========================================================
+   刻印 6 · 天工
+   ========================================================= */
+function actMachine(p){
+  if (!hasSeal(p,'6')){ render(); return; }
+  const ms = machinesOf(p);
+  const opts = [];
+  opts.push({label:'构建炮台', sub:'在 ' + islandName(p.island) + ' 建一座（固定、无上限、消耗主要行动）', run:()=>{
+    G.machines.push({mid:MACHINE_UID++, owner:p.i, island:p.island, ammo:null, auto:false});
+    addLog(p.name + ' 在 ' + islandName(p.island) + ' 构建了炮台（#' + (MACHINE_UID-1) + '）。', 'hl');
+    finishTurn(p);
+  }});
+  ms.forEach(m => {
+    const tag = '#' + m.mid + ' · ' + islandName(m.island);
+    opts.push({label:'装填 · ' + tag, sub:'当前：' + (m.ammo === 'tnt' ? 'TNT' : m.ammo === 'arrow' ? '箭矢' : '空（弹药装填后无限）'), run:()=>{
+      showChoice('装填哪种弹药？', [
+        {label:'箭矢', sub:'8 ATK 单体 · 可自选目标 · 自动发射时 ×2', run:()=>{ m.ammo='arrow'; addLog(p.name + ' 为炮台 ' + tag + ' 装填箭矢（无限弹药）。', 'hl'); finishTurn(p); }},
+        {label:'TNT',  sub:'16 ATK · 可自选任意岛 · 命中该岛全部实体（含自己人与召唤物）· 自动发射 ×1', run:()=>{ m.ammo='tnt'; addLog(p.name + ' 为炮台 ' + tag + ' 装填 TNT（无限弹药）。', 'hl'); finishTurn(p); }},
+      ], () => render());   // 取消：未装填，回到当前回合
+    }});
+    opts.push({label:(m.auto ? '关闭自动化 · ' : '自动化 · ') + tag,
+      sub: m.auto ? '当前：每主要回合开始自动发射' : '开启后：每主要回合开始前自动发射（TNT ×1 / 箭矢 ×2）',
+      run:()=>{ m.auto = !m.auto; addLog(p.name + ' ' + (m.auto ? '开启' : '关闭') + '炮台 ' + tag + ' 的自动化。', 'hl'); finishTurn(p); }});
+    opts.push({label:'手动发射 · ' + tag, sub:'消耗主要行动，只发射 1 发（自选目标）', run:()=>{
+      fireMachine(m, (fired)=>{
+        if (fired){ finishTurn(p); }
+        else { addLog('（没有打出去，主要行动未消耗）'); render(); }
+      });
+    }});
+  });
+  showChoice('建造机械（刻印 6 天工）', opts, () => render());   // 取消：什么都没做
+}
+
+function actMove(p){
+  const opts = canMoveTo(p).map(t => ({
+    label: islandName(t),
+    sub: '箱 ' + (t === 0 ? '∞' : G.boxes[t-1]),
+    run: () => { doMove(p, t); render(); endTurn(); }
+  }));
+  showChoice('移动到哪个岛？', opts, () => render());   // 取消：没动，行动未消耗
+}
+
+function actBox(p){
+  if (p.island !== 0 && G.boxes[p.island-1] <= 0){
+    addLog('这个外岛的箱子已经开完了。'); render(); return;
+  }
+  const r = doOpenBox(p);
+  if (r !== 'wait') { render(); }
+}
+
+function actAttack(p){
+  const ws = weaponsOf(p);
+  const choices = [{uid:null, label:'空手', sub:'ATK ' + getAtk(p,null) + ' · 射程 ' + rngTxt(getRng(p,null))}];
+  ws.forEach(inst => {
+    const it = ITEMS[inst.id];
+    let extra = '', rngLabel = rngTxt(getRng(p, inst.uid, 'normal'));
+    if (inst.id === 'bow'){
+      extra = (p.charging && itemIdOf(p,p.charging) === 'bow') ? '蓄力完成 · 可释放' : '需蓄力 1 回合';
+    } else if (inst.id === 'trident'){
+      // 近战按基础射程 + 附魔加成（轻盈 +1）；蓄力后可投掷，射程无限
+      extra = (p.charging && itemIdOf(p,p.charging) === 'trident') ? '蓄力完成 · 可投掷' : '近战 · 可蓄力投掷';
+    }
+    const en = (p.ench[inst.uid] || []).map(x => ' ·' + enchantName(x)).join('');
+    choices.push({uid: inst.uid, label: it.name + ' #' + inst.uid,
+      sub:'ATK ' + getAtk(p,inst.uid) + ' · 射程 ' + rngLabel + en + (extra ? ' · ' + extra : '')});
+  });
+  showChoice('用哪把武器？', choices.map(c => ({
+    label: c.label, sub: c.sub, run: () => actAttackTarget(p, c.uid)
+  })), () => render());   // 取消：攻击未发生
+}
+
+function rngTxt(r){ return r === Infinity ? '∞（全场）' : (r === 0 ? '仅同岛' : r + ' 格'); }
+/* 玩家卡上的射程：远程武器标明「近战 X / 释放 Y」，轻盈附魔会体现在 X 上 */
+function rngLabel(p){
+  const uid = p.weapon, d = itemDef(p, uid);
+  const fmt = v => (v === Infinity ? '∞' : String(v));
+  const m = fmt(getRng(p, uid, 'normal'));
+  if (d && d.ranged) return m + ' / 释放 ' + fmt(getRng(p, uid, 'release'));
+  return m;
+}
+
+/* 判断某一件武器是否已蓄力完成（按实例编号比对） */
+function isCharged(p, uid){ return !!uid && p.charging === uid && !!itemOf(p, uid); }
+
+function actAttackTarget(p, w){
+  const enemies = foesOf(p);
+  const wid = itemIdOf(p, w);
+  const charged = isCharged(p, w);
+
+  /* 远程武器（弓箭 / 三叉戟）蓄力完成 → 射程无限，任选目标释放。
+     必须走这一步，否则会落到下面的近战射程判断，导致弓箭「射程 0」打不到人。 */
+  if (charged){
+    const mode = (wid === 'trident') ? 'throw' : 'release';
+    const verb = (wid === 'trident') ? '投掷' : '释放';
+    showChoice(verb + ITEMS[wid].name + '蓄力一击 · 选择目标', enemies.map(t => ({
+      label: entLabel(t),
+      sub: 'HP ' + Math.max(0,t.hp) + '/' + t.maxHp + ' · DEF ' + getDef(t) +
+           ' · 预计伤害 ' + Math.max(0, getAtk(p,w) - getDef(t)),
+      run: () => { launchAttack(p, w, t, mode); }
+    })), () => render());   // 取消：蓄力保留，下回合还能放
+    return;
+  }
+
+  // 弓箭未蓄力 → 只能蓄力
+  if (wid === 'bow'){
+    showChoice('弓箭需要蓄力', [
+      {label:'蓄力（消耗本回合）', sub:'下回合释放：射程∞ · ATK ' + getAtk(p,w), run:()=>{
+        beginCharge(p, w);
+      }}
+    ], () => render());   // 取消：不蓄力，回到当前回合
+    return;
+  }
+  // 三叉戟：近战（无需蓄力）/ 投掷（需蓄力 1 回合，射程∞，投出后需捡回）
+  if (wid === 'trident'){
+    const melee = enemies.filter(t => inRange(p, w, t, 'normal'));
+    const opts = [];
+    if (melee.length) opts.push({label:'近战', sub:'射程内目标 · ATK ' + getAtk(p,w), run:()=>pickTarget(p,w,'normal')});
+    opts.push({label:'蓄力投掷（消耗本回合）',
+      sub:'下回合释放：射程∞ · ATK ' + getAtk(p,w) + ' · 投出后需捡回',
+      run:()=>{ beginCharge(p, w); }});
+    showChoice('三叉戟：近战还是投掷？', opts, () => render());   // 取消：回到当前回合
+    return;
+  }
+  const inR = enemies.filter(t => inRange(p, w, t, 'normal'));
+  if (!inR.length){
+    addLog('射程内没有目标。'); render(); return;
+  }
+  pickTarget(p, w, 'normal');
+}
+
+function pickTarget(p, w, mode){
+  const enemies = foesOf(p);
+  const inR = enemies.filter(t => inRange(p, w, t, mode));
+  if (!inR.length){ addLog('射程内没有目标。'); render(); return; }
+  const label = isCharged(p, w) ? '释放蓄力一击，目标？' : '攻击谁？';
+  showChoice(label, inR.map(t => ({
+    label: entLabel(t) + (t.isSummon ? '' : ''),
+    sub: 'HP ' + Math.max(0,t.hp) + '/' + t.maxHp + ' · DEF ' + getDef(t) + ' · 预计伤害 ' + Math.max(0, getAtk(p,w) - getDef(t)),
+    run: () => { launchAttack(p, w, t, mode); }
+  })), () => render());   // 取消：攻击未发生
+}
+/* 攻击发起：有刻印 11 点染时先选命中效果 */
+function launchAttack(p, w, t, mode){
+  if (!hasSeal(p, '11')){ doAttack(p, w, t, mode); return; }
+  p.hitPick = p.hitPick || 'red';
+  showChoice('命中后附加哪种效果？（刻印·点染）', ['red','blue','yellow'].map(k => ({
+    label: HITFX[k].name + (p.hitPick === k ? ' · 上次选择' : ''),
+    sub: HITFX[k].desc,
+    run: () => { p.hitPick = k; doAttack(p, w, t, mode); }
+  })).concat([{label:'不附加', sub:'本次不施加状态', run: () => { p.hitPick = null; doAttack(p, w, t, mode); }}]),
+  () => render());   // 取消：本次攻击取消，回到当前回合
+}
+
+function actItem(p){
+  // 消耗品 + 可当道具用的钓竿（附魔走独立按钮，不占主要回合）
+  // 逐件列出，这样才能选中「附了回响的那一瓶药水」
+  // 可附魔的逐件列出（可能带不同附魔）；不可附魔的合并成一项，省去无意义的重复
+  const all = p.bag.filter(it => {
+    const d = ITEMS[it.id];
+    return d.type === 'consume' || d.fish;
+  });
+  const usables = [];
+  all.forEach(inst => {
+    if (canEnchant(inst.id)){ usables.push({inst:inst, n:1}); return; }
+    const g = usables.find(x => !canEnchant(x.inst.id) && x.inst.id === inst.id);
+    if (g) g.n++; else usables.push({inst:inst, n:1});
+  });
+  if (!usables.length){ addLog('背包里没有可使用的道具。'); render(); return; }
+
+  const run = uid => {
+    const id = itemIdOf(p, uid);
+    if (id === 'enchant'){ actEnchant(p); return; }
+    if (id === 'teleport'){
+      showChoice('传送到哪个岛？', [0].concat(G.players.map((_,i)=>i+1)).map(t => ({
+        label: islandName(t), run: () => {
+          removeUid(p, uid);
+          const from = p.island; p.island = t;
+          p.movedThisTurn = true;     // 传送也算"换过岛"，触发游侠跟随
+          breakCharge(p, ' 传送了');
+          addLog(p.name + ' 使用传送器：' + islandName(from) + ' → ' + islandName(t), 'hl');
+          const pos = islandXY(t); floatText(pos.x,pos.y-30,'传送','#38f0d8'); sparks(pos.x,pos.y,'#38f0d8',18);
+          pickup(p); checkRetrieve(p); render(); endTurn();
+        }
+      })), () => render());   // 取消：传送器未用掉，回到当前回合
+      return;
+    }
+    useConsume(p, uid);        // 注意：必须传实例编号 uid，不是物品类型 id
+  };
+
+  const opts = usables.map(g => {
+    const inst = g.inst, d = ITEMS[inst.id];
+    // 可附魔的物品带 #编号；不可附魔的（传送器等）不编号
+    const no = canEnchant(inst.id) ? ' #' + inst.uid : '';
+    const en = (p.ench[inst.uid] || []).map(x => ' ·' + enchantName(x)).join('');
+    return {
+      label: d.icon + ' ' + d.name + no + en + (g.n > 1 ? ' ×' + g.n : ''),
+      sub: d.desc,
+      run: () => run(inst.uid)
+    };
+  });
+  showChoice('使用哪个道具？', opts, () => render());   // 取消：什么都没用掉
+}
+
+function actEnchant(p){
+  if (p.enchantUsed){ addLog('本回合已经用过附魔了。'); render(); return; }
+  if (!hasItem(p, 'enchant')){ addLog('背包里没有附魔。'); render(); return; }
+  // 逐件列出（不去重），才能精确挑中想要的那一件
+  // 刻印 / 神器 / 附魔 / 传送器本身不能被附魔，不会出现在这里
+  const targets = p.bag.filter(it => canEnchant(it.id));
+  if (!targets.length){ addLog('没有可附魔的物品（刻印、神器、附魔、传送器不能被附魔）。'); render(); return; }
+  showChoice('第一步：为哪件物品附魔？', targets.map(inst => {
+    const cur = (p.ench[inst.uid] || []).length ? enchNames(p, inst.uid) : null;
+    const same = p.bag.filter(x => x.id === inst.id).length;
+    return {
+      label: itemLabel(p, inst.uid) + (same > 1 ? '（同类 ×' + same + '）' : ''),
+      sub: (cur ? '当前附魔：' + cur : '尚未附魔') + ' · 第二步再挑附魔',
+      run: () => pickEnchant(p, inst.uid)
+    };
+  }), () => render());   // 取消：附魔保留，回到当前回合
+}
+
+/* ---------------- 渲染 ---------------- */
+function islandName(i){ return i === 0 ? '中心岛' : ('外岛 ' + i); }
+
+function drawMap(){
+  ctx.clearRect(0,0,MW,MH);
+
+  // 海洋
+  const g = ctx.createLinearGradient(0,0,0,MH);
+  g.addColorStop(0,'#071a2c'); g.addColorStop(1,'#040d18');
+  ctx.fillStyle = g; ctx.fillRect(0,0,MW,MH);
+
+  // 波纹
+  ctx.strokeStyle = 'rgba(90,150,220,.07)'; ctx.lineWidth = 1;
+  const t = performance.now()/1000;
+  for (let i=0;i<9;i++){
+    ctx.beginPath();
+    const y = 40 + i*70;
+    for (let x=0;x<=MW;x+=12){
+      const yy = y + Math.sin((x/70) + t*0.7 + i)*5;
+      x===0 ? ctx.moveTo(x,yy) : ctx.lineTo(x,yy);
+    }
+    ctx.stroke();
+  }
+
+  // 桥
+  for (let i=1;i<=G.n;i++){
+    const a = islandXY(0), b = islandXY(i);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(140,190,255,.22)';
+    ctx.lineWidth = 12; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    ctx.strokeStyle = 'rgba(180,225,255,.30)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    ctx.restore();
+  }
+
+  // 岛
+  for (let i=0;i<=G.n;i++){
+    const {x,y} = islandXY(i);
+    const r = i===0 ? R_MID : R_OUT;
+    const isHere = G.players.some(p=>p.alive && p.island===i);
+    ctx.save();
+    // 光晕
+    const gg = ctx.createRadialGradient(x,y,r*0.4,x,y,r*1.55);
+    gg.addColorStop(0,'rgba(56,240,216,.20)'); gg.addColorStop(1,'rgba(56,240,216,0)');
+    ctx.fillStyle = gg;
+    ctx.beginPath(); ctx.arc(x,y,r*1.55,0,7); ctx.fill();
+    // 岛体
+    ctx.beginPath(); ctx.arc(x,y,r,0,7);
+    const bg = ctx.createLinearGradient(x,y-r,x,y+r);
+    bg.addColorStop(0,'#20465c'); bg.addColorStop(1,'#0e2438');
+    ctx.fillStyle = bg; ctx.fill();
+    ctx.strokeStyle = isHere ? 'rgba(56,240,216,.75)' : 'rgba(140,190,255,.3)';
+    ctx.lineWidth = 2; ctx.stroke();
+    // 沙滩
+    ctx.beginPath(); ctx.arc(x,y,r-7,0,7);
+    ctx.strokeStyle = 'rgba(255,202,58,.14)'; ctx.lineWidth = 2; ctx.stroke();
+    // 岛标号：中心岛=「中心」，外岛=数字
+    const label = i === 0 ? '中心' : String(i);
+    ctx.font = '700 11px system-ui,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(4,8,18,.85)';
+    ctx.strokeText(label, x, y - r - 8);
+    ctx.fillStyle = i === 0 ? 'rgba(56,240,216,.9)' : 'rgba(190,218,255,.7)';
+    ctx.fillText(label, x, y - r - 8);
+    ctx.restore();
+  }
+
+  // 箱子
+  for (let i=1;i<=G.n;i++){
+    const n = G.boxes[i-1];
+    if (n <= 0) continue;
+    const {x,y} = islandXY(i);
+    for (let k=0;k<n;k++){
+      const bx = x - 24 + k*24, by = y + 14;
+      ctx.save();
+      ctx.fillStyle = '#8a5a2b';
+      ctx.fillRect(bx-8, by-8, 16, 16);
+      ctx.fillStyle = '#c98a3c';
+      ctx.fillRect(bx-8, by-8, 16, 5);
+      ctx.strokeStyle = '#ffca3a'; ctx.lineWidth = 1.2;
+      ctx.strokeRect(bx-8, by-8, 16, 16);
+      ctx.restore();
+    }
+  }
+  // 中心岛无限箱标记
+  {
+    const {x,y} = islandXY(0);
+    ctx.save();
+    ctx.fillStyle = '#8a5a2b'; ctx.fillRect(x-9, y+12, 18, 16);
+    ctx.fillStyle = '#c98a3c'; ctx.fillRect(x-9, y+12, 18, 5);
+    ctx.strokeStyle = '#ffca3a'; ctx.lineWidth = 1.2; ctx.strokeRect(x-9,y+12,18,16);
+    ctx.fillStyle = 'rgba(255,202,58,.9)';
+    ctx.font = '700 9px system-ui'; ctx.textAlign = 'center';
+    ctx.fillText('∞', x, y + 25);
+    ctx.restore();
+  }
+
+  // 掉落物
+  Object.keys(G.drops).forEach(k => {
+    const {x,y} = islandXY(+k);
+    ctx.save();
+    ctx.shadowBlur = 12; ctx.shadowColor = '#ffca3a';
+    ctx.fillStyle = 'rgba(255,202,58,.9)';
+    ctx.beginPath(); ctx.arc(x + 26, y - 6, 7, 0, 7); ctx.fill();
+    ctx.fillStyle = '#04121a'; ctx.font = '700 9px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('' + G.drops[k].length, x + 26, y - 5);
+    ctx.restore();
+  });
+
+  // 神器陷阱
+  Object.keys(G.traps).forEach(k => {
+    const {x,y} = islandXY(+k);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,202,58,.9)'; ctx.lineWidth = 2;
+    ctx.shadowBlur = 12; ctx.shadowColor = '#ffca3a';
+    ctx.beginPath(); ctx.arc(x - 26, y - 6, 9, 0, 7); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,202,58,.9)';
+    ctx.font = '700 9px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('!', x - 26, y - 5);
+    ctx.restore();
+  });
+
+  // 三叉戟落点（用主人的颜色 —— 只有本人能捡回）
+  G.thrown.forEach(th => {
+    const {x,y} = islandXY(th.island);
+    const owner = G.players[th.owner];
+    const col = owner ? owner.color : '#38f0d8';
+    ctx.save();
+    ctx.fillStyle = col; ctx.shadowBlur = 10; ctx.shadowColor = col;
+    ctx.font = '14px serif'; ctx.textAlign='center';
+    ctx.fillText('\u{1F531}', x, y - 34);
+    // 落点标记：不是本人则画一圈虚线提示拿不走
+    if (cur() && cur().i !== th.owner){
+      ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 1;
+      ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.arc(x, y - 34, 12, 0, 7); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    ctx.restore();
+  });
+
+  // 机械（炮台）
+  G.machines.forEach(m => {
+    const {x,y} = islandXY(m.island);
+    const owner = G.players[m.owner];
+    ctx.save();
+    ctx.fillStyle = owner ? owner.color : '#ffca3a';
+    ctx.shadowBlur = 8; ctx.shadowColor = ctx.fillStyle;
+    ctx.fillRect(x + 30, y - 14, 13, 13);
+    ctx.fillStyle = '#04121a'; ctx.font = '700 9px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(m.ammo === 'tnt' ? 'T' : (m.ammo === 'arrow' ? 'A' : '·'), x + 36.5, y - 7);
+    if (m.auto){
+      ctx.strokeStyle = '#ffca3a'; ctx.lineWidth = 1.4; ctx.setLineDash([3,2]);
+      ctx.beginPath(); ctx.arc(x + 36.5, y - 7.5, 11, 0, 7); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    ctx.restore();
+  });
+
+  // 玩家（火柴人）
+  G.players.forEach(p => {
+    if (!p.alive) return;
+    drawPlayer(p);
+  });
+
+  // 召唤物
+  G.summons.forEach(s => { if (s.alive) drawSummon(s); });
+
+  // 飞行物
+  anim.forEach(a => {
+    const x = a.from.x + (a.to.x - a.from.x)*a.p;
+    const y = a.from.y + (a.to.y - a.from.y)*a.p - Math.sin(a.p*Math.PI)*70;
+    ctx.save();
+    ctx.shadowBlur = 14; ctx.shadowColor = a.color;
+    ctx.fillStyle = a.color;
+    ctx.beginPath(); ctx.arc(x,y,6,0,7); ctx.fill();
+    ctx.restore();
+  });
+
+  // 特效
+  fx.forEach(f => {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, Math.min(1, f.life));
+    if (f.t === 'ring'){
+      ctx.strokeStyle = f.color; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 7); ctx.stroke();
+    } else if (f.t === 'text'){
+      ctx.fillStyle = f.color;
+      ctx.font = '700 17px system-ui,sans-serif'; ctx.textAlign = 'center';
+      ctx.shadowBlur = 8; ctx.shadowColor = 'rgba(0,0,0,.8)';
+      ctx.fillText(f.txt, f.x, f.y);
+    } else {
+      ctx.fillStyle = f.color;
+      ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 7); ctx.fill();
+    }
+    ctx.restore();
+  });
+}
+
+function drawPlayer(p){
+  const {x,y} = islandXY(p.island);
+  // 同岛多人时错开
+  const mates = G.players.filter(q => q.alive && q.island === p.island);
+  const k = mates.findIndex(q => q.i === p.i);
+  const off = (k - (mates.length-1)/2) * 26;
+
+  const bx = x + off, by = y - 6;
+  const isCur = (p === cur() && G.phase === 'play');
+  const s = 1;
+
+  ctx.save();
+  ctx.translate(bx, by);
+  ctx.scale(s,s);
+
+  // 高亮圈
+  if (isCur){
+    ctx.save();
+    ctx.strokeStyle = p.color; ctx.globalAlpha = .55 + Math.sin(performance.now()/220)*.25;
+    ctx.lineWidth = 2; ctx.setLineDash([5,5]);
+    ctx.beginPath(); ctx.arc(0,4,26,0,7); ctx.stroke();
+    ctx.restore();
+  }
+
+  ctx.shadowBlur = 12; ctx.shadowColor = p.color;
+  ctx.strokeStyle = p.color; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+
+  // 头
+  ctx.beginPath(); ctx.arc(0,-16,6,0,7); ctx.stroke();
+  // 身体
+  ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(0,4); ctx.stroke();
+  // 手
+  ctx.beginPath(); ctx.moveTo(0,-6); ctx.lineTo(-9,1); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,-6); ctx.lineTo(9,1); ctx.stroke();
+  // 腿
+  ctx.beginPath(); ctx.moveTo(0,4); ctx.lineTo(-7,15); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,4); ctx.lineTo(7,15); ctx.stroke();
+
+  // 武器
+  const wd = p.weapon ? itemDef(p, p.weapon) : null;
+  if (wd){
+    const wid = wd.id;
+    ctx.save();
+    ctx.shadowBlur = 8;
+    if (wid === 'sword'){ ctx.strokeStyle='#ffca3a'; ctx.beginPath(); ctx.moveTo(9,1); ctx.lineTo(19,-8); ctx.stroke(); }
+    else if (wid === 'bow'){ ctx.strokeStyle='#fb923c'; ctx.beginPath(); ctx.arc(11,0,8,-1.1,1.1); ctx.stroke(); }
+    else if (wid === 'trident'){ ctx.strokeStyle='#38f0d8'; ctx.beginPath(); ctx.moveTo(9,1); ctx.lineTo(20,-10); ctx.stroke(); }
+    else if (wid === 'kb'){ ctx.strokeStyle='#a78bfa'; ctx.beginPath(); ctx.moveTo(9,1); ctx.lineTo(18,-6); ctx.stroke(); }
+    else if (wid === 'rod'){ ctx.strokeStyle='#4ade80'; ctx.beginPath(); ctx.moveTo(9,1); ctx.lineTo(21,-12); ctx.stroke(); }
+    // 附过魔的武器带一层紫色光晕
+    if ((p.ench[p.weapon] || []).length){ ctx.shadowColor = '#8b5cf6'; ctx.shadowBlur = 14; ctx.stroke(); }
+    ctx.restore();
+  }
+  // 蓄力标记
+  const cd = p.charging ? itemDef(p, p.charging) : null;
+  if (cd){
+    ctx.save();
+    ctx.fillStyle = '#ffca3a';
+    ctx.font = '700 11px system-ui'; ctx.textAlign='center';
+    ctx.fillText('蓄力·' + cd.name, 0, -30);
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // 名字 + HP
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.font = '600 10.5px system-ui,sans-serif';
+  ctx.fillStyle = p.color;
+  ctx.fillText(p.name, bx, by + 30);
+  ctx.font = '600 9.5px system-ui,sans-serif';
+  ctx.fillStyle = 'rgba(230,238,255,.65)';
+  ctx.fillText(Math.max(0,p.hp) + ' HP', bx, by + 41);
+  ctx.restore();
+}
+
+function drawSummon(s){
+  const {x,y} = islandXY(s.island);
+  const owner = G.players[s.owner];
+  const list = G.summons.filter(q => q.alive && q.island === s.island);
+  const k = list.findIndex(q => q.sid === s.sid);
+  const bx = x - 26 + k * 24, by = y + 38;
+  ctx.save();
+  ctx.font = '15px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.shadowBlur = 9; ctx.shadowColor = owner ? owner.color : '#8b5cf6';
+  ctx.fillText(s.icon, bx, by);
+  ctx.shadowBlur = 0;
+  ctx.font = '700 8.5px system-ui,sans-serif';
+  ctx.fillStyle = '#c3d2f0';
+  ctx.fillText(Math.max(0, s.hp) + '', bx, by + 12);
+  if (s.resting){
+    ctx.fillStyle = '#8494b8'; ctx.font = '700 8px system-ui';
+    ctx.fillText('zZ', bx, by - 11);
+  } else if (isSpawning(s)){
+    ctx.fillStyle = '#a78bfa'; ctx.font = '700 10px system-ui';
+    ctx.fillText('…', bx, by - 11);
+  }
+  // 状态提示点
+  if (s.st && (s.st.tear > 0 || s.st.blue || s.st.yellow > 0 || s.st.red > 0)){
+    ctx.fillStyle = '#ff3d9a';
+    ctx.beginPath(); ctx.arc(bx + 9, by - 9, 3, 0, 7); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function render(){
+  if (!G) return;
+  const p = cur();
+  $('rRound').textContent = G.round;
+  $('rPlayers').textContent = G.players.filter(q=>q.alive).length;
+  const mb = $('modeBadge');
+  if (mb){
+    mb.textContent = modeDef(G.mode).name;
+    mb.style.borderColor = (G.mode === 'team') ? 'rgba(255,202,58,.55)'
+                         : (G.mode === 'boss') ? 'rgba(255,61,154,.55)' : '';
+    mb.style.color = (G.mode === 'team') ? '#ffca3a'
+                   : (G.mode === 'boss') ? '#ff9ecb' : '';
+  }
+  const tb = $('turnbar');
+  const subTxt = (G.sub === 'summon') ? ' · <span style="color:#8b5cf6">召唤物回合</span>'
+               : (G.sub === 'summonExtra') ? ' · <span style="color:#8b5cf6">召唤物额外回合</span>'
+               : (G.sub === 'extra') ? ' · <span style="color:#ffca3a">额外回合</span>' : '';
+  if (G.phase === 'play' && p){
+    tb.style.color = p.color;
+    $('turnTxt').innerHTML = '<b style="color:' + p.color + '">' + p.name + '</b> 的回合 · 位于 ' + islandName(p.island) +
+      subTxt +
+      (p.isAI ? ' · <span style="color:#8494b8">电脑思考中…</span>' : ' · 请选择一项行动');
+  } else {
+    tb.style.color = '#8494b8';
+    $('turnTxt').textContent = '对局结束';
+  }
+
+  // 玩家卡
+  const pl = $('plist');
+  pl.innerHTML = '';
+  G.players.forEach(q => {
+    const d = document.createElement('div');
+    d.className = 'pcard' + (q === p && G.phase==='play' ? ' cur' : '') + (q.alive ? '' : ' dead');
+    const wname = (function(){ const d = itemDef(q, q.weapon); return d ? d.name : '空手'; })();
+    // 背包按「物品 + 附魔」分组：完全相同的未附魔物品合并显示 ×N，
+    // 附过魔的那一件会单独成一组，一眼就能看出附魔只作用在单件上。
+    // 不可附魔的物品（刻印/神器/附魔/传送器）直接按类型合并，不带 #编号
+    const bagChips = q.bag.length
+      ? (function(){
+          const groups = [];
+          q.bag.forEach(inst => {
+            const key = canEnchant(inst.id)
+              ? inst.id + '|' + (q.ench[inst.uid] || []).slice().sort().join(',')
+              : inst.id;
+            let g = groups.find(x => x.key === key);
+            if (!g){ g = {key:key, id:inst.id, uids:[], n:0}; groups.push(g); }
+            g.uids.push(inst.uid); g.n++;
+          });
+          return groups.map(g => {
+            const it = ITEMS[g.id];
+            const eq = g.uids.indexOf(q.weapon) >= 0 ? ' eq' : '';
+            const dr = it.draft ? ' draft' : '';
+            const en = (q.ench[g.uids[0]] || []).map(x => ' ·' + enchantName(x)).join('');
+            // 多件护甲时明确标出不会叠加
+            const dup = (g.id === 'armor' && q.bag.filter(x=>x.id==='armor').length > 1) ? ' ·仅计1件' : '';
+            // 只有可附魔的物品才需要 #编号来区分具体是哪一件
+            const no = (g.n > 1 ? '×' + g.n : (canEnchant(g.id) ? ' #' + g.uids[0] : ''));
+            return '<span class="chip' + eq + dr + '" title="' + it.desc + '">' + it.icon + it.name + no + en + dup + '</span>';
+          }).join('');
+        })()
+      : '<span class="none">（空）</span>';
+    const pct = Math.max(0, q.hp / q.maxHp * 100);
+    const col = pct > 50 ? '#4ade80' : (pct > 25 ? '#ffca3a' : '#ff3d9a');
+    d.innerHTML =
+      '<div class="top">' +
+        '<span style="width:9px;height:9px;border-radius:50%;background:' + q.color + ';display:inline-block"></span>' +
+        '<span class="nm">' + q.name + '</span>' +
+        '<span class="tag ' + (q.isAI ? 'ai' : 'you') + '">' + (q.isAI ? 'AI' : 'YOU') + '</span>' +
+        (q.isBoss ? '<span class="bosstag">BOSS</span>' : '') +
+        (G.mode === 'team' && q.team ? '<span class="teamtag">' + q.team + ' 队</span>' : '') +
+        (q.dodgeReady ? '<span class="dodgetag" title="下一次受击必定闪避成功">蓄闪</span>' : '') +
+        (!q.dodgeReady && G.round <= (q.dodgeCdRound || 0) ? '<span class="dodgecd" title="蓄闪冷却中，本回合不能再蓄">闪冷却</span>' : '') +
+        '<span class="hpv">' + Math.max(0,q.hp) + '/' + q.maxHp + '</span>' +
+      '</div>' +
+      '<div class="bar"><i style="width:' + pct + '%;background:' + col + '"></i></div>' +
+      '<div class="stats">' +
+        '<span>ATK <b>' + getAtk(q, q.weapon) + '</b></span>' +
+        '<span>DEF <b>' + getDef(q) + '</b></span>' +
+        '<span>射程 <b>' + rngLabel(q) + '</b></span>' +
+        '<span>受击 <b>' + q.hits + '</b></span>' +
+      '</div>' +
+      '<div class="bag">' + bagChips + '</div>' +
+      (sealListOf(q).length ? '<div class="sealrow">刻印 ' + sealListOf(q).map(n=>'<span class="sc">'+n+'</span>').join('') + '</div>' : '') +
+      (stateText(q) ? '<div class="strow">状态 ' + stateText(q).split(' · ').map(n=>'<span class="st">'+n+'</span>').join('') + '</div>' : '') +
+      (summonsOf(q).length ? '<div class="smrow">召唤 ' + summonsOf(q).map(s=>'<span class="sm">'+s.icon+s.name+' '+Math.max(0,s.hp)+'/'+s.maxHp+(isSpawning(s)?' ·现身':(s.resting?' ·休息':''))+'</span>').join('') + '</div>' : '');
+    pl.appendChild(d);
+  });
+
+  // 按钮可用性（戒律会禁掉对应行动；刻印按钮按持有情况显示）
+  const human = isHumanTurn();
+  document.querySelectorAll('.abtn').forEach(b => {
+    const a = b.dataset.a;
+    let dis = !human || a === 'skill';
+    if (human && p){
+      if (a === 'move'    && (hasBan(p,'move') || p.st.yellow > 0)) dis = true;   //【黄】禁移动
+      if (a === 'box'     && hasBan(p,'box'))  dis = true;
+      if (a === 'atk'     && (hasBan(p,'atk') || p.st.blue)) dis = true;          //【蓝】禁攻击
+      if (a === 'item'    && hasBan(p,'item')) dis = true;
+      if (a === 'enchant') dis = p.enchantUsed || !hasItem(p,'enchant') || hasBan(p,'seal');
+      if (a === 'seal7')   dis = hasBan(p,'seal') || !(hasSeal(p,'7') && !p.extraUsed && G.sub === 'main' && (p.turnSeq - p.seal7cd) > 2);
+      if (a === 'dodge')   dis = !canChargeDodge(p);       // ⑧a 专属；已蓄闪 / 冷却 / 戒律 都禁用
+      if (a === 'precept') dis = hasBan(p,'seal') || !(hasSeal(p,'4') && !p.freeActUsed);
+      if (a === 'machine') dis = hasBan(p,'seal') || !hasSeal(p,'6');
+    }
+    b.disabled = dis;
+  });
+}
+
+/* ---------------- 主循环 ---------------- */
+function loop(){
+  updateFx();
+  if (G) drawMap();
+  requestAnimationFrame(loop);
+}
+loop();
+
+/* ---------------- 设置界面 ---------------- */
+let cfgN = 4, cfgHP = 30, cfgMode = 'ffa';
+const pconf = $('pconf');
+const TEAMS = ['A','B','C','D'];
+const TEAM_COLORS = {A:'#ffca3a', B:'#38f0d8', C:'#ff3d9a', D:'#8b5cf6'};
+
+const MODES = [
+  {id:'ffa',  name:'单人混战', hint:'各自为战，全员相同 HP，最后存活者获胜。'},
+  {id:'team', name:'自定义分队', hint:'给每位玩家指定队伍，同队之间不能互相攻击，最后存活的队伍获胜。'},
+  {id:'boss', name:'BOSS 战',   hint:'玩家 1 为 BOSS，HP = 其余玩家数 × 10；其余玩家只有 1 HP。'},
+];
+function modeDef(id){ return MODES.find(m=>m.id===id) || MODES[0]; }
+
+/* BOSS 战里每位玩家的 HP：BOSS = 其余人数 × 10，其余 = 1 */
+function hpFor(mode, i, n, maxHp){
+  if (mode === 'boss'){
+    if (i === 0) return Math.max(10, (n - 1) * 10);
+    return 1;
+  }
+  return maxHp;
+}
+
+function buildSegMode(){
+  const seg = $('segMode');
+  seg.innerHTML = '';
+  MODES.forEach(m => {
+    const b = document.createElement('button');
+    b.textContent = m.name;
+    b.className = m.id === cfgMode ? 'on' : '';
+    b.onclick = () => { cfgMode = m.id; buildSegMode(); buildPconf(); syncModeUI(); };
+    seg.appendChild(b);
+  });
+}
+/* 模式相关的界面联动：BOSS 战隐藏 HP 输入，分队模式显示队伍按钮 */
+function syncModeUI(){
+  const m = modeDef(cfgMode);
+  $('modeHint').textContent = m.hint;
+  const boss = cfgMode === 'boss';
+  $('hpRow').style.display = boss ? 'none' : '';
+  $('hpHint').textContent = boss
+    ? ('BOSS ' + Math.max(10, (cfgN-1)*10) + ' HP · 其余玩家 1 HP')
+    : '出生时满 HP';
+}
+
+function buildSeg(){
+  const seg = $('segN');
+  seg.innerHTML = '';
+  for (let i=2;i<=6;i++){
+    const b = document.createElement('button');
+    b.textContent = i;
+    b.className = i === cfgN ? 'on' : '';
+    b.onclick = () => { cfgN = i; buildSeg(); buildPconf(); syncModeUI(); };
+    seg.appendChild(b);
+  }
+}
+function buildPconf(){
+  pconf.innerHTML = '';
+  const isTeam = cfgMode === 'team';
+  for (let i=0;i<cfgN;i++){
+    const row = document.createElement('div');
+    row.className = 'prow';
+    const isAI = i !== 0;
+    const label = (cfgMode === 'boss' && i === 0) ? 'BOSS' : ('玩家 ' + (i+1));
+    row.innerHTML =
+      '<span class="sw" style="background:' + PCOLORS[i%6] + '"></span>' +
+      '<span class="pn">' + label + '</span>';
+    const btn = document.createElement('button');
+    btn.className = 'mode ' + (isAI ? 'bot' : 'human');
+    btn.textContent = isAI ? '电脑' : '你';
+    btn.onclick = () => {
+      const nowAI = btn.textContent !== '电脑';
+      btn.textContent = nowAI ? '电脑' : '你';
+      btn.className = 'mode ' + (nowAI ? 'bot' : 'human');
+      row.dataset.ai = nowAI ? '1' : '0';
+    };
+    row.dataset.ai = isAI ? '1' : '0';
+    row.appendChild(btn);
+
+    // 分队模式：给每人指定队伍，点击在 A/B/C/D 之间切换
+    if (isTeam){
+      const t = row.dataset.team || TEAMS[i % 2];
+      row.dataset.team = t;
+      const tb = document.createElement('button');
+      tb.className = 'mode team';
+      tb.textContent = t + ' 队';
+      tb.onclick = () => {
+        const cur = row.dataset.team || 'A';
+        const nx = TEAMS[(TEAMS.indexOf(cur) + 1) % TEAMS.length];
+        row.dataset.team = nx;
+        tb.textContent = nx + ' 队';
+      };
+      row.appendChild(tb);
+    }
+    pconf.appendChild(row);
+  }
+}
+buildSegMode(); buildSeg(); buildPconf(); syncModeUI();
+
+/* 从设置界面读取当前配置 */
+function readCfg(){
+  const maxHp = cfgMode === 'boss'
+    ? hpFor('boss', 0, cfgN, 30)
+    : Math.max(5, parseInt($('inpHP').value, 10) || 30);
+  const players = [...pconf.children].map((r,i)=>({
+    name: (cfgMode === 'boss' && i === 0) ? 'BOSS' : ('玩家 ' + (i+1)),
+    isAI: r.dataset.ai === '1',
+    team: r.dataset.team || TEAMS[i % 2]
+  }));
+  return {n: cfgN, maxHp, mode: cfgMode, players};
+}
+
+/* 规则说明弹窗：对局中随时可查，纯展示不影响回合状态 */
+function openRules(){ $('rulesModal').classList.remove('hide'); }
+function closeRules(){ $('rulesModal').classList.add('hide'); }
+/* 规则弹窗分页：速查表 / 刻印目录 / 完整规则 / 常见问题 */
+document.querySelectorAll('.rtab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const key = tab.dataset.tab;
+    document.querySelectorAll('.rtab').forEach(t => t.classList.toggle('on', t === tab));
+    document.querySelectorAll('.rpane').forEach(pn => pn.classList.toggle('on', pn.dataset.pane === key));
+    const body = $('rulesBody');
+    if (body) body.scrollTop = 0;
+  });
+});
+$('rulesBtn').onclick = openRules;
+$('rulesBtn2').onclick = openRules;
+$('rulesCloseBtn').onclick = closeRules;
+$('rulesModal').onclick = e => { if (e.target === $('rulesModal')) closeRules(); };
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('rulesModal').classList.contains('hide')) closeRules();
+});
+
+$('goBtn').onclick = () => { newGame(readCfg()); };
+$('againBtn').onclick = () => {
+  const cfg = readCfg();
+  cfg.players = G.players.map(p=>({name:p.name, isAI:p.isAI, team:p.team || 'A'}));
+  newGame(cfg);
+};
+$('resetBtn').onclick = () => {
+  $('over').classList.add('hide');
+  $('setup').classList.remove('hide');
+  buildSegMode(); buildSeg(); buildPconf(); syncModeUI();
+};
+
+/* 强制结束：立刻按当前局面结算 */
+$('forceEndBtn').onclick = () => {
+  if (!G || G.phase !== 'play'){ return; }
+  hideChoice();
+  const w = checkWinner();
+  if (w.over){ gameOver(w); return; }
+  // 还没分出胜负：按剩余 HP 比例 + 击杀数选出领先者
+  const alive = G.players.filter(p=>p.alive);
+  if (G.mode === 'team'){
+    const best = [...new Set(alive.map(p=>p.team))]
+      .map(t => ({t: t, mem: alive.filter(p=>p.team===t)}))
+      .sort((a,b)=> b.mem.length - a.mem.length)[0];
+    gameOver({over:true, winner:null, team: best ? best.t : null, forced:true});
+    return;
+  }
+  const best = alive.slice().sort((a,b)=>
+    (b.hp / b.maxHp) - (a.hp / a.maxHp) || b.kills - a.kills || b.hp - a.hp)[0];
+  gameOver({over:true, winner: best || null, team:null, forced:true});
+};
+
+/* 返回主页面：需要连点两次确认，避免误触丢失对局 */
+let backArmed = false, backTimer = null;
+$('backBtn').onclick = () => {
+  const btn = $('backBtn');
+  if (!backArmed && G && G.phase === 'play'){
+    backArmed = true;
+    btn.textContent = '再点一次确认';
+    btn.classList.add('warn');
+    clearTimeout(backTimer);
+    backTimer = setTimeout(()=>{
+      backArmed = false;
+      btn.textContent = '返回主页面';
+      btn.classList.remove('warn');
+    }, 3000);
+    return;
+  }
+  backArmed = false;
+  clearTimeout(backTimer);
+  btn.textContent = '返回主页面';
+  btn.classList.remove('warn');
+  G = null;                       // 清空对局，回到设置界面
+  fx = []; anim = [];
+  hideChoice();
+  $('over').classList.add('hide');
+  $('setup').classList.remove('hide');
+  buildSegMode(); buildSeg(); buildPconf(); syncModeUI();
+};
+
+// 空格 / 数字键快捷行动
+addEventListener('keydown', e => {
+  if (!isHumanTurn()) return;
+  const map = {'1':'move','2':'box','3':'atk','5':'item','e':'enchant'};
+  const a = map[e.key.toLowerCase()];
+  if (a){
+    e.preventDefault();
+    const btn = document.querySelector('[data-a="' + a + '"]');
+    if (btn && !btn.disabled) btn.click();
+  }
+});
+</script>
+</body>
+</html>
