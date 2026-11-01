@@ -426,7 +426,7 @@ input[type=number],input[type=text]{
           <tr><td class="no">⑦</td><td class="nm">蹑景</td><td>声明后主要行动结束追加 1 个额外回合（<b>冷却 2 轮</b>）</td></tr>
           <tr><td class="no">⑧</td><td class="nm">凌波</td><td><b>可重复选</b>，二选一分支 ↓</td></tr>
           <tr class="sub"><td></td><td class="nm">⑧a</td><td><b>+30% 闪避</b>（可叠加，封顶 100%），并可花 1 个主要行动<b>蓄闪</b></td></tr>
-          <tr class="sub"><td></td><td class="nm">⑧b</td><td>闪避成功立即获 <b>N 个额外回合</b>（N = ⑧a 层数，最低 1）</td></tr>
+          <tr class="sub"><td></td><td class="nm">⑧b</td><td>闪避成功立即获 <b>N 个额外回合</b>（N = ⑧a 层数；<b>⑧a 为 0 层时完全无效</b>，无保底）</td></tr>
           <tr><td class="no">⑨</td><td class="nm">裂帛</td><td>所有进攻类能力额外施加 1 层【撕裂】</td></tr>
           <tr><td class="no">⑩</td><td class="nm">御灵</td><td>自身召唤物 HP/ATK +50%、可手动操控、并共享你的刻印</td></tr>
           <tr><td class="no">⑪</td><td class="nm">点染</td><td>攻击命中可自选附加【红】/【蓝】/【黄】之一</td></tr>
@@ -443,6 +443,7 @@ input[type=number],input[type=text]{
           <tr><td>戒律</td><td>被【戒律·禁止使用刻印】时：<b>不能蓄闪</b>，⑧a 的 30% 与蓄闪<b>都不触发</b>；<b>已蓄的闪原样保留</b>，戒律解除后继续有效</td></tr>
           <tr><td>真实伤害</td><td>只对「攻击」生效；【撕裂】、陷阱、坠入虚空<b>不吃闪避</b></td></tr>
           <tr><td>联动</td><td>蓄闪闪避同样算「闪避成功」，⑧b <b>照常触发</b>额外回合</td></tr>
+          <tr><td>⑧b 前提</td><td>⑧b 的 N 取 ⑧a <b>当前层数</b>，没有 ⑧a（0 层）时 ⑧b 不触发、不给任何额外回合；之后再叠 ⑧a，N 同步提高</td></tr>
         </table>
       </div>
 
@@ -504,7 +505,7 @@ input[type=number],input[type=text]{
         <details class="faq"><summary>开箱开出刻印，为什么背包里没有？</summary><p>刻印是<b>永久被动</b>，开出即选立即生效，不占背包、不占回合、死亡不掉落，因此不会出现在「道具」列表里。</p></details>
         <details class="faq"><summary>为什么选完刻印，回合就结束了？</summary><p>开箱本身消耗了主要行动，选刻印的过程才是免费的。只有「回合开始捡拾」这类不消耗行动来源才是选完继续行动。</p></details>
         <details class="faq"><summary>同一个刻印能选两次吗？</summary><p>只有 ③丰穰 与 ⑧凌波（各分支）能叠加。其他刻印已拥有时再选会提示「重复不叠加」；一次性刻印全拿满后，面板只列出可叠加项，不会卡死。</p></details>
-        <details class="faq"><summary>只有 ⑧b 没有 ⑧a，闪避成功还能拿额外回合吗？</summary><p>可以，N 按 <b>1</b> 计算。⑧b 的 N 等于当前 ⑧a 层数，层数为 0 时保底 1。</p></details>
+        <details class="faq"><summary>只有 ⑧b 没有 ⑧a，闪避成功还能拿额外回合吗？</summary><p>不能。⑧b 的 N 就是 ⑧a 的当前层数，<b>⑧a 为 0 层时 ⑧b 完全不生效</b>，一个额外回合都不给（没有保底）。想要追击流，得先叠 ⑧a。</p></details>
         <details class="faq"><summary>蓄闪是不是按了就一定躲得掉？</summary><p>是，下一次受击<b>必定闪避</b>，不看概率。但它只管<b>攻击</b>——【撕裂】、陷阱、坠入虚空照样掉血。</p></details>
         <details class="faq"><summary>蓄闪之后按钮为什么是灰的？</summary><p>两种情况：① 已经蓄着了，不能重复蓄；② 刚消耗完，<b>冷却 1 轮</b>，你下个回合仍然灰，再下一个回合恢复。玩家卡会显示「蓄闪」或「闪冷却」徽标。</p></details>
         <details class="faq"><summary>中了「禁止使用刻印」，已经蓄好的闪会消失吗？</summary><p><b>不会</b>。蓄闪原样保留（不消耗、不解散），但戒律期间不能触发；戒律一解除，下一次受击立刻生效。</p></details>
@@ -593,7 +594,7 @@ const SEALS = [
   {id:'5',  name:'残锋', icon:'\u{1F525}', desc:'HP 每比临界值（5）低 1 点，ATK +1 且 DEF +1'},
   {id:'6',  name:'天工', icon:'\u{1F9F0}', desc:'解锁「建造机械」行动：构建炮台 / 装填弹药 / 自动化 / 手动发射（每次发射都可自选目标）'},
   {id:'7',  name:'蹑景', icon:'\u{26A1}',    desc:'回合开始主动使用：主要行动后追加 1 个额外回合（冷却 2 轮）'},
-  {id:'8',  name:'凌波', icon:'\u{1F4A8}', desc:'可重复选。分支① +30% 闪避（可叠加），并可花 1 个主要行动【蓄闪】：下一次受击必定闪避成功（闪避后蓄闪消耗并冷却 1 回合）；分支② 闪避成功立即获 N 个额外回合（N = 分支①层数）。被戒律禁止使用刻印时不能蓄闪、闪避也不触发，已蓄的闪保留'},
+  {id:'8',  name:'凌波', icon:'\u{1F4A8}', desc:'可重复选。分支① +30% 闪避（可叠加），并可花 1 个主要行动【蓄闪】：下一次受击必定闪避成功（闪避后蓄闪消耗并冷却 1 回合）；分支② 闪避成功立即获 N 个额外回合（N = 分支①层数；没有分支①时分支②无效）。被戒律禁止使用刻印时不能蓄闪、闪避也不触发，已蓄的闪保留'},
   {id:'9',  name:'裂帛', icon:'\u{1FA79}', desc:'所有进攻类能力额外施加 1 层【撕裂】'},
   {id:'10', name:'御灵', icon:'\u{1F451}', desc:'自身召唤物 HP/ATK +50%，可操控其行动，且召唤物共享你的刻印并享受加成'},
   {id:'11', name:'点染', icon:'\u{1F9EA}', desc:'攻击命中可自选附加【红】/【蓝】/【黄】之一'},
@@ -1044,13 +1045,17 @@ function attackResolve(src, tgt, opt){
            (gathered ? '（蓄闪必定闪避）' : ''), 'hl');
     const dpos = islandXY(tgt.island);
     floatText(dpos.x, dpos.y - 30, '闪避', '#38f0d8');
-    // 刻印 8 凌波 分支 2：闪避成功立即获 N 个额外回合（N = 分支①层数）
+    // 刻印 8 凌波 分支 2：闪避成功立即获 N 个额外回合
+    // N = 分支①（8a）层数，没有分支①时分支②完全无效（无保底 N=1）
     const b2 = entSealCount(tgt, '8b');
-    if (b2 > 0){
-      const n = Math.max(1, entSealCount(tgt, '8a'));
+    const nA = entSealCount(tgt, '8a');
+    if (b2 > 0 && nA > 0){
+      const n = nA;
       if (tgt.isSummon){ tgt.extraPending = (tgt.extraPending || 0) + n; }
       else { G.extraLeft += n; }
       addLog(entLabel(tgt) + ' 触发刻印·凌波：立即获得 ' + n + ' 个额外回合！', 'hl');
+    } else if (b2 > 0){
+      addLog(entLabel(tgt) + ' 的刻印·凌波分支② 未生效（需要先拥有分支①）。', 'sys');
     }
     if (gathered) addLog(entLabel(tgt) + ' 的【蓄闪】已消耗，下个自己的回合内不能再次蓄闪。', 'sys');
     return {evaded:true, dmg:0};
@@ -1956,7 +1961,7 @@ function sealDisplayName(id){
 }
 function sealDisplayDesc(id){
   if (id === '8a') return '+30% 闪避（可叠加，当前层数越高闪避越高）';
-  if (id === '8b') return '闪避成功立即获 N 个额外回合（N = 分支①层数）';
+  if (id === '8b') return '闪避成功立即获 N 个额外回合（N = 分支①层数；没有分支①时无效）';
   const s = SEAL_BY_ID[id];
   return s ? s.desc : '';
 }
@@ -2006,10 +2011,14 @@ function showSealChoice(p, done){
   showChoice('刻印 · 自选一项永久强化（13 选 1 · 立即生效 · 不占回合）', opts);
 }
 function pickSealBranch(p, done){
-  if (p.isAI){ applySeal(p, Math.random() < .6 ? '8a' : '8b'); if (done) done(); return; }
+  // 分支② 依赖分支①：没有 8a 时选 8b 等于白选，AI 必选 8a
+  if (p.isAI){ applySeal(p, aiPickSealBranch(p), {silent:true}); if (done) done(); return; }
+  const a = sealCount(p, '8a');
   showChoice('刻印·凌波：选择分支', [
-    {label:'分支① · 闪避 +30%', sub:'可叠加（当前 ' + sealCount(p,'8a') + ' 层 → 闪避 ' + Math.round(Math.min(1,0.3*(sealCount(p,'8a')+1))*100) + '%）', run:()=>applySeal(p,'8a',{done:done})},
-    {label:'分支② · 闪避成功后获 N 个额外回合', sub:'N = 分支①当前层数（' + sealCount(p,'8a') + '）', run:()=>applySeal(p,'8b',{done:done})},
+    {label:'分支① · 闪避 +30%', sub:'可叠加（当前 ' + a + ' 层 → 闪避 ' + Math.round(Math.min(1,0.3*(a+1))*100) + '%）', run:()=>applySeal(p,'8a',{done:done})},
+    {label:'分支② · 闪避成功后获 N 个额外回合', sub: a > 0
+        ? ('N = 分支①当前层数（' + a + '）· 之后再叠 ① 会同步提升 N')
+        : ('⚠ 需要分支①：当前 0 层，选了也不会生效'), run:()=>applySeal(p,'8b',{done:done})},
   ]);
 }
 /* opt.done  → 还有后续选择，不收尾；opt.silent → AI 批量，由 grantSeal 收尾 */
@@ -2027,10 +2036,36 @@ function applySeal(p, id, opt){
   if (opt.silent) return;
   finishTurn(p);
 }
+/* AI 选刻印：按当前局势给每项打分，取最高；不可叠加的已有项自动排除 */
 function aiPickSeal(p){
-  const order = ['9','1','12','10','7','13','3','11','5','2','6','4','8a'];
-  for (const id of order) if (!(sealCount(p, id) > 0)) return id;
-  return '3';
+  const owned = id => sealCount(p, id) > 0;
+  const canTake = id => !owned(id) || canStackSeal(id);
+  const sc = [];
+  const add = (id, s) => { if (s > 0 && canTake(id)) sc.push({id:id, s:s}); };
+  const gear = p.bag.filter(it => it.id === 'armor' || (ITEMS[it.id] && ITEMS[it.id].type === 'weapon')).length;
+
+  add('5',  p.maxHp <= 6 ? 130 : 45);                                  // 残锋：血上限越低越逆天
+  add('9',  72);                                                       // 裂帛：稳定附加撕裂
+  add('1',  62);                                                       // 劫雷：暴击期望高
+  add('13', gear >= 2 ? 78 : 28);                                      // 盈箧：装备够多才值
+  add('12', p.maxHp >= 12 ? 58 : 22);                                  // 尘梦：血厚才扛得住叠层
+  add('6',  G.round <= 3 ? 62 : 32);                                   // 天工：越早建台越赚
+  add('10', (summonsOf(p).length || hasItem(p, 'summon')) ? 68 : 16);  // 御灵：有召唤才有用
+  add('2',  G.mode === 'ffa' ? 0 : 74);                                // 同契：混战无效
+  add('7',  48);                                                       // 蹑景：多打一次
+  add('4',  42);                                                       // 敕禁：掐人一手
+  add('11', 38);                                                       // 点染：附加状态
+  add('8a', sealCount(p, '8a') > 0 ? 54 : 40);                         // 凌波①：越叠越能闪
+  add('8b', sealCount(p, '8a') >= 2 ? 58 : 0);                         // 凌波②：没①就是废的
+  add('3',  26);                                                       // 丰穰：可叠加，兜底
+
+  if (!sc.length) return '3';
+  sc.sort((a,b) => b.s - a.s);
+  return sc[0].id;
+}
+/* AI 选凌波分支：⑧b 的 N 取决于 ⑧a 层数，先攒到 2 层再转 ⑧b */
+function aiPickSealBranch(p){
+  return sealCount(p, '8a') >= 2 ? '8b' : '8a';
 }
 /* 召唤物道具：自选一种生物 */
 function showSummonChoice(p){
@@ -2100,6 +2135,121 @@ function pickEnchant(p, targetUid){
 }
 
 /* ---------------- AI ---------------- */
+/* =========================================================
+   AI 谋略层：把「能打赢吗 / 会被打死吗」量化成评分
+   ========================================================= */
+/* 实体的有效射程（蓄力完成的弓 / 三叉戟按无限算；游侠本就无限） */
+function aiRngOf(e){
+  if (e.isSummon) return SUMMON_TYPES[e.type].rng === Infinity ? 99 : (SUMMON_TYPES[e.type].rng || 0);
+  const w = e.weapon;
+  if (e.charging && w){
+    const id = itemIdOf(e, w);
+    if (id === 'bow' || id === 'trident') return 99;   // 下回合可无限射程释放
+  }
+  return getRng(e, w, 'normal');
+}
+/* e 打在 me 身上的期望伤害：够不到 0；差一步够到算半威胁；劫雷按暴击期望放大 */
+function aiHitOf(e, me){
+  if (!e || !e.alive) return 0;
+  if (hasBan(e, 'atk') || e.st.blue) return 0;          // 被禁攻击 /【蓝】
+  if (e.isSummon && e.resting) return 0;                // 巨兽命中后休息
+  const d = islandDist(e.island, me.island);
+  const r = aiRngOf(e);
+  const reach = d <= r ? 1 : (d - r <= 1 ? 0.5 : 0);    // 已经够得到 / 再挪一步就够得到
+  if (!reach) return 0;
+  const atk = e.isSummon ? summonAtk(e) : getAtk(e, e.weapon);
+  let dmg = Math.max(0, atk - getDef(me));
+  if (!e.isSummon && hasSeal(e, '1')) dmg *= 3;         // 劫雷暴击期望
+  return dmg * reach;
+}
+/* me 若站在 island，一回合内大概会挨多少伤害 */
+function aiThreatAt(me, island){
+  const bak = me.island; me.island = island;
+  let s = 0;
+  foesOf(me).forEach(t => { s += aiHitOf(t, me); });
+  me.island = bak;
+  return s;
+}
+/* 我（用武器 w）站在 island 时能否打到 t */
+function aiCanHit(p, w, t, island){
+  return islandDist(island, t.island) <= getRng(p, w, 'normal');
+}
+/* 我对 t 的单次伤害 */
+function aiDmgTo(p, w, t){ return Math.max(0, getAtk(p, w) - getDef(t)); }
+/* 攻击目标评分：能秒 > 伤害高 > 残血 > BOSS；打不动返回 -1 */
+function aiAtkScore(p, w, t){
+  const dmg = aiDmgTo(p, w, t);
+  if (dmg <= 0) return -1;
+  let s = dmg * 10;
+  if (dmg >= t.hp) s += 1000;                            // 一击必杀，最优先
+  s += (1 - t.hp / t.maxHp) * 40;                        // 残血优先收人头
+  if (G.mode === 'boss' && t.isBoss) s += 80;            // BOSS 战集火 BOSS
+  if (t.isSummon) s -= 40;                               // 召唤物排后面（能秒除外）
+  const dr = dodgeRate(t);
+  if (dr > 0) s *= (1 - dr * 0.6);                       // 会闪避的目标打折扣
+  return s;
+}
+/* 站点评分：进攻收益 − 受威胁 − 陷阱 + 箱子资源 − 离敌人的距离
+   进攻收益分两档：现在就能打到（全额）/ 再走一步就能打到（半额）——这样 AI 会主动逼近，而不是原地发呆 */
+function aiIslandScore(p, island){
+  if (G.traps[island] != null && G.traps[island] !== p.i) return -1e6;   // 别人的陷阱，不去
+  const w = p.weapon || null;
+  const rng = getRng(p, w, 'normal');
+  let offense = 0, minD = 99;
+  foesOf(p).forEach(t => {
+    const d = islandDist(island, t.island);
+    if (d < minD) minD = d;
+    const v = aiAtkScore(p, w, t);
+    if (v <= 0) return;
+    if (d <= rng) offense += v;                 // 站这儿就能打
+    else if (d - rng <= 1) offense += v * 0.5;  // 再挪一步就能打
+  });
+  if (p.hp / p.maxHp < 0.5) offense *= 0.5;     // 残血时进攻欲望减半，保命优先
+  let s = offense;
+  const threat = aiThreatAt(p, island);
+  s -= threat * (p.hp / p.maxHp < 0.5 ? 14 : 6);         // 残血时更怕挨打
+  if (minD < 99) s -= minD * 5;                          // 主动往人堆里靠
+  const boxes = (island === 0) ? 99 : (G.boxes[island-1] || 0);
+  const needGear = !p.weapon || foesOf(p).every(t => aiDmgTo(p, w, t) <= 0);
+  if (boxes > 0) s += needGear ? 18 : 5;
+  return s;
+}
+/* 刻印 11 点染：按目标挑附加效果 */
+function aiHitEffect(p, t){
+  if (!t) return 'red';
+  if (t.hp <= aiDmgTo(p, p.weapon, t) + 2) return 'red';   // 快打死了 → 撕裂补持续伤害
+  const atk = t.isSummon ? summonAtk(t) : getAtk(t, t.weapon);
+  if (atk >= 8) return 'blue';                              // 高输出 → 禁它下次攻击
+  return 'red';
+}
+/* 回合外的免费增强：附魔不占主要行动，有就先用掉 */
+function aiAutoEnchant(p){
+  if (p.enchantUsed || !hasItem(p, 'enchant') || hasBan(p, 'seal')) return;
+  const ws = weaponsOf(p);
+  const best = ws.length ? ws.reduce((a,b)=> getAtk(p,b.uid) >= getAtk(p,a.uid) ? b : a) : null;
+  if (best && !hasEnch(p, best.uid, 'sharp')){ doEnchant(p, best.uid, 'sharp'); return; }
+  const armors = p.bag.filter(it => it.id === 'armor');
+  const ar = armors.find(it => !hasEnch(p, it.uid, 'tough'));
+  if (ar){ doEnchant(p, ar.uid, 'tough'); return; }
+  if (best && !hasEnch(p, best.uid, 'light')) doEnchant(p, best.uid, 'light');
+}
+/* 传送器：一步到位（逃生 / 追击），用掉并结束主要行动 */
+function aiTeleport(p, dest){
+  const uid = itemUidOf(p, 'teleport');
+  if (uid == null) return false;
+  removeUid(p, uid);
+  const from = p.island;
+  p.island = dest;
+  p.movedThisTurn = true;
+  breakCharge(p, ' 传送了');
+  addLog(p.name + ' 使用传送器：' + islandName(from) + ' → ' + islandName(dest), 'hl');
+  const pos = islandXY(dest);
+  floatText(pos.x, pos.y - 30, '传送', '#38f0d8');
+  sparks(pos.x, pos.y, '#38f0d8', 18);
+  pickup(p); checkRetrieve(p);
+  finishTurn(p);
+  return true;
+}
 /* AI 的机械策略：建台 → 装填 → 开启自动化（配置齐全后返回 false，走正常行动） */
 function aiMachineAct(p){
   const ms = machinesOf(p);
@@ -2125,96 +2275,151 @@ function aiMachineAct(p){
 function aiAct(p){
   if (!G || G.phase !== 'play' || !p.alive) return;
   const enemies = foesOf(p);
-  const weakest = () => enemies.reduce((a,b)=> a.hp <= b.hp ? a : b);
   const wid = uid => itemIdOf(p, uid);      // 实例编号 → 物品类型
-  if (hasSeal(p,'11') && !p.hitPick) p.hitPick = 'red';
 
-  // 0. 刻印 7（蹑景）：主要回合声明，主要行动后多打一次
+  // 0. 回合外的免费增强：附魔不占主要行动
+  aiAutoEnchant(p);
+
+  // 1. 装备 ATK 最高的武器（后面的所有评估都基于它）
+  const ws = weaponsOf(p);
+  if (ws.length) p.weapon = ws.reduce((a,b)=> getAtk(p,b.uid) > getAtk(p,a.uid) ? b : a).uid;
+  const W = p.weapon || null;
+
+  // 被【蓝】/ 戒律禁止攻击时，AI 不再选择攻击类行动
+  const canAtk = !hasBan(p,'atk') && !p.st.blue;
+
+  // 2. 局势评估：我站在这里有多危险、谁能被我打到、打谁最划算
+  const threatHere = aiThreatAt(p, p.island);
+  const lethal = threatHere >= p.hp;                          // 站着不动可能直接被打死
+  const bestTarget = (island) => {
+    let best = null, bs = 0;
+    enemies.forEach(t => {
+      if (island != null && !aiCanHit(p, W, t, island)) return;
+      const s = aiAtkScore(p, W, t);
+      if (s > bs){ bs = s; best = t; }
+    });
+    return bs > 0 ? best : null;
+  };
+  const tgtHere = canAtk ? bestTarget(p.island) : null;
+
+  // 3. 刻印 7（蹑景）：确认这一回合真能打出伤害才声明，别白给
   if (G.sub === 'main' && hasSeal(p,'7') && !p.extraUsed &&
-      (p.turnSeq - p.seal7cd) > 2 && enemies.length){
+      (p.turnSeq - p.seal7cd) > 2 && (tgtHere || (canAtk && p.charging && enemies.length))){
     p.seal7cd = p.turnSeq; p.extraUsed = true; G.extraLeft += 1;
     addLog(p.name + ' 声明使用刻印·蹑景：主要行动后获得 1 个额外回合。', 'hl');
   }
-  // 0b. 刻印 4（敕禁）：自由行动，禁掉最强敌人的攻击
+  // 4. 刻印 4（敕禁）：自由行动，优先掐掉对我威胁最大的那个
   if (hasSeal(p,'4') && !p.freeActUsed && enemies.length){
-    const t = enemies.reduce((a,b)=> a.hp >= b.hp ? a : b);
-    if (addPrecept(t, 'atk', p)) p.freeActUsed = true;
+    const order = enemies.slice().sort((a,b)=> aiHitOf(b, p) - aiHitOf(a, p));
+    for (const t of order){
+      if (aiHitOf(t, p) <= 0) break;
+      if (addPrecept(t, 'atk', p)){ p.freeActUsed = true; break; }
+    }
   }
-  // 0c. 刻印 6（天工）：建台 → 装填 → 自动化
+  // 5. 刻印 6（天工）：建台 → 装填 → 自动化
   if (hasSeal(p,'6') && aiMachineAct(p)) return;
-  // 0d. 有召唤物道具 → 优先用掉（刻印不入背包，开箱 / 钓鱼即得即选）
+  // 6. 有召唤物道具 → 局势不危急时用掉（危急时先保命）
   const sumIt = p.bag.find(it => it.id === 'summon');
-  if (sumIt && enemies.length){ useConsume(p, sumIt.uid); return; }
+  if (sumIt && enemies.length && !lethal){ useConsume(p, sumIt.uid); return; }
 
-  // 1. 残血优先喝药（优先喝掉附了「回响」的那一件）
-  if (p.hp <= p.maxHp * 0.4){
-    const pots = p.bag.filter(it => it.id === 'potion');
-    if (pots.length){
-      const best = pots.find(it => hasEnch(p, it.uid, 'echo')) || pots[0];
+  // 7. 保命：会被一回合打死，或者血线已经很低
+  const pots = () => p.bag.filter(it => it.id === 'potion');
+  if (lethal || p.hp <= p.maxHp * 0.35){
+    // 7a. 喝药最省事：优先喝附了「回响」的那瓶
+    const ps = pots();
+    if (ps.length && (lethal || p.hp <= p.maxHp * 0.35)){
+      const best = ps.find(it => hasEnch(p, it.uid, 'echo')) || ps[0];
       useConsume(p, best.uid);
-      return;                     // useConsume -> finishTurn 会交接
+      return;                       // useConsume -> finishTurn 会交接
+    }
+    // 7b. 刻印 8a 蓄闪：没药可喝、又确实有人够得着我时才蓄，别空蓄
+    if (canChargeDodge(p) && threatHere > 0){ actDodgeCharge(p); return; }
+    // 7c. 传送器 / 移动到威胁更低的地方
+    const refuge = aiBestIsland(p, true);
+    if (refuge != null && aiThreatAt(p, refuge) < threatHere){
+      if (itemUidOf(p, 'teleport') != null && aiTeleport(p, refuge)) return;
+      if (!hasBan(p,'move') && !p.st.yellow && islandDist(p.island, refuge) === 1){
+        doMove(p, refuge); finishTurn(p, 150); return;
+      }
     }
   }
 
-  // 1b. 刻印 8 凌波 · 蓄闪保命：没药可喝时，敌人够得着自己就蓄一发
-  if (canChargeDodge(p) && enemies.length){
-    const threat = enemies.some(t => islandDist(p.island, t.island) <= 1);
-    if (threat && (p.hp <= p.maxHp * 0.5 || Math.random() < 0.25)){ actDodgeCharge(p); return; }
-  }
-
-  // 2. 装备 ATK 最高的武器
-  const ws = weaponsOf(p);
-  if (ws.length) p.weapon = ws.reduce((a,b)=> getAtk(p,b.uid) > getAtk(p,a.uid) ? b : a).uid;
-
-  // 被【蓝】/戒律禁止攻击时，AI 不再选择攻击类行动
-  const canAtk = !hasBan(p,'atk') && !p.st.blue;
-
-  // 3. 蓄力完成 → 释放（弓箭射程无限；三叉戟投掷后需捡回）
+  // 8. 蓄力完成 → 挑最划算的目标释放（弓箭射程无限；三叉戟投掷后需捡回）
   if (p.charging && enemies.length && canAtk){
     const cid = wid(p.charging);
-    if (cid === 'bow'){     doAttack(p, p.charging, weakest(), 'release'); return; }
-    if (cid === 'trident'){ doAttack(p, p.charging, weakest(), 'throw');   return; }
-  }
-
-  // 4. 近战射程内有敌人且打得动 → 开打
-  if (enemies.length && canAtk){
-    const w = p.weapon || null;
-    const cand = enemies.filter(t => inRange(p, w, t, 'normal'));
-    if (cand.length){
-      const t = cand.reduce((a,b)=> a.hp <= b.hp ? a : b);
-      // 弓箭必须先蓄力
-      if (wid(w) === 'bow'){ beginCharge(p, w); return; }
-      // 三叉戟：近战射程（含轻盈 +1）够不到才蓄力投掷
-      if (wid(w) === 'trident' && !inRange(p, w, t, 'normal')){ beginCharge(p, w); return; }
-      if (getAtk(p, w) - getDef(t) > 0){ doAttack(p, w, t, 'normal'); return; }
-      // 打不动（ATK ≤ DEF）：别空挥，交给下面开箱找武器
+    const mode = cid === 'bow' ? 'release' : (cid === 'trident' ? 'throw' : null);
+    if (mode){
+      // 蓄力释放是无限射程，全场的敌人都能选
+      let best = null, bs = -1;
+      enemies.forEach(t => { const s = aiAtkScore(p, p.charging, t); if (s > bs){ bs = s; best = t; } });
+      if (best){
+        if (hasSeal(p,'11')) p.hitPick = aiHitEffect(p, best);
+        doAttack(p, p.charging, best, mode);
+        return;
+      }
     }
   }
 
-  // 4b. 手里有弓箭/三叉戟但近战够不着人 → 先蓄力，下回合远程打
-  if (enemies.length && canAtk){
-    const id = wid(p.weapon);
-    if (id === 'bow' || id === 'trident'){ beginCharge(p, p.weapon); return; }
+  // 9. 打得到的、打得动的 → 直接开打（能秒的优先）
+  if (canAtk && tgtHere){
+    if (hasSeal(p,'11')) p.hitPick = aiHitEffect(p, tgtHere);
+    // 弓箭必须先蓄力；三叉戟近战够不到才蓄力投掷
+    if (wid(W) === 'bow'){ beginCharge(p, W); return; }
+    doAttack(p, W, tgtHere, 'normal');
+    return;
   }
 
-  // 5. 所在岛还有箱子 → 开箱（AI 自动二选一）
-  //    打不动任何人的时候必定开箱找武器，否则会陷入互相免疫的死循环
-  const hasBox = p.island === 0 || G.boxes[p.island-1] > 0;
-  const hopeless = enemies.length && enemies.every(t => getAtk(p, p.weapon) - getDef(t) <= 0);
-  if (hasBox && !hasBan(p,'box') && (hopeless || !p.weapon || Math.random() < .85)){
+  // 10. 手里是弓 / 三叉戟但够不着人 → 蓄力，下回合远程点名
+  //     但别在「站着就会被打死」时空蓄 —— 那回合先跑
+  if (canAtk && enemies.length && !lethal){
+    const id = wid(W);
+    if (id === 'bow' || id === 'trident'){ beginCharge(p, W); return; }
+  }
+
+  // 11. 开箱：打不动任何人时必开（否则双方互相免疫，局面僵死）；否则看局势
+  const hasBox = p.island === 0 || (G.boxes[p.island-1] || 0) > 0;
+  const hopeless = enemies.length && enemies.every(t => aiDmgTo(p, W, t) <= 0);
+  const wantGear = !p.weapon || hopeless;
+  const safeish = threatHere <= p.hp * 0.5;
+  if (hasBox && !hasBan(p,'box') && (wantGear || (safeish && !tgtHere && Math.random() < .7))){
     const r = doOpenBox(p, true);
-    if (r !== 'wait') return;     // afterItem -> finishTurn 会交接
+    if (r !== 'wait') return;       // afterItem -> finishTurn 会交接
   }
 
-  // 6. 兜底：移动去找人，否则去中心岛（被禁移动则原地结束）
-  if (hasBan(p,'move') || p.st.yellow > 0){ addLog(p.name + ' 被禁止移动（戒律 /【黄】），原地结束回合。'); finishTurn(p); return; }
-  const opts = canMoveTo(p);
-  let dest = 0;
-  const reachable = enemies.filter(t => islandDist(p.island, t.island) === 1);
-  if (reachable.length && Math.random() < .8) dest = reachable[0].island;
-  else if (p.island === 0) dest = pick(opts);
+  // 12. 走位：按「进攻 − 挨打 + 资源」挑落脚点；被禁移动 /【黄】就原地结束
+  if (hasBan(p,'move') || p.st.yellow > 0){
+    addLog(p.name + ' 被禁止移动（戒律 /【黄】），原地结束回合。');
+    finishTurn(p); return;
+  }
+  const dest = aiBestIsland(p, false);
+  if (dest == null || dest === p.island){
+    // 原地就是最优：无箱可开、无路可走，直接结束
+    if (hasBox && !hasBan(p,'box')){ const r = doOpenBox(p, true); if (r !== 'wait') return; }
+    addLog(p.name + ' 按兵不动，结束回合。');
+    finishTurn(p); return;
+  }
+  // 距离 2（两外岛之间）且局势紧急 → 传送器一步到位
+  if (islandDist(p.island, dest) > 1 && itemUidOf(p, 'teleport') != null &&
+      (lethal || (tgtHere == null && aiThreatAt(p, p.island) > 0))){
+    if (aiTeleport(p, dest)) return;
+  }
   doMove(p, dest);
   finishTurn(p, 150);
+}
+/* 选址：候选只能是从当前岛一步能到的岛（外加传送时的全图） */
+function aiBestIsland(p, anyIsland){
+  const cands = anyIsland
+    ? [0].concat(G.players.map((_,i)=>i+1))
+    : canMoveTo(p);
+  if (!cands.length) return null;
+  let best = null, bs = -Infinity;
+  cands.forEach(i => {
+    const s = aiIslandScore(p, i);
+    if (s > bs){ bs = s; best = i; }
+  });
+  // 评分不比原地好就别动（避免来回横跳）
+  if (!anyIsland && best != null && bs <= aiIslandScore(p, p.island)) return p.island;
+  return best;
 }
 
 /* ---------------- 交互 ---------------- */
