@@ -748,7 +748,8 @@ function newGame(cfg){
     machines: [],                       // 刻印 6 天工的炮台
     phase: 'play',
     sub: 'main',                        // main / summon / summonExtra / extra
-    extraLeft: 0,                       // 玩家剩余额外回合数
+    extraLeft: 0,                       // 当前行动者剩余额外回合数
+    extraBank: [],                      // 玩家索引 -> 待兑现的额外回合（⑧b 闪避奖励）
     summonExtraQueue: [],               // 本轮待行动的「召唤物额外回合」
     log: [],
     animating: false,                   // 飞行物动画中，锁定输入
@@ -900,8 +901,22 @@ function entSealCount(e, id){
   return sealCount(e, id);
 }
 function sealListOf(p){
-  return SEALS.filter(s => sealCount(p, s.id) > 0)
-    .map(s => s.name + (sealCount(p,s.id) > 1 ? '×' + sealCount(p,s.id) : ''));
+  // ⑧凌波实际存在 8a / 8b 两个键，SEALS 里只有占位的 '8'，需要单独拼一条并插回原位
+  const a = sealCount(p, '8a'), b = sealCount(p, '8b');
+  let lingbo = null;
+  if (a > 0 || b > 0){
+    const parts = [];
+    if (a > 0) parts.push('①' + (a > 1 ? '×' + a : ''));
+    if (b > 0) parts.push('②');
+    lingbo = '凌波 ' + parts.join('+');
+  }
+  const out = [];
+  SEALS.forEach(s => {
+    if (s.id === '8'){ if (lingbo) out.push(lingbo); return; }   // 凌波按 ⑧ 的位置插入
+    const n = sealCount(p, s.id);
+    if (n > 0) out.push(s.name + (n > 1 ? '×' + n : ''));
+  });
+  return out;
 }
 /* 刻印 5 残锋：HP 每比临界值低 1 → ATK+1、DEF+1 */
 function seal5Bonus(e){
@@ -1023,6 +1038,15 @@ function dealDamage(tgt, raw, opt){
   return dmg;
 }
 
+/* 把 n 个额外回合记到「某个玩家」名下。
+   不能直接改 G.extraLeft —— 那个计数器会被「当前行动者」消耗，
+   闪避往往发生在别人的回合，直接加就会把回合送给攻击方。 */
+function grantExtraTurn(p, n){
+  if (!p || p.isSummon || !p.alive) return;
+  if (!G.extraBank) G.extraBank = [];
+  G.extraBank[p.i] = (G.extraBank[p.i] || 0) + n;
+}
+
 /* 一次「攻击」结算：src 可以是玩家或召唤物 */
 function attackResolve(src, tgt, opt){
   opt = opt || {};
@@ -1051,8 +1075,13 @@ function attackResolve(src, tgt, opt){
     const nA = entSealCount(tgt, '8a');
     if (b2 > 0 && nA > 0){
       const n = nA;
-      if (tgt.isSummon){ tgt.extraPending = (tgt.extraPending || 0) + n; }
-      else { G.extraLeft += n; }
+      if (tgt.isSummon){
+        tgt.extraPending = (tgt.extraPending || 0) + n;
+      } else {
+        // 回合属于「闪避者」本人：记到他的名下，等他自己的回合结束时才兑现
+        // （以前直接加 G.extraLeft，会把这个回合白送给当时正在行动的攻击方）
+        grantExtraTurn(tgt, n);
+      }
       addLog(entLabel(tgt) + ' 触发刻印·凌波：立即获得 ' + n + ' 个额外回合！', 'hl');
     } else if (b2 > 0){
       addLog(entLabel(tgt) + ' 的刻印·凌波分支② 未生效（需要先拥有分支①）。', 'sys');
@@ -1255,6 +1284,10 @@ function afterSummonPhase(p){
 
 function runPlayerExtra(p){
   if (G.phase !== 'play') return;
+  // ⑧b 凌波等「被别人触发、但回合归我」的额外回合：轮到我时先并入。
+  // 阵亡者不兑现，额度原样留在名下，绝不能被下面的清零顺手抹掉或转给别人。
+  const owed = (G.extraBank && G.extraBank[p.i]) || 0;
+  if (owed > 0 && p.alive){ G.extraBank[p.i] = 0; G.extraLeft += owed; }
   if (G.extraLeft > 0 && p.alive){
     G.extraLeft--;
     G.sub = 'extra';
@@ -1593,6 +1626,8 @@ function kill(victim, killer, toVoid){
   victim.bag = [];
   victim.weapon = null;
   victim.charging = null;
+  // 人已阵亡，名下待兑现的额外回合（⑧b 闪避奖励）一并作废，避免无限期挂着
+  if (G.extraBank) G.extraBank[victim.i] = 0;
   if (toVoid){
     // 人没了，本人专属的东西一并消失：投在外的三叉戟（别人也捡不回）、布置的神器陷阱
     for (let i = G.thrown.length-1; i >= 0; i--) if (G.thrown[i].owner === victim.i) G.thrown.splice(i,1);
@@ -1685,16 +1720,20 @@ function aiSummonWantsSeal7(s, owner){
   const T = SUMMON_TYPES[s.type];
   return foesOfEnt(s).some(t => islandDist(s.island, t.island) <= T.rng);
 }
+/* 休息硬直：消耗掉这次休息并把本回合作废。返回 true 表示这一回合被休息吃掉了 */
+function consumeResting(s){
+  if (!s.resting) return false;
+  s.resting = false;
+  s.useSeal7 = false;
+  addLog(entLabel(s) + ' 正在休息（命中后的硬直），本回合无法行动。');
+  return true;
+}
 /* 单次行动：能打到就打，打不到就追（1 步） */
 function summonDoAction(s, owner, done){
   done = done || function(){};
   if (!s.alive){ done(); return; }
   const T = SUMMON_TYPES[s.type];
-  if (s.resting){
-    addLog(entLabel(s) + ' 正在休息（命中后的硬直），无法行动。');
-    s.resting = false;
-    done(); return;
-  }
+  if (consumeResting(s)){ done(); return; }
   if (hasBan(s,'atk') && hasBan(s,'move')){
     addLog(entLabel(s) + ' 被【戒律】完全限制，无法行动。'); done(); return;
   }
@@ -1746,10 +1785,18 @@ function runOneSummon(s, owner, done){
 /* 人类操控面板（刻印 10 御灵） */
 function summonPanel(s, owner, done){
   const T = SUMMON_TYPES[s.type];
+  // 休息硬直：这一回合本来就不能动，别给出能动的选项，直接结算掉
+  if (s.resting){
+    showChoice('召唤物行动 · ' + s.name + '（HP ' + Math.max(0,s.hp) + '/' + s.maxHp + ' · 休息中）',
+      [{label:'确认（本回合休息）', sub:'上一击命中后进入硬直，这一回合无法行动', run:()=>{
+        consumeResting(s); done();
+      }}],
+      () => { consumeResting(s); done(); });    // 取消也一样：休息照常消耗
+    return;
+  }
   const fxName = HITFX[s.hitEffect || 'red'].name;
   const title = '召唤物行动 · ' + s.name + '（HP ' + Math.max(0,s.hp) + '/' + s.maxHp +
-                ' · ATK ' + summonAtk(s) + ' · 射程 ' + (T.rng === Infinity ? '∞' : T.rng) +
-                (s.resting ? ' · 休息中' : '') + '）';
+                ' · ATK ' + summonAtk(s) + ' · 射程 ' + (T.rng === Infinity ? '∞' : T.rng) + '）';
   const opts = [];
   opts.push({label:'自动行动', sub:'按索敌逻辑执行（推荐）', run:()=>{ summonHumanGo(s, owner, null, done); }});
   const foes = foesOfEnt(s).filter(t => islandDist(s.island, t.island) <= T.rng);
@@ -1774,6 +1821,9 @@ function summonPanel(s, owner, done){
   showChoice(title, opts, () => summonHumanGo(s, owner, {act:'idle'}, done));   // 取消＝待机，流程照常推进
 }
 function summonHumanGo(s, owner, choice, done){
+  done = done || function(){};
+  // 兜底：休息硬直期间无论选了什么都不能落地（面板已屏蔽，这里防止其他入口绕过）
+  if (consumeResting(s)){ done(); return; }
   if (choice && choice.act === 'idle'){ addLog(entLabel(s) + ' 原地待命。'); }
   else if (choice && choice.act === 'move'){ s.island = choice.island; addLog(entLabel(s) + ' 移动到 ' + islandName(s.island) + '。'); }
   else if (choice && choice.act === 'atk'){
