@@ -292,6 +292,7 @@ input[type=number],input[type=text]{
           <button class="abtn" data-a="dodge">蓄闪<small>刻印 8 · 必定闪避</small></button>
           <button class="abtn" data-a="precept">敕禁<small>刻印 4 · 自由行动</small></button>
           <button class="abtn" data-a="machine">天工<small>刻印 6 · 建造/发射</small></button>
+          <button class="abtn" data-a="pass">结束回合<small>按兵不动，什么都不做</small></button>
         </div>
         <div id="choice">
           <div class="ctitle" id="cTitle"></div>
@@ -2550,8 +2551,17 @@ document.querySelectorAll('.abtn').forEach(btn => {
     else if (a === 'dodge') actDodgeCharge(p);
     else if (a === 'precept') actPrecept(p);
     else if (a === 'machine') actMachine(p);
+    else if (a === 'pass') actPass(p);
   });
 });
+
+/* 按兵不动：不消耗任何东西，直接结束本回合（AI 的「按兵不动」由 aiAct 自行判定） */
+function actPass(p){
+  if (!p || !p.alive) return;
+  // 主要行动回合才有意义；额外回合里也可以直接放弃
+  addLog(p.name + ' 按兵不动，结束回合。');
+  finishTurn(p);
+}
 
 /* =========================================================
    刻印 8 凌波 · 蓄闪（消耗主要行动，下一次受击必定闪避）
@@ -3444,7 +3454,10 @@ $('backBtn').onclick = () => {
 // 空格 / 数字键快捷行动
 addEventListener('keydown', e => {
   if (!isHumanTurn()) return;
-  const map = {'1':'move','2':'box','3':'atk','5':'item','e':'enchant'};
+  // 焦点在按钮上时，空格/回车本来是「激活该按钮」，别再叠一层快捷键免得一次点两个
+  const tag = (e.target && e.target.tagName) || '';
+  if ((e.key === ' ' || e.key === 'Enter') && (tag === 'BUTTON' || tag === 'INPUT')) return;
+  const map = {'1':'move','2':'box','3':'atk','5':'item','e':'enchant',' ':'pass','0':'pass'};
   const a = map[e.key.toLowerCase()];
   if (a){
     e.preventDefault();
