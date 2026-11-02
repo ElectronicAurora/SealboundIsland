@@ -66,8 +66,11 @@ canvas{display:block;width:100%;height:auto}
 .pcard .tag.you{background:var(--cyan)}
 .pcard .tag.ai{background:var(--violet);color:#fff}
 .pcard .hpv{margin-left:auto;font-size:11.5px;color:var(--dim);font-variant-numeric:tabular-nums}
-.bar{height:6px;border-radius:4px;background:rgba(255,255,255,.09);overflow:hidden}
+.bar{height:6px;border-radius:4px;background:rgba(255,255,255,.09);overflow:hidden;position:relative}
 .bar i{display:block;height:100%;border-radius:4px;transition:width .35s}
+.bar i.shbar{position:absolute;top:0;background:rgba(120,180,255,.85);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+.pcard .hpv .shv{color:#8fc0ff;font-weight:700}
+.stats b.shb{color:#8fc0ff}
 .stats{display:flex;gap:10px;margin-top:6px;font-size:10.5px;color:var(--dim);font-variant-numeric:tabular-nums}
 .stats b{color:#c3d2f0;font-weight:600}
 .bag{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
@@ -462,7 +465,7 @@ input[type=number],input[type=text]{
 
         <div class="rsec">战斗</div>
         <p>伤害 = ATK − DEF，低于 0 无伤害（仍记 1 次【受击】）。每次被击打记 1 次受击。攻击目标可为玩家或召唤物。</p>
-        <p><b>武器</b>：剑 +7；击退棒 ATK 0 但命中后击退 1 格；钓竿 ATK 0，射程 +1、命中后拉近 1 格，并可当道具钓鱼；弓箭 +8，蓄力 1 回合后射程 ∞；三叉戟 +9，近战无需蓄力，投掷需蓄力 1 回合、射程 ∞，投出后<b>只能本人</b>到落点岛捡回。</p>
+        <p><b>武器</b>：剑 +7；击退棒 ATK 0 但命中后击退 1 格；钓竿 ATK 0，射程 +1、命中后拉近 1 格，并可当道具钓鱼；弓箭 +8，蓄力 1 回合后射程 ∞；三叉戟 +9，近战无需蓄力，投掷需蓄力 1 回合、射程 ∞，投出后<b>只能本人</b>到落点岛捡回；遗器斩月 +11，<b>近战无需蓄力</b>，也可蓄力 1 回合后远程释放（射程 ∞，无需捡回）。弓箭没有近战，必须先蓄力。</p>
         <p><b>蓄力会被任何位移打断</b>——主动的移动 / 开箱 / 传送，被动的被击退 / 被钓竿拉走，都算，需重新蓄力。</p>
 
         <div class="rsec">物品与掉落</div>
@@ -499,7 +502,7 @@ input[type=number],input[type=text]{
         <div class="rsec">遗器（4 选 1 特殊武器）</div>
         <p>开箱 / 钓鱼 5% 获得，<b>当场从 4 件中自选 1 件直接装备</b>（不占回合），可重复获得（多件并存、⑬盈箧下 ATK 叠加）。遗器是武器：<b>可被附魔</b>、死亡掉落（虚空除外）。主动技消耗主要行动，属于「技能」：<b>不触发 ①劫雷 / ⑪点染，不触发击退 / 拉近等攻击类效果，可以在命中环节被闪避（沧溟的「吸收 HP」除外）</b>；造成伤害时<b>触发 ⑨裂帛、计入目标【受击】</b>（被闪避则不计）；受戒律「禁止使用遗器技能」封禁，但<b>沧溟 / 忘川的被动无视戒律</b>。</p>
         <table class="rtb">
-          <tr><td>🌊 沧溟</td><td>ATK+9 · 近战 / 蓄力投掷 ∞ · 主动技「分配」：把 ATK 点分给<b>同岛实体</b>——回复 HP / 加护盾 / <b>吸收 HP（真实伤害：无视 DEF 与护盾，受【尘】减伤，不可被闪避）</b>。被动：回合开始自动释放一次（AI 自动分配；人类弹面板，不占行动）</td></tr>
+          <tr><td>🌊 沧溟</td><td>ATK+9 · 近战（无需蓄力）/ 蓄力投掷 ∞（投出需本人捡回）/ 特殊投掷（不造成伤害）· 主动技「分配」：把 ATK 点分给<b>同岛实体</b>——回复 HP / 加护盾 / <b>吸收 HP（真实伤害：无视 DEF 与护盾，受【尘】减伤，不可被闪避）</b>。被动：回合开始自动释放一次（AI 自动分配；人类弹面板，不占行动）</td></tr>
           <tr><td>🎵 七弦</td><td>无普通攻击 · 主动技「连射」：全场任意实体连续 7 次 ×1 真实伤害（<b>无视 DEF / 护盾，受【尘】减伤</b>），每次可换目标或随时跳过（浪费）</td></tr>
           <tr><td>🌙 斩月</td><td>ATK+11 · 近战 / 蓄力远程 ∞ · 主动技「斩杀」：<b>满血</b>时选一名目标直接死亡（<b>无视【忘川】不死</b>，可被闪避——被闪则落空，代价照付），代价自己 HP 减半（下取整，目标死后结算）</td></tr>
           <tr><td>💀 忘川</td><td>无普通攻击 · 被动「不死」：<b>HP 恰好为 0 才死亡</b>，负 HP 仍存活（回血正常计算）· 主动技「均分」：选至少 2 个实体，HP 加总后均分（各不超上限；负 HP 按 0 计）</td></tr>
@@ -565,11 +568,11 @@ const ITEMS = {
      yiqi 编号用于获得时的「遗器 · 4 选 1」面板；
      noAtk:true —— 没有普通攻击（只能靠主动技），不会出现在攻击武器列表里 */
   yq_cangming: {name:'沧溟', icon:'\u{1F30A}', type:'weapon', atk:9, rng:Infinity, ranged:true, charge:true, ench:true, yiqi:1,
-    desc:'遗器 · 近战 ATK+9 / 蓄力投掷射程∞ · 可附魔。主动技「分配」（主要行动）：把 ATK 点分给同岛实体——回复 HP / 加护盾 / 吸收 HP（真实伤害：无视 DEF 与护盾，受【尘】减伤，不可被闪避）。被动：每回合开始自动释放一次（无视戒律）'},
+    desc:'遗器 · 近战 ATK+9（无需蓄力）/ 蓄力投掷射程∞（投出后需本人到落点捡回）/ 特殊投掷：不蓄力不造成伤害，直接投到任意岛 · 可附魔。主动技「分配」（主要行动）：把 ATK 点分给同岛实体——回复 HP / 加护盾 / 吸收 HP（真实伤害：无视 DEF 与护盾，受【尘】减伤，不可被闪避）。被动：每回合开始自动释放一次（无视戒律）'},
   yq_qixian:  {name:'七弦', icon:'\u{1F3B5}', type:'weapon', atk:0, noAtk:true, ench:true, yiqi:2,
     desc:'遗器 · 无普通攻击 · 可附魔。主动技「连射」（主要行动）：全场任意实体连续 7 次 ×1 真实伤害（无视 DEF / 护盾，受【尘】减伤，可被闪避），每次可换目标，也可随时跳过剩余次数'},
   yq_zhanyue: {name:'斩月', icon:'\u{1F319}', type:'weapon', atk:11, rng:Infinity, ranged:true, charge:true, ench:true, yiqi:3,
-    desc:'遗器 · 近战 ATK+11 / 蓄力远程射程∞（同弓箭）· 可附魔。主动技「斩杀」（主要行动）：满血时选一名目标直接死亡（无视【遗器·忘川】的不死），代价是自己 HP 减半'},
+    desc:'遗器 · 近战 ATK+11（无需蓄力，射程按基础算）/ 蓄力 1 回合后远程释放，射程∞（无需捡回）· 可附魔。主动技「斩杀」（主要行动）：满血时选一名目标直接死亡（无视【遗器·忘川】的不死），代价是自己 HP 减半'},
   yq_wangchuan:{name:'忘川', icon:'\u{1F480}', type:'weapon', atk:0, noAtk:true, ench:true, yiqi:4,
     desc:'遗器 · 无普通攻击 · 可附魔。被动「不死」：只有 HP 恰好为 0 才死亡，负 HP 仍存活（回血正常计算）。主动技「均分」（主要行动）：选至少 2 个实体，把它们的 HP 加总后均分（各不超过上限）'},
   enchant:  {name:'附魔',   icon:'\u2728', type:'enchant', draft:true, desc:'[草案] 回合外使用：自选一种附魔附加到一件物品上'},
@@ -1141,8 +1144,10 @@ function attackResolve(src, tgt, opt){
   const gathered = !dodgeSealed(tgt) && !!tgt.dodgeReady;
   if (resolveDodge(tgt)){
     onDodgeEvade(tgt, entLabel(src), gathered);
-    return {evaded:true, dmg:0};
+    return {evaded:true, dmg:0};      // 闪避成功：不计【受击】
   }
+  // 命中才记【受击】；被免疫 / 被护盾吸收（0 伤害）仍算挨了一下，照常计数
+  tgt.hits = (tgt.hits || 0) + 1;
   if (crit) addLog('【暴击 ×' + mult + '】' + entLabel(src) + ' 打出暴击！', 'hl');
   const dealt = dealDamage(tgt, dmg, {srcEnt:src});
   // 刻印 9 裂帛：所有进攻类能力额外 +1 层
@@ -1279,7 +1284,7 @@ function startTurn(){
       render();
       if (p.isAI){ later(()=>{ aiAct(p); }, 150); }
     };
-    if (hasArtifact(p, 'yq_cangming') && p.alive){ cangmingPassive(p, afterCangming); return; }
+    if (hasCangming(p) && p.alive){ cangmingPassive(p, afterCangming); return; }
     afterCangming();
   });
 }
@@ -1560,13 +1565,14 @@ function afterItem(p, label, pos){
 }
 
 /* ---------------- 行动：攻击 ---------------- */
-/* 攻击结算。注意：只有「攻击」才 +1 受击；
+/* 攻击结算。注意：只有「攻击」才 +1 受击，且必须是「命中」才记 ——
+   闪避成功不记【受击】，与技能伤害 / 斩月·斩杀保持一致。
+   计数统一在 attackResolve 命中后执行（跨岛时要等飞行物动画落地才算命中）。
    后续加入的技能伤害走独立函数，不计入受击、也不触发攻击类效果。 */
 function doAttack(p, w, t, mode){
   const atk = getAtk(p, w);
   const def = getDef(t);
   const dmg = Math.max(0, atk - def);
-  t.hits += 1;                      // 无论是否造成伤害都记【受击】
 
   const pa = islandXY(p.island), pb = islandXY(t.island);
   const wdef = itemDef(p, w);
@@ -1642,13 +1648,14 @@ function applyHit(p, t, dmg, w, mode, pb){
     pickup(t);
   }
 
-  // 三叉戟投掷：落入目标岛（连同这一件上的附魔一起留在岛上）
-  if (mode === 'throw' && wid === 'trident'){
+  // 三叉戟 / 沧溟投掷：落入目标岛（连同这一件上的附魔一起留在岛上，只能本人捡回）
+  const thrownWid = itemIdOf(p, w);
+  if (mode === 'throw' && (thrownWid === 'trident' || thrownWid === 'yq_cangming')){
     const inst = itemOf(p, w);
     if (inst) removeUid(p, w);
     if (p.weapon === w) p.weapon = null;
-    G.thrown.push({owner:p.i, island:t.island, item: inst || mkItem('trident')});
-    addLog('三叉戟落在 ' + islandName(t.island) + '，只能由 ' + p.name + ' 本人前往捡回。');
+    G.thrown.push({owner:p.i, island:t.island, item: inst || mkItem(thrownWid)});
+    addLog(ITEMS[thrownWid].name + '落在 ' + islandName(t.island) + '，只能由 ' + p.name + ' 本人前往捡回。');
   }
 
   finishTurn(p);          // 无论是否致死都由这里统一收尾（kill 已在伤害管线内处理）
@@ -1720,7 +1727,7 @@ function doSummon(p, type){
   const s = {
     isSummon:true, sid:SUMMON_UID++, owner:p.i, type:type,
     name:T.name, icon:T.icon,
-    hp:maxHp, maxHp:maxHp,
+    hp:maxHp, maxHp:maxHp, hits:0,
     island:p.island, alive:true,
     resting:false, extraPending:0, seal7cd:-99,
     shield:0,               // 护盾（遗器·沧溟「分配」施加）
@@ -2050,8 +2057,23 @@ function useConsume(p, uid){
      造成伤害时触发 ⑨裂帛、计入目标【受击】；均分不触发裂帛
    - 戒律「禁止使用遗器技能」只封主动技；沧溟 / 忘川的被动无视戒律
    ========================================================= */
-function artifactsOf(p){ return p ? p.bag.filter(it => ITEMS[it.id] && ITEMS[it.id].yiqi) : []; }
+function artifactsOf(p){
+  if (!p) return [];
+  const list = p.bag.filter(it => ITEMS[it.id] && ITEMS[it.id].yiqi);
+  // 投出在外的遗器（目前只有沧溟可投掷）仍与本人相连，也算「持有」（被动与主动技都可用）
+  if (!p.isSummon) (G.thrown || []).forEach(th => {
+    if (th.owner === p.i && ITEMS[th.item.id] && ITEMS[th.item.id].yiqi &&
+        !list.some(it => it.uid === th.item.uid)) list.push(th.item);
+  });
+  return list;
+}
 function hasArtifact(p, id){ return !!p && !p.isSummon && p.bag.some(it => it.id === id); }
+/* 遗器·沧溟专用：投出在外（滞留在任意岛）也算「仍与本人相连」，被动照常触发 */
+function hasCangming(p){
+  if (!p || p.isSummon) return false;
+  if (hasArtifact(p, 'yq_cangming')) return true;
+  return !!G.thrown.some(th => th.owner === p.i && th.item.id === 'yq_cangming');
+}
 
 /* AI 选遗器：按当前局势打分（参考：沧溟重续航 / 七弦重清杂 / 斩月重斩杀 / 忘川重保命） */
 function aiPickYiqi(p){
@@ -2141,8 +2163,23 @@ function dispatchYiqi(p, id){
 /* 分配点数 = 当前 ATK 全额（基础 1 + 武器 ATK，含附魔 / ⑤残锋 / ⑬盈箧加成） */
 function cangmingPoints(p){
   const inst = p.bag.find(it => it.id === 'yq_cangming');
-  if (!inst) return 0;
-  return Math.max(0, getAtk(p, inst.uid));
+  if (inst) return Math.max(0, getAtk(p, inst.uid));
+  // 投出在外（滞留在别的岛）：仍与本人相连，按该件本身的 ATK 计算（附魔保留，不享⑬盈箧）
+  const th = G.thrown.find(t => t.owner === p.i && t.item.id === 'yq_cangming');
+  if (!th) return 0;
+  const d = ITEMS.yq_cangming;
+  return Math.max(0, p.baseAtk + (d.atk || 0) + (bonusOf(p, th.item.uid).atk || 0) + seal5Bonus(p));
+}
+/* 沧溟所在的岛：在背包里就是本人所在岛；投出在外就是它滞留的那个岛 */
+function cangmingIsland(p){
+  if (hasArtifact(p, 'yq_cangming')) return p.island;
+  const th = G.thrown.find(t => t.owner === p.i && t.item.id === 'yq_cangming');
+  return th ? th.island : p.island;
+}
+/* 沧溟的可分配目标：沧溟所在岛上的存活实体 */
+function cangmingTargets(p){
+  const isl = cangmingIsland(p);
+  return allEnts().filter(e => e.alive && e.island === isl);
 }
 /* 沧溟分配面板（主动技与被动共用）。alloc: 实体key -> {heal, shield, dmg}
    onFinish(alloc) 确认后回调；onCancel() 取消后回调（未消耗点数视为浪费） */
@@ -2189,9 +2226,9 @@ function cangmingAllocUI(p, pts, targets, alloc, title, onFinish, onCancel){
 function actCangming(p){
   const pts = cangmingPoints(p);
   if (pts <= 0){ addLog('沧溟当前没有可分配的 ATK 点。'); render(); return; }
-  const targets = allEnts().filter(e => e.island === p.island);
-  if (!targets.length){ addLog('同岛上没有其他实体，点数只能浪费。'); render(); return; }
-  cangmingAllocUI(p, pts, targets, {}, '沧溟 · 分配 ATK 点（共 ' + pts + ' · 主要行动）',
+  const targets = cangmingTargets(p);          // 沧溟所在岛（投出在外则取滞留岛）的存活实体
+  if (!targets.length){ addLog('沧溟所在岛上没有可分配的目标，点数只能浪费。'); render(); return; }
+  cangmingAllocUI(p, pts, targets, {}, '沧溟 · 分配 ATK 点（共 ' + pts + ' · ' + islandName(cangmingIsland(p)) + ' · 主要行动）',
     alloc => executeCangming(p, alloc, targets, true),
     () => render());   // 取消：技能未发动
 }
@@ -2201,6 +2238,7 @@ function executeCangming(p, alloc, targets, endTurn){
   addLog(p.name + ' 发动遗器·沧溟【分配】。', 'hl');
   sparks(pos.x, pos.y, '#38f0d8', 12);
   targets.forEach(t => {
+    if (!t.alive) return;
     const a = alloc[t.isSummon ? 's' + t.sid : 'p' + t.i];
     if (!a) return;
     if (a.heal > 0){
@@ -2226,16 +2264,20 @@ function executeCangming(p, alloc, targets, endTurn){
    人类：弹分配面板自选（取消＝本回合被动放弃，点数浪费）。 */
 function cangmingPassive(p, done){
   const pts = cangmingPoints(p);
-  const targets = allEnts().filter(e => e.island === p.island);
+  const targets = cangmingTargets(p);          // 沧溟所在岛（投出在外则取滞留岛）的存活实体
   if (pts <= 0 || !targets.length){
-    if (pts > 0) addLog('遗器·沧溟被动触发：同岛上没有可分配的目标，' + pts + ' 点浪费。');
+    if (pts > 0) addLog('遗器·沧溟被动触发：沧溟所在岛上没有可分配的目标，' + pts + ' 点浪费。');
     done(); return;
   }
   if (p.isAI){
     const keyOf = t => t.isSummon ? 's' + t.sid : 'p' + t.i;
     const alloc = {};
     let left = pts;
-    const mates = targets.filter(e => !isEnemyOf(p, e) && e.hp < e.maxHp);
+    /* 治疗顺序：先把队友（自己以外）拉起来，自己只在真的快死时才补
+       —— 否则「每回合灌满自己」会变成无限回血引擎，残局永远打不完 */
+    const hurt = e => (e.maxHp - e.hp) >= Math.max(3, Math.round(e.maxHp * 0.2));
+    let mates = targets.filter(e => !isEnemyOf(p, e) && e !== p && hurt(e));
+    if (!mates.length && p.hp <= p.maxHp * 0.4) mates = [p];
     if (mates.length){
       const m = mates.reduce((a,b) => (a.hp/a.maxHp) <= (b.hp/b.maxHp) ? a : b);
       const n = Math.min(left, m.maxHp - m.hp);
@@ -2264,7 +2306,7 @@ function cangmingPassive(p, done){
 function actQixian(p){
   const shot = (left) => {
     if (left <= 0 || !p.alive){ finishTurn(p); return; }
-    const tgts = allEnts();
+    const tgts = allEnts().filter(e => e.alive);
     if (!tgts.length){ addLog('场上没有实体，剩余 ' + left + ' 次射击浪费。'); finishTurn(p); return; }
     showChoice('七弦 · 第 ' + (8 - left) + ' 次射击（剩余 ' + left + ' 次 · 1 点真实伤害）', tgts.map(t => ({
       label: entLabel(t),
@@ -2287,7 +2329,7 @@ function actQixian(p){
 /* ---------- 斩月 · 斩杀 ---------- */
 function actZhanyue(p){
   if (p.hp < p.maxHp){ addLog('斩月【斩杀】要求使用者满血（当前 ' + p.hp + '/' + p.maxHp + '）。'); render(); return; }
-  const tgts = allEnts().filter(e => e !== p);
+  const tgts = allEnts().filter(e => e !== p && e.alive);
   if (!tgts.length){ addLog('场上没有目标。'); render(); return; }
   showChoice('斩月 · 斩杀：选择目标（目标直接死亡，代价：自己 HP 减半）', tgts.map(t => ({
     label: entLabel(t),
@@ -2297,11 +2339,11 @@ function actZhanyue(p){
 }
 function executeZhanyue(p, t){
   addLog(p.name + ' 发动遗器·斩月【斩杀】→ ' + entLabel(t) + '！', 'hl');
-  t.hits += 1;
   const gathered = !dodgeSealed(t) && !!t.dodgeReady;
   if (resolveDodge(t)){
-    onDodgeEvade(t, p.name, gathered);   // 被闪避：斩杀落空，代价照付
+    onDodgeEvade(t, p.name, gathered);   // 被闪避：斩杀落空，代价照付（不计【受击】）
   } else {
+    t.hits += 1;            // 命中才记【受击】；被闪避则不计（与其余伤害一致）
     t.hp = 0;               // 直接设置 HP=0：无视【忘川】的不死
     killEnt(t, p);
   }
@@ -2315,13 +2357,13 @@ function executeZhanyue(p, t){
 function actWangchuan(p){
   const sel = [];
   const panel = () => {
-    const tgts = allEnts();
+    const tgts = allEnts().filter(e => e.alive);
     showChoice('忘川 · 均分：选择实体（至少 2 个，当前 ' + sel.length + ' 个）', tgts.map(t => {
       const key = t.isSummon ? 's' + t.sid : 'p' + t.i;
       const on = sel.indexOf(key) >= 0;
       return {
         label: (on ? '☑ ' : '☐ ') + entLabel(t),
-        sub: 'HP ' + Math.max(0,t.hp) + (t.hp < 0 ? '（负值按 0 计）' : '') + '/' + t.maxHp,
+        sub: 'HP ' + t.hp + (t.hp < 0 ? '（负血 · 按 ' + t.hp + ' 计入）' : '') + '/' + t.maxHp,
         run: () => {
           const i = sel.indexOf(key);
           if (i >= 0) sel.splice(i,1); else sel.push(key);
@@ -2338,14 +2380,15 @@ function actWangchuan(p){
   panel();
 }
 function executeWangchuan(p, keys){
-  const ents = allEnts().filter(t => keys.indexOf(t.isSummon ? 's' + t.sid : 'p' + t.i) >= 0);
-  if (ents.length < 2){ addLog('均分至少要选 2 个实体。'); render(); return; }
-  const total = ents.reduce((s,t) => s + Math.max(0, t.hp), 0);   // 负 HP 按 0 计算
-  const each = Math.floor(total / ents.length);
+  const ents = allEnts().filter(t => t.alive && keys.indexOf(t.isSummon ? 's' + t.sid : 'p' + t.i) >= 0);
+  if (ents.length < 2){ addLog('均分至少要选 2 个存活实体。'); render(); return; }
+  // 负 HP 按真实负值计入：靠忘川吊命的负血者会实打实拉低全场均分，而不是被当成 0 白嫖
+  const total = ents.reduce((s,t) => s + t.hp, 0);
+  const each = Math.floor(total / ents.length);      // 负数同样向下取整（-5/2 → -3）
   addLog(p.name + ' 发动遗器·忘川【均分】：' + ents.map(entLabel).join('、') +
          '，总 HP ' + total + ' → 每人 ' + each + '。', 'hl');
   ents.forEach(t => { t.hp = Math.min(t.maxHp, each); });
-  addLog('均分完成：' + ents.map(t => entLabel(t) + ' ' + Math.max(0,t.hp) + '/' + t.maxHp).join('、'));
+  addLog('均分完成：' + ents.map(t => entLabel(t) + ' ' + t.hp + '/' + t.maxHp).join('、'));
   ents.forEach(t => {
     // 均分结果为 0：按死亡规则处理（忘川携带者 HP 恰好为 0 也死）
     const wc = !t.isSummon && hasArtifact(t, 'yq_wangchuan');
@@ -2677,6 +2720,92 @@ function aiMachineAct(p){
   }
   return false;
 }
+/* 七弦【连射】· AI 版：连续 7 次 1 点真实伤害，每次挑当前血量最低的敌人集火 */
+function executeQixianAI(p){
+  addLog(p.name + ' 发动遗器·七弦【连射】。', 'hl');
+  let left = 7;
+  while (left > 0 && p.alive && G.phase === 'play'){
+    const foes = allEnts().filter(e => e.alive && isEnemyOf(p, e));
+    if (!foes.length){ addLog('场上没有敌方目标，剩余 ' + left + ' 次射击浪费。'); break; }
+    const t = foes.reduce((a,b) => a.hp <= b.hp ? a : b);
+    addLog('遗器·七弦【连射】第 ' + (8 - left) + ' 发 → ' + entLabel(t) + '。', 'hl');
+    applySkillDamage(p, t, 1, {trueDmg:true, ignoreShield:true, dodgeable:true, tag:'遗器·七弦'});
+    left -= 1;
+  }
+  if (left > 0 && G.phase === 'play') addLog(p.name + ' 停止连射，剩余 ' + left + ' 次浪费。');
+  finishTurn(p);
+  return true;
+}
+/* AI 的遗器主动技决策（主要行动）。返回 true = 已消耗行动 */
+function aiArtifactSkill(p){
+  if (hasBan(p, 'artskill')) return false;            // 被【戒律·禁止使用遗器技能】封住
+  const ids = [];
+  artifactsOf(p).forEach(it => { if (ids.indexOf(it.id) < 0) ids.push(it.id); });
+  if (!ids.length) return false;
+  const foes = foesOf(p).filter(e => e.alive);
+  const keyOf = t => t.isSummon ? 's' + t.sid : 'p' + t.i;
+  // 血线告急且身上有药水：先交给后面的「保命」分支喝药，别把行动花在技能上
+  const lowHp = p.hp <= Math.max(2, p.maxHp * 0.35);
+  const hasPot = p.bag.some(it => it.id === 'potion');
+
+  /* 斩月：满血就处决威胁最大的敌人（代价 HP 减半，换掉一个人头） */
+  if (ids.indexOf('yq_zhanyue') >= 0 && p.hp >= p.maxHp && foes.length){
+    const byThreat = foes.slice().sort((a,b) => aiHitOf(b, p) - aiHitOf(a, p));
+    const top = byThreat[0];
+    const t = (top && aiHitOf(top, p) > 0) ? top : foes.slice().sort((a,b) => b.hp - a.hp)[0];
+    if (t){ executeZhanyue(p, t); return true; }
+  }
+  /* 忘川：把高血敌人拉进均分池，顺手把自己的血抬上来。
+     只在「真划算」时才发动：自己掉到 30% 以下、且这一下能抬回 25% 以上
+     —— 否则均分会变成无限回血引擎，把残局拖成永远打不完的僵持。 */
+  if (ids.indexOf('yq_wangchuan') >= 0 && foes.length){
+    const pool = [p].concat(foes.filter(f => f.hp > p.hp).sort((a,b) => b.hp - a.hp).slice(0, 3));
+    if (pool.length >= 2){
+      // 与实际结算保持一致：负血按真实负值计入（AI 自己负血时 gain 也按真实 hp 算）
+      const each = Math.floor(pool.reduce((s,t) => s + t.hp, 0) / pool.length);
+      const gain = each - p.hp;
+      const hurt = p.hp <= Math.max(3, Math.round(p.maxHp * 0.3));
+      if (hurt && gain >= Math.max(5, Math.round(p.maxHp * 0.25))){
+        executeWangchuan(p, pool.map(keyOf)); return true;
+      }
+    }
+  }
+  /* 七弦：唯一的输出手段，有敌人就集火（血线危急且还有药时先去喝药） */
+  if (ids.indexOf('yq_qixian') >= 0 && foes.length && !(lowHp && hasPot)){
+    executeQixianAI(p); return true;
+  }
+  /* 沧溟：点数够多、且沧溟所在岛上有敌人或伤员时才主动分配（否则留着普通攻击） */
+  if (ids.indexOf('yq_cangming') >= 0){
+    const pts = cangmingPoints(p);
+    const tg  = cangmingTargets(p);
+    if (pts >= 4 && tg.length && !(lowHp && hasPot)){
+      // 治疗优先给同岛队友；只有自己一个人且真的快死时才给自己补
+      let mates = tg.filter(e => !isEnemyOf(p, e) && e !== p && e.hp < e.maxHp)
+                      .sort((a,b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+      if (!mates.length && p.hp <= p.maxHp * 0.4) mates = [p];
+      const ef   = tg.filter(e => isEnemyOf(p, e)).sort((a,b) => a.hp - b.hp);
+      // 能一口气吸死最脆的敌人时就不分心治疗，全部点数走伤害
+      const killable = ef.length && ef[0].hp <= pts;
+      const heal = (mates.length && !killable)
+        ? Math.min(mates[0].maxHp - mates[0].hp, Math.ceil(pts / 2)) : 0;
+      if (heal > 0 || ef.length){
+        const alloc = {};
+        let left = pts;
+        if (heal > 0){
+          alloc[keyOf(mates[0])] = {heal: heal, shield: 0, dmg: 0};
+          left -= heal;
+        }
+        if (left > 0 && ef.length){
+          const k = keyOf(ef[0]);
+          const a = alloc[k] || {heal:0, shield:0, dmg:0};
+          a.dmg += left; alloc[k] = a;
+        }
+        if (Object.keys(alloc).length){ executeCangming(p, alloc, tg, true); return true; }
+      }
+    }
+  }
+  return false;
+}
 function aiAct(p){
   if (!G || G.phase !== 'play' || !p.alive) return;
   const enemies = foesOf(p);
@@ -2727,6 +2856,9 @@ function aiAct(p){
   const sumIt = p.bag.find(it => it.id === 'summon');
   if (sumIt && enemies.length && !lethal){ useConsume(p, sumIt.uid); return; }
 
+  // 6.5 遗器主动技（主要行动）：AI 会在划算时发动（斩月处决 / 忘川均分 / 七弦连射 / 沧溟分配）
+  if (aiArtifactSkill(p)) return;
+
   // 7. 保命：会被一回合打死，或者血线已经很低
   const pots = () => p.bag.filter(it => it.id === 'potion');
   if (lethal || p.hp <= p.maxHp * 0.35){
@@ -2769,9 +2901,11 @@ function aiAct(p){
   // 9. 打得到的、打得动的 → 直接开打（能秒的优先）
   if (canAtk && tgtHere){
     if (hasSeal(p,'11')) p.hitPick = aiHitEffect(p, tgtHere);
-    // 弓箭 / 沧溟 / 斩月必须先蓄力；三叉戟近战够不到才蓄力投掷
+    // 弓箭 / 沧溟必须先蓄力；三叉戟、斩月可以直接近战（够不到才蓄力投掷 / 蓄力远程）
     const wdef = ITEMS[wid(W)];
-    if (wdef && wdef.charge && wdef.ranged && wid(W) !== 'trident'){ beginCharge(p, W); return; }
+    if (wdef && wdef.charge && wdef.ranged && wid(W) !== 'trident' && wid(W) !== 'yq_zhanyue'){
+      beginCharge(p, W); return;
+    }
     doAttack(p, W, tgtHere, 'normal');
     return;
   }
@@ -3025,6 +3159,10 @@ function actAttack(p){
     } else if (inst.id === 'trident'){
       // 近战按基础射程 + 附魔加成（轻盈 +1）；蓄力后可投掷，射程无限
       extra = (p.charging && itemIdOf(p,p.charging) === 'trident') ? '蓄力完成 · 可投掷' : '近战 · 可蓄力投掷';
+    } else if (inst.id === 'yq_cangming'){
+      extra = p.charging === inst.uid ? '蓄力完成 · 可投掷' : '近战 · 可蓄力投掷 / 特殊投掷';
+    } else if (inst.id === 'yq_zhanyue'){
+      extra = p.charging === inst.uid ? '蓄力完成 · 可远程释放' : '近战 · 可蓄力远程';
     }
     const en = (p.ench[inst.uid] || []).map(x => ' ·' + enchantName(x)).join('');
     choices.push({uid: inst.uid, label: it.name + ' #' + inst.uid,
@@ -3053,11 +3191,12 @@ function actAttackTarget(p, w){
   const wid = itemIdOf(p, w);
   const charged = isCharged(p, w);
 
-  /* 远程武器（弓箭 / 三叉戟）蓄力完成 → 射程无限，任选目标释放。
+  /* 远程武器（弓箭 / 三叉戟 / 沧溟）蓄力完成 → 射程无限，任选目标释放。
      必须走这一步，否则会落到下面的近战射程判断，导致弓箭「射程 0」打不到人。 */
+  const throwable = wid === 'trident' || wid === 'yq_cangming';
   if (charged){
-    const mode = (wid === 'trident') ? 'throw' : 'release';
-    const verb = (wid === 'trident') ? '投掷' : '释放';
+    const mode = throwable ? 'throw' : 'release';
+    const verb = throwable ? '投掷' : '释放';
     showChoice(verb + ITEMS[wid].name + '蓄力一击 · 选择目标', enemies.map(t => ({
       label: entLabel(t),
       sub: 'HP ' + Math.max(0,t.hp) + '/' + t.maxHp + ' · DEF ' + getDef(t) +
@@ -3067,8 +3206,46 @@ function actAttackTarget(p, w){
     return;
   }
 
-  // 蓄力远程武器（弓箭 / 沧溟 / 斩月）未蓄力 → 只能蓄力
-  if (wid !== 'trident' && ITEMS[wid] && ITEMS[wid].charge && ITEMS[wid].ranged){
+  // 三叉戟：近战（无需蓄力）/ 蓄力投掷（射程∞，投出后需本人捡回）——没有特殊投掷
+  if (wid === 'trident'){
+    const melee = enemies.filter(t => inRange(p, w, t, 'normal'));
+    const opts = [];
+    if (melee.length) opts.push({label:'近战', sub:'射程内目标 · ATK ' + getAtk(p,w), run:()=>pickTarget(p,w,'normal')});
+    opts.push({label:'蓄力投掷（消耗本回合）',
+      sub:'下回合释放：射程∞ · ATK ' + getAtk(p,w) + ' · 投出后需本人到落点捡回',
+      run:()=>{ beginCharge(p, w); }});
+    showChoice('三叉戟：近战还是投掷？', opts, () => render());   // 取消：回到当前回合
+    return;
+  }
+  // 沧溟：近战（无需蓄力）/ 蓄力投掷 / 特殊投掷（不造成伤害，直接投到任意岛滞留）
+  if (wid === 'yq_cangming'){
+    const melee = enemies.filter(t => inRange(p, w, t, 'normal'));
+    const opts = [];
+    if (melee.length) opts.push({label:'近战', sub:'射程内目标 · ATK ' + getAtk(p,w), run:()=>pickTarget(p,w,'normal')});
+    opts.push({label:'蓄力投掷（消耗本回合）',
+      sub:'下回合释放：射程∞ · ATK ' + getAtk(p,w) + ' · 投出后需本人到落点捡回',
+      run:()=>{ beginCharge(p, w); }});
+    opts.push({label:'特殊投掷（不蓄力 · 不造成伤害）',
+      sub:'直接投到任意岛，遗器滞留在该岛，本人到达后捡回',
+      run:()=>specialThrow(p, w)});
+    showChoice('沧溟：近战、投掷还是特殊投掷？', opts, () => render());   // 取消：回到当前回合
+    return;
+  }
+
+  // 斩月：近战 ATK+11（无需蓄力）/ 蓄力远程（射程∞，同弓箭，投出后无需捡回）
+  if (wid === 'yq_zhanyue'){
+    const melee = enemies.filter(t => inRange(p, w, t, 'normal'));
+    const opts = [];
+    if (melee.length) opts.push({label:'近战', sub:'射程内目标 · ATK ' + getAtk(p,w), run:()=>pickTarget(p,w,'normal')});
+    opts.push({label:'蓄力远程（消耗本回合）',
+      sub:'下回合释放：射程∞ · ATK ' + getAtk(p,w),
+      run:()=>{ beginCharge(p, w); }});
+    showChoice('斩月：近战还是蓄力远程？', opts, () => render());   // 取消：回到当前回合
+    return;
+  }
+
+  // 蓄力远程武器（弓箭）未蓄力 → 只能蓄力
+  if (ITEMS[wid] && ITEMS[wid].charge && ITEMS[wid].ranged){
     showChoice(ITEMS[wid].name + '需要蓄力', [
       {label:'蓄力（消耗本回合）', sub:'下回合释放：射程∞ · ATK ' + getAtk(p,w), run:()=>{
         beginCharge(p, w);
@@ -3076,22 +3253,36 @@ function actAttackTarget(p, w){
     ], () => render());   // 取消：不蓄力，回到当前回合
     return;
   }
-  // 三叉戟：近战（无需蓄力）/ 投掷（需蓄力 1 回合，射程∞，投出后需捡回）
-  if (wid === 'trident'){
-    const melee = enemies.filter(t => inRange(p, w, t, 'normal'));
-    const opts = [];
-    if (melee.length) opts.push({label:'近战', sub:'射程内目标 · ATK ' + getAtk(p,w), run:()=>pickTarget(p,w,'normal')});
-    opts.push({label:'蓄力投掷（消耗本回合）',
-      sub:'下回合释放：射程∞ · ATK ' + getAtk(p,w) + ' · 投出后需捡回',
-      run:()=>{ beginCharge(p, w); }});
-    showChoice('三叉戟：近战还是投掷？', opts, () => render());   // 取消：回到当前回合
-    return;
-  }
   const inR = enemies.filter(t => inRange(p, w, t, 'normal'));
   if (!inR.length){
     addLog('射程内没有目标。'); render(); return;
   }
   pickTarget(p, w, 'normal');
+}
+
+/* 特殊投掷：不蓄力、不造成伤害，直接把武器投到任意岛，本人到达后捡回（消耗主要行动） */
+function specialThrow(p, w){
+  const wid = itemIdOf(p, w);
+  if (!wid) { render(); return; }
+  const isl = [];
+  for (let i = 0; i <= G.boxes.length; i++) if (i !== p.island) isl.push(i);
+  const opts = isl.map(i => ({
+    label: islandName(i),
+    sub: i === 0 ? '中心岛' : ('箱 ' + G.boxes[i-1] + ' · 岛 ' + i),
+    run: () => {
+      const inst = itemOf(p, w);
+      if (inst) removeUid(p, w);
+      if (p.weapon === w) p.weapon = null;
+      G.thrown.push({owner:p.i, island:i, item: inst || mkItem(wid)});
+      addLog(p.name + ' 把' + ITEMS[wid].name + '投到了 ' + islandName(i) +
+             '（未造成伤害），到达后可由本人捡回。', 'hl');
+      const from = islandXY(p.island), to = islandXY(i);
+      floatText((from.x+to.x)/2, (from.y+to.y)/2 - 30, ITEMS[wid].icon + ' →', '#38f0d8');
+      if (p.weapon === null) equipAuto(p);
+      finishTurn(p);
+    }
+  }));
+  showChoice('特殊投掷' + ITEMS[wid].name + '：投到哪个岛？', opts, () => render());
 }
 
 function pickTarget(p, w, mode){
@@ -3552,12 +3743,17 @@ function render(){
         (q.dodgeReady ? '<span class="dodgetag" title="下一次受击必定闪避成功">蓄闪</span>' : '') +
         (!q.dodgeReady && G.round <= (q.dodgeCdRound || 0) ? '<span class="dodgecd" title="蓄闪冷却中，本回合不能再蓄">闪冷却</span>' : '') +
         '<span class="hpv">' + (q.hp < 0 ? q.hp : Math.max(0,q.hp)) + '/' + q.maxHp +
+        (q.shield > 0 ? ' <span class="shv">盾' + q.shield + '</span>' : '') +
         (q.hp < 0 ? '（忘川·负值存活）' : '') + '</span>' +
       '</div>' +
-      '<div class="bar"><i style="width:' + pct + '%;background:' + col + '"></i></div>' +
+      '<div class="bar">' +
+        '<i style="width:' + pct + '%;background:' + col + '"></i>' +
+        (q.shield > 0 ? '<i class="shbar" style="width:' + Math.min(100, q.shield / q.maxHp * 100) + '%;left:' + pct + '%"></i>' : '') +
+      '</div>' +
       '<div class="stats">' +
         '<span>ATK <b>' + getAtk(q, q.weapon) + '</b></span>' +
         '<span>DEF <b>' + getDef(q) + '</b></span>' +
+        (q.shield > 0 ? '<span>盾 <b class="shb">' + q.shield + '</b></span>' : '') +
         '<span>射程 <b>' + rngLabel(q) + '</b></span>' +
         '<span>受击 <b>' + q.hits + '</b></span>' +
       '</div>' +
