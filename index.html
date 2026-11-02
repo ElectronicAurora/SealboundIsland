@@ -1410,7 +1410,13 @@ function breakCharge(p, why){
 /* 蓄力：占用本回合主要行动；任何位移都会打断，下回合释放 */
 function beginCharge(p, uid){
   const d = itemDef(p, uid);
-  if (!d) return;
+  if (!d){
+    // 目标已不在手上（如刚投掷出去、尚未捡回）：不能静默返回，
+    // 否则这一回合没有任何收尾，AI 会直接卡在原地不再推进。
+    addLog(p.name + ' 想蓄力，但那件武器已经不在手上了。');
+    finishTurn(p, 120);
+    return;
+  }
   p.charging = uid;                // 记录具体哪一件在蓄力（换成别的武器则蓄力作废）
   addLog(p.name + ' 开始为' + d.name + ' #' + uid + '蓄力……（下回合释放）');
   finishTurn(p, 170);
@@ -1885,6 +1891,9 @@ function summonHumanGo(s, owner, choice, done){
   if (s.useSeal7 && canSummonUseSeal7(s, owner) && s.alive){
     s.seal7cd = owner.turnSeq; s.useSeal7 = false;
     addLog(entLabel(s) + ' 使用刻印·蹑景，获得 1 个额外回合！', 'hl');
+    // 御灵的操控同样适用于额外回合：否则人类玩家在这一步会被强制自动索敌
+    // （蹑景刚用过，seal7cd 已刷新，面板里的蹑景选项不会出现，不会递归）
+    if (!owner.isAI && owner.alive && hasSeal(owner, '10')){ summonPanel(s, owner, done); return; }
     summonDoAction(s, owner, done);
     return;
   }
@@ -2885,7 +2894,9 @@ function aiAct(p){
   if (p.charging && enemies.length && canAtk){
     const cid = wid(p.charging);
     const cd = ITEMS[cid];
-    const mode = (cid === 'trident') ? 'throw' : (cd && cd.charge ? 'release' : null);
+    // 沧溟与三叉戟同属「投掷」：释放后武器飞落目标岛，需本人前往捡回（与人类一致）。
+    // 若走 release，沧溟会一直留在背包，AI 就能每两回合无限重复蓄力释放。
+    const mode = (cid === 'trident' || cid === 'yq_cangming') ? 'throw' : (cd && cd.charge ? 'release' : null);
     if (mode){
       // 蓄力释放是无限射程，全场的敌人都能选
       let best = null, bs = -1;
