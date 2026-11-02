@@ -1060,6 +1060,8 @@ function stateText(e){
    dodgeable    —— 该伤害属于「命中」环节（攻击 / 技能 / 机械），可被闪避；
                    闪避判定在伤害结算前进行，闪避成功则不结算任何伤害；
    _ev          —— 调用方传入对象，闪避成功时写入 _ev.evaded = true。
+   notHit       —— 该伤害不属于「受击」：不计 hits，也不解除【蓝】/【黄】。
+                   （【撕裂】结算是状态伤害，不是挨打，不能白送一次解控）
    非命中来源（【撕裂】结算、坠入虚空、均分等）不传 dodgeable，不可被闪避。 */
 function dealDamage(tgt, raw, opt){
   opt = opt || {};
@@ -1095,14 +1097,17 @@ function dealDamage(tgt, raw, opt){
     floatText(pos.x, pos.y - 28, '免疫', '#8494b8');
     if (opt.tag) addLog(entLabel(tgt) + ' 免疫了' + opt.tag + '伤害。');
   }
-  // 【蓝】/【黄】：受到攻击（下次受击）即解除
-  if (tgt.st.blue){
-    tgt.st.blue = false;
-    addLog(entLabel(tgt) + ' 的【蓝】解除（下次受击）。');
-  }
-  if (tgt.st.yellow > 0){
-    tgt.st.yellow = 0;
-    addLog(entLabel(tgt) + ' 的【黄】解除（下次受击）。');
+  // 【蓝】/【黄】：只有真正「受击」才解除。
+  // 非受击来源（【撕裂】结算这类状态伤害）不算挨打，不解蓝黄 —— 否则撕裂会白送一次解控。
+  if (!opt.notHit){
+    if (tgt.st.blue){
+      tgt.st.blue = false;
+      addLog(entLabel(tgt) + ' 的【蓝】解除（下次受击）。');
+    }
+    if (tgt.st.yellow > 0){
+      tgt.st.yellow = 0;
+      addLog(entLabel(tgt) + ' 的【黄】解除（下次受击）。');
+    }
   }
   // 死亡判定（遗器·忘川「不死」：只有 HP 恰好为 0 才死，负 HP 仍存活）
   if (tgt.hp <= 0 && tgt.alive){
@@ -1166,7 +1171,7 @@ function attackResolve(src, tgt, opt){
 function turnStartTick(e){
   if (!e.alive) return true;
   // 【撕裂】（含【红】叠加的部分）：每回合开始扣 1×层数真实伤害，在【尘】判定之前
-  if (e.st.tear > 0) dealDamage(e, e.st.tear, {trueDmg:true, tag:'撕裂'});
+  if (e.st.tear > 0) dealDamage(e, e.st.tear, {trueDmg:true, tag:'撕裂', notHit:true});
   if (!e.alive) return false;      // 忘川携带者负 HP 存活，照样行动
   // 刻印 12 尘梦：上回合结束至今未受伤 → +1 层【尘】
   if (entHasSeal(e, '12') && !e.hurtSince){
