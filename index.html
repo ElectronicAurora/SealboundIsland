@@ -522,8 +522,8 @@ input[type=number],input[type=text]{
         <div class="rsec">遗器（4 选 1 特殊武器）</div>
         <p>开箱 / 钓鱼 5% 获得，<b>当场从 4 件中自选 1 件直接装备</b>（不占回合），可重复获得（多件并存、⑬盈箧下 ATK 叠加）。遗器是武器：<b>可被附魔</b>、死亡掉落（虚空除外）。主动技消耗主要行动，属于「技能」：<b>不走普攻的 ①劫雷 / ⑪点染判定，不触发击退 / 拉近等攻击类效果，可以在命中环节被闪避（沧溟的「吸收 HP」除外）</b>；造成伤害时<b>触发 ⑨裂帛、计入目标【受击】</b>（被闪避则不计）。<b>「真实伤害」只描述无视 DEF 与护盾，与能否闪避无关</b>（详见下方 FAQ）。受戒律「禁止使用遗器技能」封禁，但<b>沧溟 / 忘川的被动无视戒律</b>。</p>
         <table class="rtb">
-          <tr><td>🌊 沧溟</td><td>ATK+9 · 近战（无需蓄力）/ 蓄力投掷 ∞（投出需本人捡回）/ 特殊投掷（不造成伤害）· 主动技「分配」：把 ATK 点分给<b>近战射程内实体</b>（轻盈附魔可扩 · ⑥b 天工无限）——回复 HP / 加护盾 / <b>吸收 HP（真实伤害：无视 DEF 与护盾，受【尘】减伤）</b>；该伤害不走命中环节，<b>不可被闪避</b>；主动技属于「技能」，<b>不暴击</b>（暴击只看「攻击 / 技能」，与是否真实伤害无关）。被动：回合开始自动释放一次（AI 自动分配；人类弹面板，不占行动）</td></tr>
-          <tr><td>🎵 七弦</td><td>无普通攻击 · 主动技「连射」：全场任意实体连续 7 次 ×1 真实伤害（<b>无视 DEF / 护盾，受【尘】减伤</b>），每一发走命中环节、<b>可被闪避</b>；每次可换目标或随时跳过（浪费）</td></tr>
+          <tr><td>🌊 沧溟</td><td>ATK+9 · 近战（无需蓄力）/ 蓄力投掷 ∞（投出需本人捡回）/ 特殊投掷（不造成伤害）· 主动技「分配」：把 ATK 点分给<b>近战射程内实体</b>（轻盈附魔可扩 · ⑥b 天工无限）——回复 HP / 加护盾 / <b>吸收 HP（真实伤害：无视 DEF 与护盾，受【尘】减伤；伤害点吃 ⑫b 尘增伤）</b>；该伤害不走命中环节，<b>不可被闪避</b>；主动技属于「技能」，<b>不暴击</b>（暴击只看「攻击 / 技能」，与是否真实伤害无关）。被动：回合开始自动释放一次（AI 自动分配；人类弹面板，不占行动）</td></tr>
+          <tr><td>🎵 七弦</td><td>无普通攻击 · 主动技「连射」：全场任意实体连续 7 次 ×1 真实伤害（<b>无视 DEF / 护盾，受【尘】减伤</b>；每发吃 ⑫b 尘增伤），每一发走命中环节、<b>可被闪避</b>；每次可换目标或随时跳过（浪费）</td></tr>
           <tr><td>🌙 斩月</td><td>ATK+11 · 近战 / 蓄力远程 ∞ · 主动技「斩杀」：<b>满血</b>时选一名目标直接死亡（<b>无视【忘川】不死</b>，可被闪避——被闪则落空，代价照付），代价自己 HP 减半（下取整，目标死后结算）</td></tr>
           <tr><td>💀 忘川</td><td>无普通攻击 · 被动「不死」：<b>HP 恰好为 0 才死亡</b>，负 HP 仍存活（回血正常计算）· 主动技「均分」：选至少 2 个实体，HP 加总后均分（各不超上限；<b>负 HP 按真实负值计入</b>，结果可能为负，结果为 0 或负时按死亡规则处理）</td></tr>
         </table>
@@ -563,7 +563,7 @@ input[type=number],input[type=text]{
         <details class="faq"><summary>物品后面的 #编号是什么意思？</summary><p>只有<b>能被附魔</b>的物品（武器 / 护甲 / 药水 / 遗器）才有独立编号，因为附魔绑定到具体那一件。给一把剑附魔不会影响另一把剑。</p></details>
         <details class="faq"><summary>附魔能叠加吗？占回合吗？</summary><p>不同附魔<b>可以叠加</b>（锋利 + 轻盈 = ATK +3 且射程 +1），同一种在同一件上只能有一次。附魔是<b>回合外</b>行动，每回合限 1 次，用完还能继续主要行动。</p></details>
         <details class="faq"><summary>对局卡住了 / 想重开怎么办？</summary><p>界面上有「强制结束」与「返回主页面」。「强制结束」直接结算当前对局；「返回主页面」回到开局设置，可重新配置模式与人数。</p></details>
-        <details class="faq"><summary>AI 会把【尘】叠到打不动人吗？它怎么办？</summary><p>【尘】每层减伤 1，⑫尘梦在中心岛（箱子无限）可以一直叠。AI 现在<b>扣掉尘之后仍打不出伤害就不再攻击</b>，改走三条通道：<b>① 沧溟【分配】</b>（真实伤害、逐点结算、不看 DEF，只要点数 &gt; 对面尘层就能打穿）→ <b>② 弓箭蓄力释放</b>（无限射程，可隔岛点名）→ <b>③ 开箱</b>找沧溟 / 找 ④、⑨b 刻印。<b>不会再对着厚尘做 0 伤害攻击</b>（旧版会，曾导致 17 回合超时）。</p></details>
+        <details class="faq"><summary>AI 会把【尘】叠到打不动人吗？它怎么办？</summary><p>【尘】每层减伤 1，⑫尘梦在中心岛（箱子无限）可以一直叠。AI 现在<b>扣掉尘之后仍打不出伤害就不再攻击</b>，改走三条通道：<b>① 沧溟【分配】</b>（真实伤害、逐点结算、不看 DEF，只要「点数 + 自身 ⑫b 尘」&gt; 对面尘层就能打穿）→ <b>② 弓箭蓄力释放</b>（无限射程，可隔岛点名）→ <b>③ 开箱</b>找沧溟 / 找 ④、⑨b 刻印。<b>不会再对着厚尘做 0 伤害攻击</b>（旧版会，曾导致 17 回合超时）。</p></details>
         <details class="faq"><summary>「AI 经验库」是什么？会上传我的数据吗？</summary><p>AI 会把打过的局记成<b>几个计数器</b>（开箱 / 蓄力 / 先拆最痛的 / 破壁 四项的胜负次数），用来微调自己的决策倾向，<b>最多只调 ±25%</b>，不改任何规则。<br>数据<b>只存在你自己浏览器的 localStorage 里</b>，不联网、不上传、不存棋谱，整份存档实测约 <b>213 字节</b>、不随局数增长。清掉浏览器数据即彻底删除。结算面板会显示四项的胜率与权重，一局都没学到时整块隐藏。</p></details>
       </div>
     </div>
@@ -2240,13 +2240,50 @@ function seal5bBurst(e){
   let n = 0;
   targets.forEach(t => {
     if (!t.alive) return;
-    // hitPick 语义：6 色 = 施加；null = 本次跳过；undefined = 还没选过（默认红）
-    // 【灰】在爆发里对每个被炸的实体各解一个（默认挑最有利的那一项，不逐个问）
-    const r = attackResolve(e, t, {atkOverride:10, effect: e.hitPick === undefined ? 'red' : e.hitPick,
+    /* 2.3.6：点染是「自选且可跳过」——爆发不再无脑默认【红】：
+       · 人类：沿用普通攻击选过的记忆色（hitPick）；从未选过 → 本次跳过（null）。
+         爆发前的选择面板由 seal5bBurstFxGate 弹出（选完会写回记忆）。
+       · AI：逐目标走 aiHitEffect（考虑白挡 / 灰解 / 击杀线），不再一刀切红。 */
+    let fx;
+    if (e.isAI){
+      fx = aiHitEffect(e, t);
+    } else {
+      fx = (e.hitPick === undefined) ? null : e.hitPick;
+      if (fx === null && hasSeal(e, '11')){
+        addLog('【残锋·分支】本次爆发未附加点染（未选择记忆色，视为跳过）。', 'sys');
+      }
+    }
+    const r = attackResolve(e, t, {atkOverride:10, effect: fx,
                                    blackSeal: e.hitSeal, greyKey: e.hitClear || null});
     if (r && !r.evaded) n++;
   });
   return n;
+}
+/* 2.3.6：人类玩家的残锋爆发点染自选。爆发是回合开始的被动、命中时没法逐发弹面板，
+   所以在爆发结算**前**弹一次「本次全场附加效果」（对每个目标生效，含自己），
+   选完写入 hitPick 记忆并继续回合开始链；跳过 / 取消 = 本次不附加。
+   AI 不弹（seal5bBurst 里逐目标智能挑）。 */
+function seal5bBurstFxGate(p, next){
+  let need = false;
+  try {
+    need = !p.isAI && p.alive && entHasSeal(p, '5b') && hasSeal(p, '11') &&
+           (seal5Threshold() - p.hp >= 10) && !p.st.blue && !hasBan(p, 'atk') &&
+           allEnts().length > 0;
+  } catch (err) { need = false; }
+  if (!need){ next(); return; }
+  const cols = paintColorsOf(p);
+  const mk = k => ({
+    label: '【' + HITFX[k].name + '】',
+    sub: HITFX[k].desc,
+    run: () => { p.hitPick = k; next(); }
+  });
+  showChoice('残锋爆发 · 命中附加哪种效果？（刻印·点染 · ' + (cols.length > 3 ? '六' : '三') +
+             '选一 · 对全场每个目标生效，**包括你自己**）',
+    cols.map(mk).concat([{
+      label: '⏭ 本次不附加（跳过）', sub: '这一场爆发不施加任何颜色；不影响下次',
+      run: () => { p.hitPick = null; next(); }
+    }]),
+    () => { p.hitPick = null; next(); });          // 取消面板 = 跳过，不卡回合
 }
 function actSeal5b(p){
   if (!hasSeal(p, '5b')){ render(); return; }
@@ -2430,20 +2467,25 @@ function startTurn(){
     if (!p.alive){ afterMainAction(p); return; }
 
     // 回合开始结算：撕裂 → 红 → 尘 → 【黄】兜底
-    if (!turnStartTick(p)){ afterMainAction(p); return; }
-
-    // 自动捡拾本岛掉落物
-    pickup(p);
-
-    // 遗器·沧溟被动：回合开始自动释放「分配」（无视戒律、不占行动）
-    const afterCangming = () => {
-      if (G.phase !== 'play' || settleWin()) return;   // 被动可能直接打光敌人
+    // 2.3.6：爆发前先过点染选择门（人类弹面板 / AI 直通），选完再走 turnStartTick
+    seal5bBurstFxGate(p, () => {
+      if (G.phase !== 'play' || settleWin()) return;
       if (!p.alive){ afterMainAction(p); return; }
-      render();
-      if (p.isAI){ later(()=>{ aiAct(p); }, 150); }
-    };
-    if (hasCangming(p) && p.alive){ cangmingPassive(p, afterCangming); return; }
-    afterCangming();
+      if (!turnStartTick(p)){ afterMainAction(p); return; }
+
+      // 自动捡拾本岛掉落物
+      pickup(p);
+
+      // 遗器·沧溟被动：回合开始自动释放「分配」（无视戒律、不占行动）
+      const afterCangming = () => {
+        if (G.phase !== 'play' || settleWin()) return;   // 被动可能直接打光敌人
+        if (!p.alive){ afterMainAction(p); return; }
+        render();
+        if (p.isAI){ later(()=>{ aiAct(p); }, 150); }
+      };
+      if (hasCangming(p) && p.alive){ cangmingPassive(p, afterCangming); return; }
+      afterCangming();
+    });
   });
 }
 
@@ -3627,6 +3669,13 @@ function grantYiqi(p, count, free){
    applySkillDamage 因此只负责把原值交给 dealDamage 并记一次【受击】。 */
 function applySkillDamage(src, tgt, raw, opt){
   opt = opt || {};
+  /* 2.3.5：⑫b 尘增伤扩大到**技能伤害**（用户拍板：七弦每一发、沧溟分配的每个伤害点都要吃）。
+     口径与 attackResolve 同源：加在发起者侧的原始值上，承受者的【尘】减伤照常在
+     dealDamage 里扣（发起者 6 尘打 9 尘目标：raw+6 再 −9）。
+     机械（炮台箭矢 / TNT）不走本函数，维持「机械不吃刻印」的既有约定。
+     斩月（置 0）/ 忘川（均分）无数值，不涉及。 */
+  const dust = dustAtkBonus(src);
+  if (dust > 0 && raw > 0 && !opt.noDustBonus) raw += dust;
   const ev = {};
   // 本轮定稿：暴击只发生在「攻击」管线 attackResolve（①劫雷）。
   // 技能走本函数，一律按原值结算、不暴击 —— 与 opt.trueDmg 是否为真无关。
@@ -5266,7 +5315,8 @@ function aiAct(p){
       if (pts >= 4 && ef.length){
         // 挑「尘最薄」的那个敌方目标：点数是逐点结算的，尘越薄穿得越多
         const pick = ef.slice().sort((a,b) => dustWall(a) - dustWall(b))[0];
-        if (pts > dustWall(pick)){
+        // 2.3.5：技能伤害也吃 ⑫b 尘增伤（applySkillDamage 里加），穿透力按「点数 + 自身尘」估
+        if (pts + dustAtkBonus(p) > dustWall(pick)){
           addLog(p.name + ' 察觉普通攻击被【尘】挡死，改用沧溟【分配】破壁。', 'sys');
           expMark(p, 'pierce');       // 2.3 学习记录：这一回合选择了破壁
           const alloc = {}; alloc[pick.isSummon ? 's' + pick.sid : 'p' + pick.i] = {heal:0, shield:0, dmg:pts};
