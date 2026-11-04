@@ -4218,25 +4218,35 @@ function sealOnAcquire(p, id){
          ③ 但必须能正常叠：只要 entHasSeal(e,'12') 且 !hurtSince，每回合 +1 照常。
          ④ 每局开始 mkState() 把 dust 归 0，newGame 清 blackSeals/dodge/extraBank/extraLeftSave/seal5Thresh/三个 UID 计数器等。
        另：本函数只做"获得即生效"的副作用，刻印入账在 applySeal 里（先 p.seals[id]++ 再调这里）。
-       所以造测试别单独调 sealOnAcquire('12b')，那不会让 hasSeal('12b') 变真。 */
-    p.st.dust += 6;
-    addLog(p.name + ' 立即获得 6 层【尘】（当前 ' + p.st.dust + ' 层 · 减伤 ' + p.st.dust +
-           ' · 增伤 +' + p.st.dust + '）', 'hl');
-    dustSyncAllSummons(p, '御灵联动');      // ① 现存召唤物一起补（先御灵后尘梦）
-    /* 2.3.4：池里能用到这枚 12b 的其他人，此刻也「获得」了它（hasSeal 池化查询立即为真），
-       「获得即生效」的 +6 必须同步结算 —— 旧版只给获得者本人叠，同契队友 / 2b 盯着获得者的人
-       的【尘】增伤判定虽然是池化实时生效的，但那 6 层底子永远缺着，
-       出现「有 12b 的判定、没有 12b 的层数」的错位。
-       ⚠ 方向：要找的是「谁的池里包含 p」（反向查询 sharePool(q).has(p.i)），
-       而不是 sharePool(p)（那是 p 能用谁的）。同契是双向的两种算法结果一样，
-       2b 是单向的：A 盯 B，B 拿 12b → A 获益；B 不在 A 的出边上，正向查会漏。 */
-    G.players.forEach(q => {
-      if (!q || q === p || q.isSummon || !q.alive) return;
-      if (!sharePool(q, new Set(), new Set()).has(p.i)) return;
-      q.st.dust += 6;
-      addLog('②同契联动：' + q.name + ' 同时获得 6 层【尘】（当前 ' + q.st.dust + ' 层）。', 'hl');
-      dustSyncAllSummons(q, '御灵联动（同契）');
-    });
+       所以造测试别单独调 sealOnAcquire('12b')，那不会让 hasSeal('12b') 变真。
+       ⚠ 2.3.7：⑫ 被【黑】时这枚 12b 一并失效 —— 不能再白送 6 层。
+         旧版无条件 +6，结果「⑫ 被黑的人再买 12b」照样拿到 6 层减伤（减伤是【尘】的
+         固有属性，不看 12b），等于用一条已经失效的分支继续获益。是否生效统一问
+         hasSealRaw（刚入账、含黑遮罩判定），失效时只记一句日志。 */
+    if (!hasSealRaw(p, '12b')){
+      addLog(p.name + ' 的【尘梦·分支】因 ⑫ 处于【黑】而失效，未获得【尘】层。', 'sys');
+    } else {
+      p.st.dust += 6;
+      addLog(p.name + ' 立即获得 6 层【尘】（当前 ' + p.st.dust + ' 层 · 减伤 ' + p.st.dust +
+             ' · 增伤 +' + p.st.dust + '）', 'hl');
+      dustSyncAllSummons(p, '御灵联动');      // ① 现存召唤物一起补（先御灵后尘梦）
+      /* 2.3.4：池里能用到这枚 12b 的其他人，此刻也「获得」了它（hasSeal 池化查询立即为真），
+         「获得即生效」的 +6 必须同步结算 —— 旧版只给获得者本人叠，同契队友 / 2b 盯着获得者的人
+         的【尘】增伤判定虽然是池化实时生效的，但那 6 层底子永远缺着，
+         出现「有 12b 的判定、没有 12b 的层数」的错位。
+         ⚠ 方向：要找的是「谁的池里包含 p」（反向查询 sharePool(q).has(p.i)），
+         而不是 sharePool(p)（那是 p 能用谁的）。同契是双向的两种算法结果一样，
+         2b 是单向的：A 盯 B，B 拿 12b → A 获益；B 不在 A 的出边上，正向查会漏。 */
+      G.players.forEach(q => {
+        if (!q || q === p || q.isSummon || !q.alive) return;
+        if (!sharePool(q, new Set(), new Set()).has(p.i)) return;
+        // 同契方用「池化视角」判：他自己能不能用到 12b（他自持没有，但不代表收不到）
+        if (!hasSeal(q, '12b')) return;
+        q.st.dust += 6;
+        addLog('②同契联动：' + q.name + ' 同时获得 6 层【尘】（当前 ' + q.st.dust + ' 层）。', 'hl');
+        dustSyncAllSummons(q, '御灵联动（同契）');
+      });
+    }
   }
   if (id === '10'){
     // ③ 先有尘梦分支、之后才补御灵 —— 已有的召唤物同样要补 6 层
