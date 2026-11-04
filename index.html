@@ -2054,6 +2054,26 @@ function rejectIfUnpickable(e, what){
    ignoreDust   —— 调用方已自行扣过【尘】减伤，本函数不再扣第二遍
                    （【撕裂】：n + 施加者尘增伤 − 承受者尘，减伤由 settleTear 算）。
    非命中来源（【撕裂】结算、坠入虚空、均分等）不传 dodgeable，不可被闪避。 */
+/* 回血后的死亡复检：忘川负血者被奶到「恰好 0」必须死。
+   ⚠ 2.3.3 修正：药水 / 沧溟【回复】是纯赋值（hp = min(max, hp+heal)），
+   旧版回血后不查死活 —— 负血忘川补 3 回 3 正好落在 0，会以 0 HP 继续存活，
+   挂在场上显示成「忘川负血存活」。规则口径：HP 恰好为 0 必死，忘川也不例外。 */
+function healCheckDeath(t, src){
+  if (!t || !t.alive || t.hp !== 0) return false;
+  const wc = !t.isSummon && hasArtifact(t, 'yq_wangchuan');
+  addLog((wc ? '【遗器·忘川】' + entLabel(t) + ' 被奶回 HP 恰好 0 ——' :
+           entLabel(t) + ' HP 恰好为 0，') + '按死亡规则阵亡。', 'kill');
+  killEnt(t, src || null);
+  return true;
+}
+/* 面板血量显示：负血照实显示（带「负血」标记），不夹成 0。
+   夹 0 会让忘川负血目标显示成「0 HP 还活着」，玩家没法判断补刀分量；
+   与斩月面板（3848 一带）的既有口径保持一致。 */
+function hpDisp(t){
+  const hp = (t && t.hp) || 0;
+  return 'HP ' + hp + (hp < 0 ? '（负血）' : '');
+}
+
 function dealDamage(tgt, raw, opt){
   opt = opt || {};
   let dmg = Math.max(0, Math.floor(raw));
@@ -2435,6 +2455,11 @@ function afterMainAction(p){
 /* 当前行动结束：额外回合直接回到额外回合队列，主要回合才进召唤物阶段 */
 function endCurrentAction(p){
   if (G.phase !== 'play') return;
+  // 经验库：记每个玩家本局行动过几个回合（开箱对照组的归一化分母）
+  if (G.expTmp && p && !p.isSummon){
+    const c = G.expTmp.cnt[p.i] || (G.expTmp.cnt[p.i] = {});
+    c.turn = (c.turn || 0) + 1;
+  }
   // 4b 敕罚：本回合被标记的行动统一在这里结算（每类只结一次）
   if (p && p.alive && p.actedBans && p.actedBans.length){
     settleSanctions(p);
@@ -3253,7 +3278,7 @@ function summonPanel(s, owner, done){
   const foes = foesOfEnt(s).filter(t => islandDist(s.island, t.island) <= summonRngOf(s));
   foes.forEach(t => opts.push({
     label:'攻击 ' + entLabel(t),
-    sub:'HP ' + Math.max(0,t.hp) + ' · DEF ' + getDef(t) + dustHint(t) +
+    sub: hpDisp(t) + ' · DEF ' + getDef(t) + dustHint(t) +
         ' · 预计伤害 ' + estHit(Math.max(0, summonAtk(s) - getDef(t)), t, s),
     run:()=>{ summonHumanGo(s, owner, {act:'atk', target:t}, done); }
   }));
@@ -3446,7 +3471,7 @@ function fireMachine(m, done){
   if (owner.isAI){ return fire(foes.reduce((a,b)=> a.hp <= b.hp ? a : b)); }
   const opts = foes.map(e => ({
     label: entLabel(e),
-    sub: 'HP ' + Math.max(0,e.hp) + ' · DEF ' + getDef(e) + dustHint(e) +
+    sub: hpDisp(e) + ' · DEF ' + getDef(e) + dustHint(e) +
          ' · 预计伤害 ' + estHit(Math.max(0, 8 - getDef(e)), e),
     run: () => fire(e)
   }));
@@ -3471,6 +3496,8 @@ function useConsume(p, uid){
     const before = p.hp;
     p.hp = Math.min(p.maxHp, p.hp + heal);
     removeUid(p, uid);
+    // 2.3.3：负血忘川被奶到恰好 0 → 按死亡规则阵亡（旧版漏检，0 HP 存活）
+    if (healCheckDeath(p, null)){ settleWin(); finishTurn(p); return true; }
     // 使用药水同样解除【蓝】/【黄】
     if (p.st.blue){ p.st.blue = false; addLog(p.name + ' 的【蓝】解除（使用药水）。'); }
     if (p.st.yellow > 0){ p.st.yellow = 0; addLog(p.name + ' 的【黄】解除（使用药水）。'); }
@@ -3690,7 +3717,7 @@ function cangmingAllocUI(p, pts, targets, alloc, title, onFinish, onCancel){
       const a = alloc[keyOf(t)] || {heal:0, shield:0, dmg:0};
       return {
         label: entLabel(t) + '（已分配 ' + usedOf(t) + '）',
-        sub: 'HP ' + Math.max(0,t.hp) + '/' + t.maxHp + (t.shield > 0 ? ' · 盾 ' + t.shield : '') +
+        sub: hpDisp(t) + '/' + t.maxHp + (t.shield > 0 ? ' · 盾 ' + t.shield : '') +
              ' · DEF ' + getDef(t) + dustHint(t) + ' · 回复 ' + a.heal + ' / 护盾 ' + a.shield + ' / 伤害 ' + a.dmg,
         run: () => allocMenu(t)
       };
@@ -3747,6 +3774,8 @@ function executeCangming(p, alloc, targets, endTurn){
       t.hp = Math.min(t.maxHp, t.hp + a.heal);
       addLog(entLabel(t) + ' 被回复 ' + (t.hp - before) + ' HP（' + Math.max(0,t.hp) + '/' + t.maxHp + '）。');
       floatText(islandXY(t.island).x, islandXY(t.island).y - 26, '+' + (t.hp - before), '#4ade80');
+      // 2.3.3：负血忘川被奶到恰好 0 → 阵亡（同药水路径）
+      if (healCheckDeath(t, p)) return;
     }
     if (a.shield > 0){
       t.shield = (t.shield || 0) + a.shield;   // 护盾在 HP 以外，独立累计，不设上限
@@ -3814,7 +3843,7 @@ function actQixian(p){
     if (!tgts.length){ addLog('场上没有可被连射选中的实体（【白】挡下了点名），剩余 ' + left + ' 次射击浪费。'); finishTurn(p); return; }
     showChoice('七弦 · 第 ' + (8 - left) + ' 次射击（剩余 ' + left + ' 次 · 1 点真实伤害）', tgts.map(t => ({
       label: entLabel(t),
-      sub: 'HP ' + Math.max(0,t.hp) + '/' + t.maxHp + dustHint(t) +
+      sub: hpDisp(t) + '/' + t.maxHp + dustHint(t) +
            ' · 真实伤害：无视 DEF / 护盾，受【尘】减伤 · 这一发可被闪避',
       run: () => {
         if (!t.alive){ shot(left); return; }
@@ -4145,6 +4174,20 @@ function sealOnAcquire(p, id){
     addLog(p.name + ' 立即获得 6 层【尘】（当前 ' + p.st.dust + ' 层 · 减伤 ' + p.st.dust +
            ' · 增伤 +' + p.st.dust + '）', 'hl');
     dustSyncAllSummons(p, '御灵联动');      // ① 现存召唤物一起补（先御灵后尘梦）
+    /* 2.3.4：池里能用到这枚 12b 的其他人，此刻也「获得」了它（hasSeal 池化查询立即为真），
+       「获得即生效」的 +6 必须同步结算 —— 旧版只给获得者本人叠，同契队友 / 2b 盯着获得者的人
+       的【尘】增伤判定虽然是池化实时生效的，但那 6 层底子永远缺着，
+       出现「有 12b 的判定、没有 12b 的层数」的错位。
+       ⚠ 方向：要找的是「谁的池里包含 p」（反向查询 sharePool(q).has(p.i)），
+       而不是 sharePool(p)（那是 p 能用谁的）。同契是双向的两种算法结果一样，
+       2b 是单向的：A 盯 B，B 拿 12b → A 获益；B 不在 A 的出边上，正向查会漏。 */
+    G.players.forEach(q => {
+      if (!q || q === p || q.isSummon || !q.alive) return;
+      if (!sharePool(q, new Set(), new Set()).has(p.i)) return;
+      q.st.dust += 6;
+      addLog('②同契联动：' + q.name + ' 同时获得 6 层【尘】（当前 ' + q.st.dust + ' 层）。', 'hl');
+      dustSyncAllSummons(q, '御灵联动（同契）');
+    });
   }
   if (id === '10'){
     // ③ 先有尘梦分支、之后才补御灵 —— 已有的召唤物同样要补 6 层
@@ -4393,11 +4436,18 @@ function expMark(p, kind){
    新算法：**同局内做横向对照**（case-control）——
      对这一项，把本局玩家分成「做了的」和「没做的」两拨，
      比两拨的最好名次（存活优先、其次 HP 百分比、再其次击杀）：
-       · 做了的那拨更好  → 做了的每人记 1 胜
-       · 做了的更差      → 做了的每人记 1 负
+       · 做了的那拨更好  → 该项 +1 胜（每局一票）
+       · 做了的更差      → 该项 +1 负（每局一票）
        · 打平 / 有一拨为空 → 本项本局不计（没信息量，别污染样本）
-   这样一局里每项的胜负来自「横向对比」而不是「谁拿了第一」，
-   多人局不会再因为「只有一个赢家」而把每项都记成负。 */
+     ⚠ 2.3.2 再修两个口径缺陷。
+     ① 「只记做了的人」不对称：开箱只在做的人更好时记胜，
+       「没做的」永远不入账 → 胜负天然失衡，「开箱只有胜」就是这么来的。
+       「先拆最痛的」更糟：只记反例 → 永远只有负。
+       现在改成**每局每项一票**：做了的那拨更好 → +1 胜；更差 → +1 负。
+       两边都能入账（不再单边漂移），且不按人头加权（3v1 的组也只算一票）。
+     ② 「先拆最痛的只记反例」撤销：只记负同样是失衡（显示永远只有负），
+       两方向都入账后，循环论证的影响会被正反样本自然对冲，
+       加上 ±25% 权重封顶，不会让 AI 失控。 */
 function expFinishGame(winner, viaSummon){
   if (!G || !G.expTmp) return;
   const E = expLoad();
@@ -4425,13 +4475,20 @@ function expFinishGame(winner, viaSummon){
       else didnt.push(p.i);
     });
     /* 开箱的对照组常常是空的 —— 四个人基本每回合都在开，于是「谁开了箱」区分不出人。
-       这种情况下改用**次数**做对照：开得多的那一半 vs 开得少的那一半。
-       expTmp 里同时存了次数（expMark 会累加 n），这里取中位数切两拨。 */
+       这种情况下改用**每回合开箱率**做对照（次数 ÷ 本局该玩家行动过的回合数）：
+       直接用次数会引入幸存者偏差 —— 活得久的人自然开得多，「开得多 = 活得好」
+       其实只是「活着才有机会开」。除以回合数后，比的才是「勤不勤」而不是「命长不长」。
+       expTmp.cnt.turn 由 endCurrentAction 累加。 */
     if (kind === 'box' && (!did.length || !didnt.length)){
-      const cnt = G.players.map(p => ({i:p.i, n:(G.expTmp.cnt && G.expTmp.cnt[p.i] && G.expTmp.cnt[p.i].box) || 0}));
+      const turns = i => Math.max(1, (G.expTmp.cnt && G.expTmp.cnt[i] && G.expTmp.cnt[i].turn) || 1);
+      const cnt = G.players.map(p => ({i:p.i,
+        n:((G.expTmp.cnt && G.expTmp.cnt[p.i] && G.expTmp.cnt[p.i].box) || 0) / turns(p.i)}));
       const sorted = cnt.slice().sort((a,b) => b.n - a.n);
       const med = sorted[Math.floor(sorted.length / 2)].n;
-      if (med <= 0) return;                       // 全都没开过箱：无信息
+      /* ⚠ 弃局条件是「全员都没开过箱」，不是「中位数是 0」：
+         多数人 0 次但有人开了 → 中位数也是 0，这种局照样有对照（开了的 vs 没开的），
+         旧判法会把它们整局丢掉，白白损失样本。 */
+      if (sorted[0].n <= 0) return;
       did = cnt.filter(x => x.n > med).map(x => x.i);
       didnt = cnt.filter(x => x.n <= med).map(x => x.i);
     }
@@ -4441,17 +4498,13 @@ function expFinishGame(winner, viaSummon){
     const better = best(did) > best(didnt);
     const worse  = best(did) < best(didnt);
     if (!better && !worse) return;        // 打平：不计
-    const key = better ? 'w' : 'l';
-    /* ⚠ 「先拆最痛的（focus）」不能按「做了更好」记胜 —— 那是循环论证：
-       威胁最大的人本来就是最强的那个，「先打他 = 赢」只反映强弱，不反映决策好坏。
-       它对这一项只记**反例**：先拆最痛的反而输了，才说明这个策略有问题（记负）。
-       正面信号不给，避免 AI 把「我已经领先」误读成「这个选择很棒」而过度自信。 */
-    if (kind === 'focus' && better) return;
-    did.forEach(() => {
-      E.pool[kind][key] = (E.pool[kind][key] || 0) + 1;
-      E.self[kind][key] = (E.self[kind][key] || 0) + 1;
-      learnt++;
-    });
+    /* ⚠ 对称但**按局投票**，不按人头：
+       「赢家那拨每人 +1 胜、输家那拨每人 +1 负」看着对称，其实在人数不等的组上
+       会退回按人数加权 —— 3 人做了 1 人没做且做得更好就记 3 胜 1 负，胜率虚高。
+       所以每局每项只记**一票**：做了的那拨更好 → w+1；更差 → l+1。
+       组里几个人、组外几个人，都不影响这一票的分量。 */
+    if (better){ E.pool[kind].w = (E.pool[kind].w || 0) + 1; E.self[kind].w = (E.self[kind].w || 0) + 1; learnt++; }
+    else if (worse){ E.pool[kind].l = (E.pool[kind].l || 0) + 1; E.self[kind].l = (E.self[kind].l || 0) + 1; learnt++; }
   });
   E.games = (E.games || 0) + 1;
   G.expTmp = null;
@@ -4493,8 +4546,8 @@ function renderExpBox(){
     }).join('') +
     '<div style="margin-top:6px;opacity:.55;font-size:11px">' +
     '「胜率」= 同一局里，做了这件事的人是否比没做的人活得更好（对照组比较，不是「谁拿了第一」）。' +
-    '多人局里只有一个赢家，按人数算会把每项都压成负数，所以不采用那种算法。<br>' +
-    '「先拆最痛的」只记反例（先打最危险的人却输了才算数）—— 打强者本来就容易赢，那是强弱不是决策。' +
+    '记账是对称的：做了的那拨更好 → 该项 +1 胜；更差 → +1 负。每局每项只投一票，两边都能入账，不会出现「只有胜」或「只有负」的单边漂移，也不按人头加权。<br>' +
+    '「开箱」的对照按**每回合开箱率**切分（不是次数）：活得久的人自然开得多，按次数分会把「命长」误学成「勤快」。<br>' +
     '权重只在该决策点上做 ±25% 的微调，不改规则。</div>';
 }
 
@@ -5934,7 +5987,7 @@ function actPaint(p){
   if (!list.length){ addLog('场上没有可被点染选中的实体（【白】挡下了点名）。'); render(); return; }
   const mk = t => ({
     label: entLabel(t) + (t === p ? '（自己）' : ''),
-    sub: 'HP ' + Math.max(0, t.hp) + '/' + t.maxHp +
+    sub: hpDisp(t) + '/' + t.maxHp +
          (t.st.blackSeals && t.st.blackSeals.length ? ' · 已黑 ' + t.st.blackSeals.length + ' 项' : '') +
          (paintClearCandidates(t).length ? ' · 【灰】可解除 ' + paintClearCandidates(t).length + ' 项' : ''),
     run: () => { if (rejectIfUnpickable(t, '点染')){ render(); return; } pickPaintColor(p, t); }
@@ -6104,7 +6157,7 @@ function actPrecept(p){
   if (!list.length){ addLog('场上没有可被敕禁选中的实体（【白】挡下了点名）。'); render(); return; }
   showChoice('对谁施加【戒律】？（刻印 4 · 自由行动）', list.map(t => ({
     label: entLabel(t),
-    sub: 'HP ' + Math.max(0,t.hp) + '/' + t.maxHp + (t.st && t.st.precepts.length ? ' · 已有戒律' : '') +
+    sub: hpDisp(t) + '/' + t.maxHp + (t.st && t.st.precepts.length ? ' · 已有戒律' : '') +
          (t.st && t.st.sanctions && t.st.sanctions.length ? ' · 敕罚 ' + t.st.sanctions.reduce((m,x)=>m+x.n,0) + ' 层' : ''),
     run: () => { if (rejectIfUnpickable(t, '敕禁')){ render(); return; } pickBan(p, t); }
   })), () => render());   // 取消：自由行动未用掉
@@ -6300,7 +6353,7 @@ function actAttackTarget(p, w){
     const verb = throwable ? '投掷' : '释放';
     showChoice(verb + ITEMS[wid].name + '蓄力一击 · 选择目标', enemies.map(t => ({
       label: entLabel(t),
-      sub: 'HP ' + Math.max(0,t.hp) + '/' + t.maxHp + ' · DEF ' + getDef(t) + dustHint(t) +
+      sub: hpDisp(t) + '/' + t.maxHp + ' · DEF ' + getDef(t) + dustHint(t) +
            ' · 预计伤害 ' + estHit(Math.max(0, getAtk(p,w) - getDef(t)), t, p),
       run: () => { launchAttack(p, w, t, mode); }
     })), () => render());   // 取消：蓄力保留，下回合还能放
@@ -6404,7 +6457,7 @@ function pickTarget(p, w, mode){
   const label = isCharged(p, w) ? '释放蓄力一击，目标？' : '攻击谁？';
   showChoice(label, inR.map(t => ({
     label: entLabel(t) + (t.isSummon ? '' : ''),
-    sub: 'HP ' + Math.max(0,t.hp) + '/' + t.maxHp + ' · DEF ' + getDef(t) + dustHint(t) +
+    sub: hpDisp(t) + '/' + t.maxHp + ' · DEF ' + getDef(t) + dustHint(t) +
          ' · 预计伤害 ' + estHit(Math.max(0, getAtk(p,w) - getDef(t)), t, p),
     run: () => { launchAttack(p, w, t, mode); }
   })), () => render());   // 取消：攻击未发生
