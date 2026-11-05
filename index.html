@@ -329,7 +329,7 @@ input[type=number],input[type=text]{
 <div class="modal" id="setup">
   <div class="sheet">
     <h2>末环协议 · RingFall</h2>
-    <div class="sub">对局设置</div>
+    <div class="sub">对局设置 · v2.4.0</div>
     <div class="row">
       <label>对战模式</label>
       <div class="seg" id="segMode"></div>
@@ -363,6 +363,43 @@ input[type=number],input[type=text]{
     <div class="rules-fold">
       <span>规则较长，可在对局中随时查看。</span>
       <button class="sysbtn" id="rulesBtn2" style="flex:none;padding:8px 14px">查看完整规则</button>
+    </div>
+    <div class="rules-fold" style="margin-top:2px">
+      <span id="expClearHint" style="flex:1"></span>
+      <button class="sysbtn" id="expClearBtn" style="flex:none;padding:8px 14px">清空 AI 经验</button>
+    </div>
+    <!-- AI 刻印策略插件（2.3.9）：可导入外部 .js 接管 AI 的「选印」与「攻击上色」 -->
+    <div class="rules-fold" style="margin-top:2px;align-items:flex-start">
+      <span id="stratHint" style="flex:1;line-height:1.7">AI 刻印策略：内置</span>
+      <button class="sysbtn" id="stratBtn" style="flex:none;padding:8px 14px">导入策略…</button>
+      <button class="sysbtn" id="stratOffBtn" style="flex:none;padding:8px 14px">卸载</button>
+    </div>
+  </div>
+</div>
+
+<!-- AI 刻印策略导入（2.3.9） -->
+<div class="modal hide" id="stratModal">
+  <div class="sheet" style="max-width:640px">
+    <div class="sub">AI Strategy</div>
+    <h2>AI 刻印策略</h2>
+    <p style="color:#a7b6d6;font-size:12.5px;line-height:1.85;margin:0 0 12px">
+      策略文件接管 AI 的<b>选印</b>与<b>攻击上色</b>两个决策；不装载时 AI 走内置逻辑（行为与原来完全一致）。
+      策略需定义 <code>STRATEGY = { name, pickSeal(ctx), pickPaint(ctx) }</code>，
+      <b>返回 null 即回落内置</b>。灰 / 黑六色全部开放。
+    </p>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="sysbtn" id="stratFileBtn" style="flex:1;padding:9px">从文件导入…</button>
+      <button class="sysbtn" id="stratUrlBtn" style="flex:1;padding:9px">从网址导入…</button>
+    </div>
+    <input type="file" id="stratFile" accept=".js,text/javascript" style="display:none">
+    <textarea id="stratCode" spellcheck="false" placeholder="也可以直接粘贴策略代码到这里…"
+      style="width:100%;height:170px;box-sizing:border-box;background:#0d1524;color:#c9d6ee;
+             border:1px solid #24314a;border-radius:8px;padding:10px;font:12px/1.6 ui-monospace,monospace;
+             resize:vertical"></textarea>
+    <div id="stratMsg" style="font-size:12px;line-height:1.7;margin-top:8px;min-height:18px"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="big" id="stratApplyBtn" style="flex:1">应用</button>
+      <button class="big" id="stratCloseBtn" style="flex:1;background:linear-gradient(100deg,#8494b8,#a9b6d6);box-shadow:none">关闭</button>
     </div>
   </div>
 </div>
@@ -404,7 +441,7 @@ input[type=number],input[type=text]{
           <tr><td>药水</td><td>+10 HP（回响附魔 +5）</td></tr>
           <tr><td>剑 / 弓箭 / 三叉戟</td><td>+7 / +8（蓄力后射程 ∞）/ +9（近战）</td></tr>
           <tr><td>炮台 箭矢 / TNT</td><td>8 ATK 单体（自动 ×2） / 16 ATK 全岛（自动 ×1）</td></tr>
-          <tr><td>遗器（4 选 1）</td><td>沧溟 ATK+9 / 七弦连射 7×1 / 斩月 ATK+11 / 忘川不死</td></tr>
+          <tr><td>遗器（N 选 1）</td><td>沧溟 ATK+9 分配 · 七弦连射 7×1 · 斩月 ATK+11 斩杀 · 忘川不死均分 · <b>掷星 1~开局上限 真实伤害（质数送回合）</b></td></tr>
           <tr><td>蓄闪 / 蹑景</td><td>1 主要行动换 1 次必闪，冷却 1 轮 / +N 额外回合（N = 蹑景层数），冷却 2 轮</td></tr>
           <tr><td>每岛箱子</td><td>外岛 3 个，中心岛无限</td></tr>
         </table>
@@ -421,7 +458,7 @@ input[type=number],input[type=text]{
           <tr><td>药水 10 · 护甲 10 · 剑 10</td><td>进背包</td></tr>
           <tr><td>传送器 10 · 三叉戟 10 · 附魔 10（×3） · 自选武器 10</td><td>进背包 / 附魔给 3 个道具 / 自选武器二选一</td></tr>
           <tr><td><b>刻印 15</b></td><td><b>立即自选，不入背包</b></td></tr>
-          <tr><td>弓箭 5 · 召唤物 5 · <b>遗器 5</b></td><td>弓箭进背包；召唤物使用后自选生物；<b>遗器当场 4 选 1 直接装备</b></td></tr>
+          <tr><td>弓箭 5 · 召唤物 5 · <b>遗器 5</b></td><td>弓箭进背包；召唤物使用后自选生物；<b>遗器当场 N 选 1 直接装备</b></td></tr>
         </table>
 
         <div class="rsec">行动消耗</div>
@@ -447,7 +484,7 @@ input[type=number],input[type=text]{
           <tr><td class="no">⑦</td><td class="nm">蹑景</td><td>声明后主要行动结束追加 <b>N 个额外回合</b>（<b>可叠加：N = 刻印层数</b>；<b>冷却 2 轮</b>）</td></tr>
           <tr><td class="no">⑧</td><td class="nm">凌波</td><td><b>可重复选</b>，二选一分支 ↓（<b>分支②须先选分支①</b>）</td></tr>
           <tr class="sub"><td></td><td class="nm">⑧a</td><td><b>+30% 闪避</b>（可叠加，封顶 100%），并可花 1 个主要行动<b>蓄闪</b></td></tr>
-          <tr class="sub"><td></td><td class="nm">⑧b</td><td>闪避成功立即获 <b>N 个额外回合</b>（N = ⑧a 层数；<b>⑧a 为 0 层时完全无效</b>，无保底）；这些回合<b>插队</b>兑现——当前行动者的回合全部结束后立刻插入，抢在下一位玩家之前</td></tr>
+          <tr class="sub"><td></td><td class="nm">⑧b</td><td>闪避成功立即获 <b>N 个额外回合</b>（N = ⑧a 层数；<b>⑧a 为 0 层时完全无效</b>，无保底）；这些回合<b>插队</b>兑现——当前行动者的回合全部结束后立刻插入，抢在下一位玩家之前。<br><b>⚠ 只能拿 1 层</b>：⑧b 只是「闪避 → 额外回合」的开关，叠第 2 层<b>收益为 0</b>（8a=2 时，8b=1 / 2 / 5 都是给 2 个回合）。成长全靠 ⑧a：每层 +30% 闪避，且 N 同步 +1</td></tr>
           <tr><td class="no">⑨</td><td class="nm">裂帛</td><td>所有进攻类能力额外施加 1 层【撕裂】（命中即叠，不要求真掉血）</td></tr>
           <tr class="sub"><td></td><td class="nm">⑨b</td><td>主动技：施加 1 层【撕裂】并立即结算全部层数。<b>⑨b 拥有者施加的撕裂每层令目标 DEF −1</b>；<b>DEF &lt; 0 时该实体无法移动</b>（传送器仍可用，与「禁止移动」同口径）</td></tr>
           <tr><td class="no">⑩</td><td class="nm">御灵</td><td>自身召唤物 HP/ATK +50%、可手动操控、并共享你的刻印</td></tr>
@@ -509,7 +546,7 @@ input[type=number],input[type=text]{
 
         <div class="rsec">状态效果</div>
         <p><b>【撕裂】</b>回合开始时（【尘】之后、⑤b 爆发之后）<b>一次性</b>结算，公式：<b>层数 + 施加者 ⑫b 的尘增伤 − 承受者的尘减伤</b>（无视 DEF 与护盾）。<b>逐层取施加者</b>：撕裂会由不同人在不同时刻一层层挂上去，每一层按「挂上那一层的人」当时的 ⑫b 尘增伤计算，最后相加（无施加者来源的层按 0 增伤）。<b>减伤只扣一次</b>，取承受撕裂者自己的【尘】层数。<b>【红】就是撕裂 +1 层</b>，与 ⑨裂帛 走同一套层数相加。<b>⑨b 拥有者施加的撕裂</b>另有附加：每层令目标 DEF −1，DEF &lt; 0 时无法移动（见 ⑨b 行）。</p>
-        <p><b>【尘】</b>每层减伤 1（含真实伤害）—— <b>减伤是【尘】的固有属性，任何来源的尘层都减伤</b>。<b>攻击增伤是 ⑫b 分支的专属收益</b>：只有持有 ⑫b 时，每层才<b>同时</b>为自身攻击提供 1 点 ATK 增伤（玩家卡显示「尘N（减伤N·增伤+N）」）；<b>只有基础 ⑫、从【红】/ 御灵补到的尘层，都只减伤不增伤</b>。受到 1 点以上伤害即<b>清空</b>，增伤随之消失。<p><b>【敕罚】</b>（4b）：目标每次进行被禁的那类行动后结算 4×层数 真实伤害（+施加者⑫b尘增伤 − 承受者尘，无视 DEF/护盾、不走命中环节、不暴击）；<b>同类合并成一次结算</b>（不同人挂的同一禁类算一个效果，层数合计、伤害仍按各自施加者算），跨类各结一次；<b>召唤物也会被戒律、也照常结算敕罚</b>（它每做完一次行动当场结一次）。<b>【蓝】</b>下次受击前无法攻击。<b>【黄】</b>使用药水前无法移动，最多 3 回合自动解除（<b>挨打不会解除</b>，只有回合倒计时与喝药水两条路）。<b>【蓝】【白】</b>在受到攻击时解除。</p>
+        <p><b>【尘】</b>每层减伤 1（含真实伤害）—— <b>减伤是【尘】的固有属性，任何来源的尘层都减伤</b>。<b>攻击增伤是 ⑫b 分支的专属收益</b>：只有持有 ⑫b 时，每层才<b>同时</b>为自身攻击提供 1 点 ATK 增伤（玩家卡显示「尘N（减伤N·增伤+N）」）；<b>只有基础 ⑫、从【红】/ 御灵补到的尘层，都只减伤不增伤</b>。受到 1 点以上伤害即<b>清空</b>，增伤随之消失。<p><b>【敕罚】</b>（4b）：目标每次进行被禁的那类行动后结算 4×层数 真实伤害（+施加者⑫b尘增伤 − 承受者尘，无视 DEF/护盾、不走命中环节、不暴击）；<b>同类合并成一次结算</b>（不同人挂的同一禁类算一个效果，层数合计、伤害仍按各自施加者算），跨类各结一次；<b>召唤物也会被戒律、也照常结算敕罚</b>（它每做完一次行动当场结一次）。<b>【蓝】</b>下次受击前无法攻击。<b>【黄】</b>使用药水前无法移动，最多 3 回合自动解除（<b>挨打不会解除</b>，只有回合倒计时与喝药水两条路）。<b>【蓝】受击即解</b>（被任何伤害打到、未被闪避即可）；<b>【白】受伤才解</b>——与受击无关：被护盾吃光、被【尘】压到 0 伤害的一击不解【白】，但【撕裂】结算真掉血，<b>照样解【白】</b>。</p>
         <p><b>结算顺序</b>：回合开始 → 清空自己施加的旧戒律 → 炮台自动发射 → <b>尘 +1</b> → ⑤b 爆发 → 撕裂 → 黄兜底。</p>
 
         <div class="rsec">回合结构</div>
@@ -519,15 +556,16 @@ input[type=number],input[type=text]{
 
         <div class="rsec">其他</div>
         <p><b>⑬b 盈箧·商店</b>：回合中可与商店交易，<b>不限次数、不占主要行动</b>。开局 0 金币，只能靠卖背包物品起家；<b>买卖同价</b>（刻印 10 / 遗器 10 / 剑·弓·三叉戟·钓竿·击退棒·护甲 各 5 / 药水·传送器 3 / 附魔 1）。<b>卖刻印是永久删除</b>：先按【黑】的口径做完整即时清算，且不回滚（详见 FAQ）。</p>
-        <div class="rsec">遗器（4 选 1 特殊武器）</div>
-        <p>开箱 / 钓鱼 5% 获得，<b>当场从 4 件中自选 1 件直接装备</b>（不占回合），可重复获得（多件并存、⑬盈箧下 ATK 叠加）。遗器是武器：<b>可被附魔</b>、死亡掉落（虚空除外）。主动技消耗主要行动，属于「技能」：<b>不走普攻的 ①劫雷 / ⑪点染判定，不触发击退 / 拉近等攻击类效果，可以在命中环节被闪避（沧溟的「吸收 HP」除外）</b>；造成伤害时<b>触发 ⑨裂帛、计入目标【受击】</b>（被闪避则不计）。<b>「真实伤害」只描述无视 DEF 与护盾，与能否闪避无关</b>（详见下方 FAQ）。受戒律「禁止使用遗器技能」封禁，但<b>沧溟 / 忘川的被动无视戒律</b>。</p>
+        <div class="rsec">遗器（N 选 1 特殊武器）</div>
+        <p>开箱 / 钓鱼 5% 获得，<b>当场从全部遗器中自选 1 件直接装备</b>（不占回合），可重复获得（多件并存、⑬盈箧下 ATK 叠加）。遗器是武器：<b>可被附魔</b>、死亡掉落（虚空除外）。主动技消耗主要行动，属于「技能」：<b>不走普攻的 ①劫雷 / ⑪点染判定，不触发击退 / 拉近等攻击类效果，可以在命中环节被闪避（沧溟的「吸收 HP」除外）</b>；造成伤害时<b>触发 ⑨裂帛、计入目标【受击】</b>（被闪避则不计）。<b>「真实伤害」只描述无视 DEF 与护盾，与能否闪避无关</b>（详见下方 FAQ）。受戒律「禁止使用遗器技能」封禁，但<b>沧溟 / 忘川的被动无视戒律</b>。</p>
         <table class="rtb">
           <tr><td>🌊 沧溟</td><td>ATK+9 · 近战（无需蓄力）/ 蓄力投掷 ∞（投出需本人捡回）/ 特殊投掷（不造成伤害）· 主动技「分配」：把 ATK 点分给<b>近战射程内实体</b>（轻盈附魔可扩 · ⑥b 天工无限）——回复 HP / 加护盾 / <b>吸收 HP（真实伤害：无视 DEF 与护盾，受【尘】减伤；伤害点吃 ⑫b 尘增伤）</b>；该伤害不走命中环节，<b>不可被闪避</b>；主动技属于「技能」，<b>不暴击</b>（暴击只看「攻击 / 技能」，与是否真实伤害无关）。被动：回合开始自动释放一次（AI 自动分配；人类弹面板，不占行动）</td></tr>
           <tr><td>🎵 七弦</td><td>无普通攻击 · 主动技「连射」：全场任意实体连续 7 次 ×1 真实伤害（<b>无视 DEF / 护盾，受【尘】减伤</b>；每发吃 ⑫b 尘增伤），每一发走命中环节、<b>可被闪避</b>；每次可换目标或随时跳过（浪费）</td></tr>
           <tr><td>🌙 斩月</td><td>ATK+11 · 近战 / 蓄力远程 ∞ · 主动技「斩杀」：<b>满血</b>时选一名目标直接死亡（<b>无视【忘川】不死</b>，可被闪避——被闪则落空，代价照付），代价自己 HP 减半（下取整，目标死后结算）</td></tr>
           <tr><td>💀 忘川</td><td>无普通攻击 · 被动「不死」：<b>HP 恰好为 0 才死亡</b>，负 HP 仍存活（回血正常计算）· 主动技「均分」：选至少 2 个实体，HP 加总后均分（各不超上限；<b>负 HP 按真实负值计入</b>，结果可能为负，结果为 0 或负时按死亡规则处理）</td></tr>
+          <tr><td>🌠 掷星</td><td>ATK 0（无普通攻击），<b>无射程概念</b> · 主动技「掷星」（主要行动）：选一名目标，掷出 <b>1 ~ 本局开局时最高玩家 HP 上限</b>的随机点数，造成等量<b>真实伤害</b>（<b>无视 DEF 与护盾，受【尘】减伤</b>，吃 ⑫b 尘增伤）；<b>走命中环节、可被闪避</b>（闪避则不记受击、不叠 ⑨裂帛）；点数若为<b>质数（1 不算）</b>立即获得 <b>1 个额外回合</b>（与 ⑧b 同源，插到队头）<br><span style="opacity:.75">上限口径：<b>开局扫一次定死</b>，只算玩家（不含召唤物 / 傀儡 / 炮台）、<b>含之后会阵亡的玩家</b>；开局后血上限变动不跟算。例：4 人 30 血开局 → 骰面恒为 1~30，送回合概率 10/30 ≈ 33%</span></td></tr>
         </table>
-        <p><b>技能与「受击」</b>：被有伤害的技能打到<b>也算受击</b>（记次数、可叠加【撕裂】），技能与机械伤害同样<b>走命中环节、可以被闪避</b>，但不触发攻击类效果（击退、拉近、投掷等）。</p>
+        <p><b>技能与「受击」</b>：被有伤害的技能打到<b>也算受击</b>（记次数、可叠加【撕裂】），技能与机械伤害同样<b>走命中环节、可以被闪避</b>，但不触发攻击类效果（击退、拉近、投掷等）。<b>炮台的箭矢 / TNT 同样记受击</b>（未被闪避即计），但不叠 ⑨裂帛、不吃 ⑪点染。</p>
         <p>全游戏数值<b>一律下取整</b>。界面提供「强制结束」「返回主页面」，对局中随时可点开本规则，不影响回合状态。</p>
       </div>
 
@@ -557,14 +595,14 @@ input[type=number],input[type=text]{
         <details class="faq"><summary>遗器技能会暴击 / 被闪避吗？</summary><p><b>「真实伤害」与「能不能被闪避」是两件事</b>：真实伤害只定义「无视 DEF 与护盾」，<b>【尘】减伤照常生效</b>；能否被闪避只看这一击走不走命中环节。七弦 / 斩月<b>可以被闪避</b>：造成伤害时<b>计入受击</b>并触发 ⑨裂帛，被闪避则都不触发；斩月被闪则斩杀落空，但 HP 减半的代价照付。<b>沧溟的「吸收 HP」不走命中环节，不可被闪避</b>。暴击方面：<b>只看这一击是「攻击」还是「技能」，与是不是真实伤害无关</b>：只有走「攻击」管线的普通攻击（含召唤物、残锋 5b 爆发）才吃 ①劫雷 2~20 倍暴击（① 2 层起必定）；遗器技能、七弦「连射」、沧溟「吸收 HP」、炮台机械伤害、【撕裂】结算都走「技能 / 非攻击」管线，<b>一律不暴击</b> —— 哪怕它们是真实伤害。</p></details>
         <details class="faq"><summary>忘川携带者被打到负 HP 会死吗？</summary><p><b>不会</b>。只有 HP <b>恰好为 0</b> 才死亡，负 HP 仍存活，之后回血正常计算。</p><p>负血<b>挨打</b>时只会越扣越负（-3 挨 3 点 → -6），伤害永远推不到 0，所以负血不会因为受伤被「洗白回满」；代码里另有一道兜底，任何路径把负血写成 0 都会改写成 <b>-1</b>（下限 -1，不设更低）。<b>但「赋值型」路径不受这条保护</b>：均分把 HP 设为 0、斩月「斩杀」把 HP 置 0，都照样判死 —— 这些不是挨打，是直接改血。</p><p>卖掉忘川同样会当场判死。</p></details>
         <details class="faq"><summary>沧溟的被动每回合都弹面板，能不做吗？</summary><p>可以点「取消」放弃本次被动分配（点数浪费）。被动<b>不占行动</b>，即使被「禁止使用遗器技能」戒律封了主动技，被动画板照样出现（被动无视戒律）。</p></details>
-        <details class="faq"><summary>商店怎么用？金币从哪来？</summary><p>需要 ⑬盈箧 的<b>分支</b>：已经拥有 ⑬ 之后再选一次 ⑬，在分支面板里选「盈箧·分支」即解锁商店。商店<b>不限次数、不占主要行动</b>，回合中随时可进出。<b>开局 0 金币</b>，只能先把背包物品卖成金币起家；<b>买卖同价</b>：刻印 10 / 遗器 10 / 剑·弓·三叉戟·钓竿·击退棒·护甲 各 5 / 药水·传送器 3 / 附魔 1。买刻印走「自选一项」、买遗器走「4 选 1」，与开箱同一条链路；装备中的物品卖出会自动卸下。</p></details>
+        <details class="faq"><summary>商店怎么用？金币从哪来？</summary><p>需要 ⑬盈箧 的<b>分支</b>：已经拥有 ⑬ 之后再选一次 ⑬，在分支面板里选「盈箧·分支」即解锁商店。商店<b>不限次数、不占主要行动</b>，回合中随时可进出。<b>开局 0 金币</b>，只能先把背包物品卖成金币起家；<b>买卖同价</b>：刻印 10 / 遗器 10 / 剑·弓·三叉戟·钓竿·击退棒·护甲 各 5 / 药水·传送器 3 / 附魔 1。买刻印走「自选一项」、买遗器走「N 选 1」，与开箱同一条链路；装备中的物品卖出会自动卸下。</p></details>
         <details class="faq"><summary>卖刻印会怎样？</summary><p><b>永久删除，且不可回滚</b> —— 比【黑】更狠：【黑】是遮罩（刻印数据还在，撤掉遮罩就回来），卖出是真的把刻印抹掉。卖出瞬间会先按【黑】的口径做一次<b>即时清算</b>：④ 立即解除<b>自己施加出去</b>的全部戒律与敕罚（别人挂给你的戒律不动）、⑦ 作废已攒未兑现的额外回合、⑧ 已蓄的闪作废并重置冷却、⑩ 召唤物血上限回落并重判胜负、⑪ 清掉自己施加出去的全部白黑；卖的是<b>基础项</b>时，名下分支一并消失。所以「拿 ④ 解完戒律马上卖掉换钱」这类白嫖不成立。</p><p><b>卖出后仍然保留</b>：自动炮台（已建好的照常运作，只是不能再新建）、【撕裂】【红】【黄】【蓝】【尘】—— 这些是<b>既成事实</b>：刻印只是当初把它们挂上去，挂上之后就是目标自己的状态，不存在「由哪枚刻印持续供给」的关系，所以卖刻印不会把它们清掉，卖 ⑫ 尘梦也不会清掉已有的【尘】层数。</p><p><b>被【黑】的刻印照样能卖</b>：【黑】只是遮罩，刻印数据还在，判定「有没有这一项」只看数据本身（不看黑）。卖掉即真删，卖掉之后【黑】那条记录仍留在身上（它记的是「谁黑了你哪一项」），但已经没有可删的刻印了。</p></details>
         <details class="faq"><summary>卖掉【遗器·忘川】会当场判死吗？</summary><p><b>会。</b>忘川的「不死」是<b>查询时实时判</b>（每次死亡检查都去背包里看这件遗器在不在），不是获得时打上的标记 —— 所以遗器一离手，「不死」立刻失效。卖出忘川时如果 HP ≤ 0，<b>当场阵亡</b>，不必等下一次挨打；阵亡后按正常流程掉落背包（此时忘川已经卖掉了，不在掉落里）。HP &gt; 0 时卖只是退掉保险，人没事。<br>顺带一提：负血的下限是 <b>-1</b> —— 负血者再受伤害永远不会被打到 0（也就不会因为「恰好为 0」而死，还白送回满血），最低停在 -1，回血才往上走。</p></details>
         <details class="faq"><summary>物品后面的 #编号是什么意思？</summary><p>只有<b>能被附魔</b>的物品（武器 / 护甲 / 药水 / 遗器）才有独立编号，因为附魔绑定到具体那一件。给一把剑附魔不会影响另一把剑。</p></details>
         <details class="faq"><summary>附魔能叠加吗？占回合吗？</summary><p>不同附魔<b>可以叠加</b>（锋利 + 轻盈 = ATK +3 且射程 +1），同一种在同一件上只能有一次。附魔是<b>回合外</b>行动，每回合限 1 次，用完还能继续主要行动。</p></details>
         <details class="faq"><summary>对局卡住了 / 想重开怎么办？</summary><p>界面上有「强制结束」与「返回主页面」。「强制结束」直接结算当前对局；「返回主页面」回到开局设置，可重新配置模式与人数。</p></details>
         <details class="faq"><summary>AI 会把【尘】叠到打不动人吗？它怎么办？</summary><p>【尘】每层减伤 1，⑫尘梦在中心岛（箱子无限）可以一直叠。AI 现在<b>扣掉尘之后仍打不出伤害就不再攻击</b>，改走三条通道：<b>① 沧溟【分配】</b>（真实伤害、逐点结算、不看 DEF，只要「点数 + 自身 ⑫b 尘」&gt; 对面尘层就能打穿）→ <b>② 弓箭蓄力释放</b>（无限射程，可隔岛点名）→ <b>③ 开箱</b>找沧溟 / 找 ④、⑨b 刻印。<b>不会再对着厚尘做 0 伤害攻击</b>（旧版会，曾导致 17 回合超时）。</p></details>
-        <details class="faq"><summary>「AI 经验库」是什么？会上传我的数据吗？</summary><p>AI 会把打过的局记成<b>几个计数器</b>（开箱 / 蓄力 / 先拆最痛的 / 破壁 四项的胜负次数），用来微调自己的决策倾向，<b>最多只调 ±25%</b>，不改任何规则。<br>数据<b>只存在你自己浏览器的 localStorage 里</b>，不联网、不上传、不存棋谱，整份存档实测约 <b>213 字节</b>、不随局数增长。清掉浏览器数据即彻底删除。结算面板会显示四项的胜率与权重，一局都没学到时整块隐藏。</p></details>
+        <details class="faq"><summary>「AI 经验库」是什么？会上传我的数据吗？</summary><p>AI 会把打过的局记成<b>几个计数器</b>（开箱 / 蓄力 / 先拆最痛的 / 破壁 四项的胜负次数），用来微调自己的决策倾向，<b>最多只调 ±25%</b>，不改任何规则。<br>数据<b>只存在你自己浏览器的 localStorage 里</b>，不联网、不上传、不存棋谱，整份存档实测约 <b>213 字节</b>、不随局数增长。开局面板有「清空 AI 经验」按钮（或清浏览器数据）即彻底删除。结算面板会显示四项的胜率与权重，一局都没学到时整块隐藏。</p></details>
       </div>
     </div>
     <button class="big" id="rulesCloseBtn">关闭</button>
@@ -593,8 +631,8 @@ const ITEMS = {
   trident:  {name:'三叉戟', icon:'\u{1F531}', type:'weapon', atk:9,  rng:Infinity, ranged:true, throwable:true, charge:true, ench:true, desc:'近战 ATK+9（无需蓄力）；投掷需蓄力 1 回合，射程∞，投出后需到落点岛由本人捡回'},
   seal:     {name:'刻印',   icon:'\u{1F4DC}', type:'consume', desc:'获得时立即自选一项永久强化：13 选 1，不占回合（重复选一般不叠加；不入背包、死亡不掉落）'},
   summon:   {name:'召唤物', icon:'\u{1F47B}', type:'consume', desc:'使用后自选一种生物召唤（巨兽 / 游侠 / 幽灵）· 召唤当回合不行动，下个自己的回合起行动'},
-  /* ---- 遗器（4 件特殊武器）----
-     yiqi 编号用于获得时的「遗器 · 4 选 1」面板；
+  /* ---- 遗器（5 件特殊武器）----
+     yiqi 编号用于获得时的「遗器 · N 选 1」面板（N = YIQI_IDS.length）；
      noAtk:true —— 没有普通攻击（只能靠主动技），不会出现在攻击武器列表里 */
   yq_cangming: {name:'沧溟', icon:'\u{1F30A}', type:'weapon', atk:9, rng:Infinity, ranged:true, charge:true, ench:true, yiqi:1,
     desc:'遗器 · 近战 ATK+9（无需蓄力）/ 蓄力投掷射程∞（投出后需本人到落点捡回）/ 特殊投掷：不蓄力不造成伤害，直接投到任意岛 · 可附魔。主动技「分配」（主要行动）：把 ATK 点分给同岛实体——回复 HP / 加护盾 / 吸收 HP（真实伤害：无视 DEF 与护盾，受【尘】减伤）；该伤害不走命中环节，不可被闪避；主动技属于「技能」，不暴击（暴击只看「攻击 / 技能」，与是否真实伤害无关）。被动：每回合开始自动释放一次（无视戒律）'},
@@ -604,6 +642,8 @@ const ITEMS = {
     desc:'遗器 · 近战 ATK+11（无需蓄力，射程按基础算）/ 蓄力 1 回合后远程释放，射程∞（无需捡回）· 可附魔。主动技「斩杀」（主要行动）：满血时选一名目标直接死亡（无视【遗器·忘川】的不死），代价是自己 HP 减半'},
   yq_wangchuan:{name:'忘川', icon:'\u{1F480}', type:'weapon', atk:0, noAtk:true, ench:true, yiqi:4,
     desc:'遗器 · 无普通攻击 · 可附魔。被动「不死」：只有 HP 恰好为 0 才死亡，负 HP 仍存活（回血正常计算；负血挨打只会越扣越负，不会被推到 0）。遗器一旦离手（卖出/被拿走）立即失效，若此刻 HP ≤ 0 则当场阵亡。主动技「均分」（主要行动）：选至少 2 个实体，把它们的 HP 加总后均分（各不超过上限；均分是直接赋值，把携带者均到 0 照样判死）'},
+  yq_zhixing: {name:'掷星', icon:'\u{1F320}', type:'weapon', atk:0, noAtk:true, ench:true, yiqi:5,
+    desc:'遗器 · 无普通攻击 · 可附魔。主动技「掷星」（主要行动）：选一名目标，掷出 1 ~ 本局开局时的最高玩家 HP 上限（只算玩家、含已阵亡者、开局定死后不再变）的随机点数，造成等量真实伤害（无视 DEF 与护盾，受【尘】减伤，吃发起者 ⑫b 尘增伤）；若点数恰好是质数（1 不算），立即获得 1 个额外回合（与 ⑧b 同源，当前回合结束后插到队头）。这一发走命中环节、可被闪避；【白】挡点名'},
   enchant:  {name:'附魔',   icon:'\u2728', type:'enchant', draft:true, desc:'[草案] 回合外使用：自选一种附魔附加到一件物品上'},
   kb:       {name:'击退棒', icon:'\u{1F528}', type:'weapon', atk:0, rng:0, knock:1, ench:true, desc:'攻击可将目标击退 1 个区域'},
   rod:      {name:'钓竿',   icon:'\u{1F3A3}', type:'weapon', atk:0, rng:1, pull:true, fish:true, ench:true, desc:'射程 +1，命中后将目标拉近 1 个区域；也可用来钓鱼'},
@@ -621,7 +661,7 @@ const DROP_TABLE = [
   {id:'trident',   w:10},
   {id:'seal',      w:15},
   {id:'summon',    w:5 },
-  {id:'yiqi',      w:5 },   // 遗器：roll 到后弹「4 选 1」面板（不占回合）
+  {id:'yiqi',      w:5 },   // 遗器：roll 到后弹「N 选 1」面板（不占回合）
   {id:'enchant',   w:10},   // 附魔 ×3
   {id:'kb_or_rod', w:10},   // 自选击退棒或钓竿
 ];
@@ -646,7 +686,7 @@ const SEALS = [
   {id:'5',  name:'残锋', icon:'\u{1F525}', desc:'HP 每比临界值低 1 点，ATK +1 且 DEF +1（临界初始 5，全场共享）'},
   {id:'6',  name:'天工', icon:'\u{1F9F0}', desc:'解锁「建造机械」行动：构建炮台 / 装填弹药 / 自动化 / 手动发射（每次发射都可自选目标）'},
   {id:'7',  name:'蹑景', icon:'\u{26A1}',    desc:'回合开始主动使用：主要行动后追加 N 个额外回合（可叠加：N = 刻印层数；冷却 2 轮）'},
-  {id:'8',  name:'凌波', icon:'\u{1F4A8}', desc:'可重复选。分支① +30% 闪避（可叠加），并可花 1 个主要行动【蓄闪】：下一次受击必定闪避成功（闪避后蓄闪消耗并冷却 1 回合）；分支② 闪避成功立即获 N 个额外回合（需先选分支①才能选；N = 分支①层数，没有分支①时分支②无效）。被戒律禁止使用刻印时不能蓄闪、闪避也不触发，已蓄的闪保留'},
+  {id:'8',  name:'凌波', icon:'\u{1F4A8}', desc:'可重复选。分支① +30% 闪避（可叠加），并可花 1 个主要行动【蓄闪】：下一次受击必定闪避成功（闪避后蓄闪消耗并冷却 1 回合）；分支② 闪避成功立即获 N 个额外回合（需先选分支①才能选；N = 分支①层数，没有分支①时分支②无效；分支②本身只能拿 1 层，叠第 2 层没有任何收益）。被戒律禁止使用刻印时不能蓄闪、闪避也不触发，已蓄的闪保留'},
   {id:'9',  name:'裂帛', icon:'\u{1FA79}', desc:'所有进攻类能力额外施加 1 层【撕裂】'},
   {id:'10', name:'御灵', icon:'\u{1F451}', desc:'自身召唤物 HP/ATK +50%，可操控其行动，且召唤物共享你的刻印并享受加成'},
   {id:'11', name:'点染', icon:'\u{1F9EA}', desc:'攻击命中可自选附加【红】/【蓝】/【黄】之一（均需命中才生效，每次都能改、都能跳过）；选 11b 分支后解锁【白】/【黑】/【灰】与主动技'},
@@ -682,9 +722,12 @@ const SEAL_EXTRA = {
                    Math.round(Math.min(1, 0.3 * (sealCount(p,'8a') + 1)) * 100) + '%）'},
   '8b': {name:'凌波·分支②',
          desc:'闪避成功立即获 N 个额外回合（N = 分支①层数；没有分支①时无效）',
-         sub: p => { const a = sealCount(p,'8a'); return a > 0
-           ? ('N = 分支①当前层数（' + a + '）· 之后再叠 ① 会同步提升 N')
-           : '🔒 不可选：需要先拥有分支①（当前 0 层）'; }},
+         sub: p => { const a = sealCount(p,'8a'), b = sealCount(p,'8b');
+           if (a <= 0) return '🔒 不可选：需要先拥有分支①（当前 0 层）';
+           const base = 'N = 分支①当前层数（' + a + '）· 之后再叠 ① 会同步提升 N';
+           return b > 0
+             ? base + '<br>⚠ 你已经持有 ' + b + ' 层分支② —— <b>分支②只是开关，叠层没有收益</b>，建议改叠分支①'
+             : base; }},
 
   /* ---------------- 天工 · 分支 6b ---------------- */
   '6b': {name:'天工·分支',
@@ -1227,6 +1270,9 @@ function newGame(cfg){
     log: [],
     animating: false,                   // 飞行物动画中，锁定输入
   };
+  // 掷星的点数上限「开局定死」：此时全员都还活着，扫一遍就是正确口径。
+  // 之后对手阵亡、血上限被护甲 / ⑫清辉改动，都不再影响本局掷星的骰面。
+  G.zhixingCap = zhixingMaxRoll();
   fx = []; anim = [];
   expBeginGame();                      // 2.3：清空本局的学习记录（结算时写回经验库）
   $('setup').classList.add('hide');
@@ -1739,7 +1785,7 @@ function clearSanctionsBy(p){
    - **伤害按施加者算**：合并后的伤害里，各施加者名下的层各自取自己的 ⑫b 尘增伤
      （Σ 4×n + Σ n×该施加者的尘增伤），再整笔扣一次承受者的【尘】；
    - 跨类不合并：禁攻击 + 禁移动都触发，就是两次独立结算。
-   notHit：不是「受击」，不解除【蓝】【黄】；trueDmg：无视 DEF 与护盾；不暴击。 */
+   notHit：不是「受击」，不解除【蓝】（受伤照解【白】）；trueDmg：无视 DEF 与护盾；不暴击。 */
 function settleSanctions(e){
   if (!e || !e.alive) return 0;
   const s = e.st.sanctions;
@@ -2049,10 +2095,14 @@ function rejectIfUnpickable(e, what){
    dodgeable    —— 该伤害属于「命中」环节（攻击 / 技能 / 机械），可被闪避；
                    闪避判定在伤害结算前进行，闪避成功则不结算任何伤害；
    _ev          —— 调用方传入对象，闪避成功时写入 _ev.evaded = true。
-   notHit       —— 该伤害不属于「受击」：不计 hits，也不解除【蓝】/【黄】。
-                   （【撕裂】结算是状态伤害，不是挨打，不能白送一次解控）
+   notHit       —— 该伤害不属于「受击」：不解【蓝】（不改 hits，hits 由各入口自己加）。
+                   注意与「受伤」是两件事：【撕裂】结算 notHit 但照样掉血，
+                   所以**解【白】不解【蓝】**。
    ignoreDust   —— 调用方已自行扣过【尘】减伤，本函数不再扣第二遍
                    （【撕裂】：n + 施加者尘增伤 − 承受者尘，减伤由 settleTear 算）。
+   解控口径     ——受击（!notHit，未闪避）→ 解【蓝】；受伤（血量实际下降）→ 解【白】，
+                   两者独立判断：0 伤害 / 被护盾或尘吃光算受击但不算受伤；
+                   撕裂则算受伤不算受击。
    非命中来源（【撕裂】结算、坠入虚空、均分等）不传 dodgeable，不可被闪避。 */
 /* 回血后的死亡复检：忘川负血者被奶到「恰好 0」必须死。
    ⚠ 2.3.3 修正：药水 / 沧溟【回复】是纯赋值（hp = min(max, hp+heal)），
@@ -2118,20 +2168,23 @@ function dealDamage(tgt, raw, opt){
                          (opt.tag ? '（' + opt.tag + '）' : '') + '，未受伤。', 'sys');
     else if (opt.tag) addLog(entLabel(tgt) + ' 免疫了' + opt.tag + '伤害。');
   }
-  // 【蓝】/【白】：只有真正「受击」才解除。
-  // 非受击来源（【撕裂】结算这类状态伤害）不算挨打，不解控 —— 否则撕裂会白送一次解控。
-  // 【白】与蓝同源：被护盾全吸收、打出 0 伤害也照样算挨了一下（只要命中未被闪避），
-  // 与【尘】的「受伤」口径不同（尘看重的是掉血，白看重的只是挨打）。
-  // ⚠【黄】不在这里 —— 黄是「禁足」，靠回合倒计时 / 喝药水解，挨一下打不会松脚。
-  if (!opt.notHit){
-    if (tgt.st.white){
-      tgt.st.white = false; tgt.st.whiteBy = null;
-      addLog(entLabel(tgt) + ' 受到攻击，【白】解除。', 'sys');
-    }
-    if (tgt.st.blue){
-      tgt.st.blue = false;
-      addLog(entLabel(tgt) + ' 的【蓝】解除（下次受击）。');
-    }
+  /* 【白】/【蓝】的解除口径（2.3.8 定稿，两者**不同源**）：
+     · 【白】—— **受伤**即解，与"受击"无关：只看血有没有真的掉。
+       被护盾吃光、被【尘】压到 0 的都不算受伤，白留着；
+       但【撕裂】结算虽然 notHit（不算挨打），**它是受伤**，照样解白。
+     · 【蓝】—— 只要**受击**才解（未闪避即算），0 伤害也解；
+       反过来 notHit 的撕裂不算受击，**不解蓝**。
+     ⚠【黄】不在这里 —— 黄是「禁足」，靠回合倒计时 / 喝药水解，挨一下打不会松脚。 */
+  const hurt = before - tgt.hp > 0;   // 真正掉血：dmg 可能被护盾/尘吃光，用血量差判断最稳
+  if (tgt.st.white && hurt){          // 白：只看受伤，不看 notHit / 是否受击
+    tgt.st.white = false; tgt.st.whiteBy = null;
+    addLog(entLabel(tgt) + ' 受伤，【白】解除。', 'sys');
+  } else if (tgt.st.white && !opt.notHit){
+    addLog(entLabel(tgt) + ' 这一击没打出伤害，【白】仍然生效。', 'sys');
+  }
+  if (!opt.notHit && tgt.st.blue){    // 蓝：只看受击
+    tgt.st.blue = false;
+    addLog(entLabel(tgt) + ' 的【蓝】解除（下次受击）。');
   }
   // 死亡判定（遗器·忘川「不死」：只有 HP 恰好为 0 才死，负 HP 仍存活）
   if (tgt.hp <= 0 && tgt.alive){
@@ -2395,6 +2448,9 @@ function killEnt(victim, killer, toVoid){
 
 /* ---------------- 日志 ---------------- */
 function addLog(text, cls){
+  /* 开局面板阶段 G 还是 null（策略装载 / 经验库提示都可能先于 newGame 走到这里）。
+     这个阶段没有对局，日志没地方挂 —— 只打印到控制台，让 UI 流程继续。 */
+  if (!G || !G.log){ console.log('[log·开局]', text); return; }
   G.log.push({text, cls: cls || ''});
   const box = $('log');
   if (!box) return;
@@ -3476,7 +3532,14 @@ function fireMachine(m, done){
       const tgts = allEnts().filter(e => e.island === isl);
       addLog('【机械】' + tagM + ' 向 ' + islandName(isl) + ' 发射 TNT：16 ATK · 该岛全部实体（含自己人）', 'hl');
       if (!tgts.length) addLog('（该岛没有实体）');
-      tgts.forEach(e => dealDamage(e, 16 - getDef(e), {srcEnt:owner, dodgeable:true, tag:'TNT'}));
+      // 2.3.8：机械命中**记【受击】**（未闪避即计），与普攻/技能口径一致。
+      // 但仍不吃 ⑨裂帛 / ⑪点染 / ①劫雷 —— 那三样只在 attackResolve / applySkillDamage 里挂，
+      // 这里直调 dealDamage，天然绕开，不会误触发。
+      tgts.forEach(e => {
+        const ev = {};
+        dealDamage(e, 16 - getDef(e), {srcEnt:owner, dodgeable:true, tag:'TNT', _ev:ev});
+        if (!ev.evaded) e.hits = (e.hits || 0) + 1;
+      });
       settleWin();          // 这一发可能直接团灭，立即判胜负，后续发射不再继续
       done(true);
       return true;
@@ -3505,7 +3568,9 @@ function fireMachine(m, done){
   if (!foes.length){ addLog('【机械】箭矢没有可被选中的目标（【白】挡下了点名）。'); done(false); return false; }
   const fire = (t) => {
     addLog('【机械】' + tagM + ' 射出箭矢 → ' + entLabel(t) + '（8 ATK）', 'hl');
-    dealDamage(t, 8 - getDef(t), {srcEnt:owner, dodgeable:true, tag:'箭矢'});
+    const ev = {};
+    dealDamage(t, 8 - getDef(t), {srcEnt:owner, dodgeable:true, tag:'箭矢', _ev:ev});
+    if (!ev.evaded) t.hits = (t.hits || 0) + 1;      // 2.3.8：机械命中记【受击】（不叠撕裂）
     settleWin();          // 同上
     done(true);
     return true;
@@ -3587,7 +3652,7 @@ function useConsume(p, uid){
 
 /* =========================================================
    遗器（4 件特殊武器：沧溟 / 七弦 / 斩月 / 忘川）
-   - 获得即「4 选 1」直接装备（开箱 / 钓鱼权重 5%，不占回合）
+   - 获得即「N 选 1」直接装备（开箱 / 钓鱼权重 5%，不占回合）
    - 可附魔、受刻印影响（⑬盈箧按武器叠加 ATK）
    - 主动技属于「技能」：不触发 ①劫雷 / ⑪点染，不触发击退等攻击类效果；
      造成伤害时触发 ⑨裂帛、计入目标【受击】；均分不触发裂帛
@@ -3611,8 +3676,15 @@ function hasCangming(p){
   return !!G.thrown.some(th => th.owner === p.i && th.item.id === 'yq_cangming');
 }
 
-/* AI 选遗器：按当前局势打分（参考：沧溟重续航 / 七弦重清杂 / 斩月重斩杀 / 忘川重保命） */
+/* AI 选遗器：按当前局势打分（参考：沧溟重续航 / 七弦重清杂 / 斩月重斩杀 / 忘川重保命）
+   ⚠ score 里缺项的遗器 AI 永不选它 —— 加新遗器必须同时补一条，否则等于只给人类用。 */
 function aiPickYiqi(p){
+  const score = aiYiqiScores(p);
+  return Object.keys(score).sort((a,b) => score[b] - score[a])[0];
+}
+/* 打分表单独拆出来：测试可以直接读真实的分数（复刻一份会让测试测了个寂寞），
+   也让「掷星必须用开局骰面」这条约束可以被断言住。 */
+function aiYiqiScores(p){
   const foes = foesOf(p);
   const mates = allEnts().filter(e => !isEnemyOf(p, e) && e !== p);
   const score = {
@@ -3620,16 +3692,28 @@ function aiPickYiqi(p){
     yq_qixian:   15 + foes.length * 8,
     yq_zhanyue:  (p.hp >= p.maxHp ? 25 : 0) + (foes.some(f => f.hp >= 10) ? 20 : 0),
     yq_wangchuan:(p.hp <= p.maxHp * .4 ? 35 : 10) + (foes.some(f => f.atk >= 15) ? 15 : 0),
+    /* 掷星：期望伤害 = 骰面上限 / 2，质数再送回合 → 收益**完全由骰面决定**。
+       ⚠ 必须用 zhixingMaxRoll()（开局定死的 G.zhixingCap），不能扫对手当前 maxHp：
+         骰面是开局快照，中局对手阵亡 / 装护甲都不改它；用现扫值会让 AI 的判断与
+         实际能掷出的点数脱节（死剩一人时低估、对手满上限时高估）——而阈值是基于
+         当前血量算的，估算量必须和它同量纲。 */
+    yq_zhixing:  22 + Math.min(30, zhixingMaxRoll() / 2)
+                    + (p.hp <= p.maxHp * .35 ? -10 : 0),
   };
-  return Object.keys(score).sort((a,b) => score[b] - score[a])[0];
+  return score;
 }
-/* 获得遗器：立即弹「4 选 1」面板（不占回合）；AI 自动按局势自选 */
+/* 遗器清单（按 yiqi 编号排序）。**唯一真源** —— 加遗器只需要：ITEMS 里加一条带 yiqi 的项，
+   这里的长度自动增长，「N 选 1」面板与规则书数字都不用再改。
+   ⚠ 旧实现把 4 写死成 [1,2,3,4]，加第 5 件遗器后面板只会列前 4 件，新遗器永远抽不到。 */
+const YIQI_IDS = Object.keys(ITEMS)
+  .filter(id => ITEMS[id].yiqi)
+  .sort((a, b) => ITEMS[a].yiqi - ITEMS[b].yiqi);
+
+/* 获得遗器：立即弹「N 选 1」面板（不占回合）；AI 自动按局势自选 */
 function grantYiqi(p, count, free){
   count = count || 1;
-  const defs = [1,2,3,4].map(k => {
-    const id = Object.keys(ITEMS).find(id => ITEMS[id].yiqi === k);   // id 是键名，ITEMS 条目本身无 id 字段
-    return {id: id, d: ITEMS[id]};
-  });
+  const defs = YIQI_IDS.map(id => ({id: id, d: ITEMS[id]}));
+  const N = defs.length;
   const apply = (id) => {
     addItem(p, id);
     equipAuto(p);
@@ -3648,7 +3732,7 @@ function grantYiqi(p, count, free){
   const step = () => {
     if (left <= 0){ if (free) render(); else finishTurn(p); return; }
     left--;
-    showChoice('遗器 · 自选一件直接装备（4 选 1 · 不占回合）', defs.map(e => ({
+    showChoice('遗器 · 自选一件直接装备（' + N + ' 选 1 · 不占回合）', defs.map(e => ({
       label: e.d.icon + ' ' + e.d.name + (hasArtifact(p, e.id) ? '（已有）' : ''),
       sub: e.d.desc,
       run: () => { apply(e.id); step(); }
@@ -3714,6 +3798,7 @@ function dispatchYiqi(p, id){
   else if (id === 'yq_qixian')   actQixian(p);
   else if (id === 'yq_zhanyue')  actZhanyue(p);
   else if (id === 'yq_wangchuan')actWangchuan(p);
+  else if (id === 'yq_zhixing')  actZhixing(p);
 }
 
 /* ---------- 沧溟 · 分配 ---------- */
@@ -3993,6 +4078,69 @@ function executeWangchuan(p, keys){
   finishTurn(p);
 }
 
+/* ---------- 掷星 · 掷星 ---------- */
+/* 质数判定（试除到 √n）。⚠ 1 **不算**质数（用户定稿）—— 掷出 1 就是最差结果，不补回合。
+   点数上限取「场上最高 HP 上限」，最大也就几十，试除完全够用，不需要筛法。 */
+function isPrime(n){
+  if (!Number.isFinite(n) || n < 2) return false;    // 0 / 1 / 负数 / 非整数 一律不算
+  if (n % 1 !== 0) return false;
+  if (n < 4) return true;                            // 2, 3
+  if (n % 2 === 0) return false;
+  for (let d = 3; d * d <= n; d += 2) if (n % d === 0) return false;
+  return true;
+}
+/* 掷星的点数上限：**开局定死**，取开局时全场玩家（含之后会阵亡的）HP 上限的最大值。
+   ⚠ 口径定稿（用户裁决）：
+     · 只算玩家，不算召唤物 / 傀儡 / 炮台（它们 maxHp 可能比玩家还高，算进来是白吃红利）；
+     · **算已阵亡玩家的 maxHp** —— 开局就把所有人的 maxHp 扫一遍定下来，之后谁死了都不影响；
+     · 之后玩家血上限变化（护甲 / ⑫清辉等）**不再跟算**，保证一局里掷星的上限恒定；
+     · 兜底为 1（单人局 / 全员 maxHp 为 0 时不会掷出 0 点）。 */
+function zhixingMaxRoll(){
+  // 开局已定死（G.zhixingCap）；没有缓存时（旧存档 / 测试里手工造 G）现扫一次兜底。
+  if (G && G.zhixingCap > 0) return G.zhixingCap;
+  let mx = 0;
+  G.players.forEach(q => { if (q && q.maxHp > mx) mx = q.maxHp; });
+  return Math.max(1, mx);
+}
+function actZhixing(p){
+  // 【白】挡点名：白的目标不进候选（与七弦 / 斩月 / 忘川同口径）
+  const tgts = pickable(allEnts(), e => e.alive);
+  if (!tgts.length){ addLog('场上没有可被掷星选中的实体（【白】挡下了点名）。'); render(); return; }
+  const hi = zhixingMaxRoll();
+  showChoice('掷星 · 选择目标（掷 1~' + hi + ' 真实伤害 · 质数送额外回合）', tgts.map(t => ({
+    label: entLabel(t),
+    sub: hpDisp(t) + '/' + t.maxHp + dustHint(t) +
+         ' · 真实伤害：无视 DEF / 护盾，受【尘】减伤 · 这一发可被闪避',
+    run: () => {
+      if (!t.alive){ render(); return; }
+      if (rejectIfUnpickable(t, '掷星')){ render(); return; }   // 期间被上了白 → 打不出去
+      executeZhixing(p, t);
+    }
+  })), () => render());   // 取消：技能未发动
+}
+function executeZhixing(p, t){
+  markActed(p, 'artskill');
+  /* 点数：1 ~ 场上最高 HP 上限（只算存活玩家）的均匀随机整数。
+     吃增伤 / 受尘减伤都在 applySkillDamage → dealDamage 里自动结算，这里不管。 */
+  const hi = zhixingMaxRoll();
+  const roll = 1 + Math.floor(Math.random() * hi);
+  addLog(p.name + ' 发动遗器·掷星【掷星】→ ' + entLabel(t) + '：掷出 ' + roll + ' 点（1~' + hi + '）。', 'hl');
+  /* 真伤 + 无视护盾 + 可闪避：与七弦每一发完全同一条管线，
+     所以 ⑨裂帛、⑫b 尘增伤、受击计数、闪避、忘川不死全部自动成立。 */
+  applySkillDamage(p, t, roll, {trueDmg:true, ignoreShield:true, dodgeable:true, tag:'遗器·掷星'});
+  if (G.phase !== 'play') return;              // 对局已结束，别再发额外回合
+  /* 质数 → 立即获得 1 个额外回合。走 grantExtraTurn，与 ⑧b 同源：
+     额度当场入账，由 takeInsertedTurn() 在当前回合结束后插到队头
+     （抢在 ⑦蹑景的额外回合与下一位玩家之前）。 */
+  if (isPrime(roll)){
+    grantExtraTurn(p, 1);
+    addLog('掷出质数 ' + roll + '！' + p.name + ' 立即获得 1 个额外回合。', 'hl');
+  } else if (roll === 1){
+    addLog('掷出 1 点（1 不是质数），没有额外回合。', 'sys');
+  }
+  finishTurn(p);
+}
+
 
 /* 可叠加的刻印：③丰穰 / ⑧凌波两分支 / ①劫雷（2 层起必定暴击）/ ⑦蹑景（每层 +1 额外回合） */
 function canStackSeal(id){
@@ -4016,7 +4164,12 @@ function sealDisplayDesc(id){
 function grantSeal(p, count, free){
   count = count || 1;
   if (p.isAI){
-    for (let k=0;k<count;k++) applySeal(p, aiPickSeal(p), {silent:true});
+    /* 2.3.9：AI 授印走策略插槽（这才是 AI 的真实入口 —— 旧实现直接调 aiPickSeal，
+       插槽挂在 showSealChoice 里对 AI 根本不会触发）。
+       ⚠ 保持「拿到的 id 原样落地」：不在这里做分支跳转。内置的凌波本来就是
+         直接返回 '8a'/'8b' 分支键，基线要与之逐位一致，就不能在插槽层偷偷改道。
+         想改「先选 8 再进分支面板」的策略，自己返回 '8' 即可（主文件会走分支）。 */
+    for (let k=0;k<count;k++) applySeal(p, strategyPickSeal(p) || aiPickSeal(p), {silent:true});
     if (free) render(); else finishTurn(p);
     return true;
   }
@@ -4034,7 +4187,12 @@ function grantSeal(p, count, free){
 /* 可无限叠加的刻印：③丰穰 / ⑧凌波（分支各算可叠加） */
 function sealStackable(id){ return canStackSeal(id) || id === '8'; }
 function showSealChoice(p, done, onCancel){
-  if (p.isAI){ applySeal(p, aiPickSeal(p)); if (done) done(); return; }
+  if (p.isAI){
+    /* AI 的授印主路径是 grantSeal（那里带分支跳转）。这里只作兜底：
+       真被别的代码直接调用时，也走同一个分派函数，行为一致。 */
+    applySeal(p, strategyPickSeal(p) || aiPickSeal(p));
+    if (done) done(); return;
+  }
   // 兜底：不可叠加项全满时，列「可叠加项 + 还有未选分支的基础项」。
   // 只列可叠加项会把 ⑫尘梦 / ⑥天工 / ⑨裂帛 这类「基础项不可叠加、但有单分支」的刻印
   // 从列表里抹掉，玩家拿满 13 项后就再也没法点进去选 12b / 6b / 9b —— 分支被永久锁死。
@@ -4095,7 +4253,7 @@ function showSealBranch(p, baseId, done){
     applySeal(p, single, {done:done});
     return;
   }
-  if (p.isAI){ applySeal(p, aiPickSealBranch(p, baseId), {silent:true}); if (done) done(); return; }
+  if (p.isAI){ applySeal(p, strategyPickSealBranch(p, baseId) || aiPickSealBranch(p, baseId), {silent:true}); if (done) done(); return; }
   showChoice('刻印·' + base.name + '：选择分支', br.subs.map(bid => {
     const x = SEAL_EXTRA[bid] || {};
     const nm = x.name || bid;
@@ -4256,6 +4414,210 @@ function sealOnAcquire(p, id){
   }
 }
 /* AI 选刻印：按当前局势给每项打分，取最高；不可叠加的已有项自动排除 */
+/* =========================================================
+   AI 刻印策略插件（2.3.9）
+   ---------------------------------------------------------
+   外部文件可接管 AI 的两个刻印决策：选印（pickSeal）与攻击附加色（pickPaint）。
+   约定：
+   · 策略文件定义 `const STRATEGY = { name, pickSeal?, pickPaint? }`，
+     由 installStrategy(code) 用 new Function 执行并取回；
+   · 每次决策先问插件；插件**返回 null / undefined / 非法值 / 抛错** → 一律回落内置实现
+     （aiPickSeal / aiHitEffect），对局不受影响；
+   · 插件连续 3 次抛错自动卸载（防死循环式的坏策略拖垮对局）；
+   · 灰 / 黑在插件层全开放（六色任选，黑可预先封锁 —— 与人类玩家同一套规则），
+     内置默认逻辑不变（黑只封已持有、⑪b 主动技只用白黑）；
+   · ctx 是只读快照：不给岛屿坐标、不给函数引用；数值常量放 ctx.rules，
+     平衡调整后策略无需改版。
+   ========================================================= */
+let AIStrategy = null;          // 已安装的策略对象（null = 未安装，全部走内置）
+let AIStrategyName = '';
+let AIStrategyErrs = 0;         // 连续错误计数：>=3 自动卸载
+function installStrategy(code, name){
+  uninstallStrategy(false);
+  try {
+    const fn = new Function('"use strict";\n' + code +
+      '\n;return (typeof STRATEGY !== "undefined" && STRATEGY) ? STRATEGY : null;');
+    const obj = fn();
+    if (!obj || typeof obj !== 'object') return '策略文件没有定义 STRATEGY 导出对象。';
+    if (typeof obj.pickSeal !== 'function' && typeof obj.pickPaint !== 'function')
+      return 'STRATEGY 至少要有一个 pickSeal(ctx) 或 pickPaint(ctx) 函数。';
+    AIStrategy = obj;
+    AIStrategyName = name || obj.name || '（未命名策略）';
+    AIStrategyErrs = 0;
+    addLog('【AI 策略】已装载策略「' + AIStrategyName + '」（AI 选印 / 上色决策由插件接管）。', 'sys');
+    syncStrategyUI();
+    return null;                       // null = 成功
+  } catch (e){
+    return '策略代码执行失败：' + (e && e.message ? e.message : e);
+  }
+}
+function uninstallStrategy(logIt){
+  const had = !!AIStrategy;
+  AIStrategy = null; AIStrategyName = ''; AIStrategyErrs = 0;
+  if (had && logIt !== false) addLog('【AI 策略】已卸载，AI 决策回到内置实现。', 'sys');
+  syncStrategyUI();
+}
+/* 统一调用口：出错计数 + 自动卸载。返回 undefined = 插件没给出可用答案 */
+function strategyCall(fnName, ctx){
+  if (!AIStrategy || typeof AIStrategy[fnName] !== 'function') return undefined;
+  let r;
+  try { r = AIStrategy[fnName](ctx); }
+  catch (e){
+    AIStrategyErrs++;
+    addLog('【AI 策略】' + fnName + ' 抛错（第 ' + AIStrategyErrs + ' 次）：' +
+           (e && e.message ? e.message : e) + '，本次回落内置。', 'sys');
+    if (AIStrategyErrs >= 3){
+      addLog('【AI 策略】连续 3 次抛错，自动卸载。', 'sys');
+      uninstallStrategy(false);
+    }
+    return undefined;
+  }
+  return r;                            // 注意：null 也是合法返回（= 明确回落）
+}
+/* ctx：刻印决策用的只读快照（深拷贝基础字段，不带函数、不带坐标） */
+function aiStrategyCtx(p, target, extra){
+  const sealSnap = e => {
+    if (!e) return null;
+    const o = {
+      hp: e.hp, maxHp: e.maxHp,
+      atk: e.isSummon ? summonAtk(e) : getAtk(e, e.weapon || null),
+      def: getDef(e), dust: (e.st && e.st.dust) || 0,
+      tear: (e.st && e.st.tear) || 0, tear9b: (e.st && e.st.tear9b) || 0,
+      blue: !!(e.st && e.st.blue), yellow: (e.st && e.st.yellow) || 0,
+      white: !!(e.st && e.st.white), isSummon: !!e.isSummon,
+      seals: {}, blacked: (e.st && e.st.blackSeals ? e.st.blackSeals.map(x => x.id) : [])
+    };
+    if (e.seals) Object.keys(e.seals).forEach(k => { o.seals[k] = e.seals[k]; });
+    return o;
+  };
+  const foes = allEnts().filter(e => e.isAI !== undefined && isEnemyOf(p, e) && e.alive);
+  /* 内置评分用到的两个聚合值，也要给插件 —— 否则「默认基线」无法做到与内置等价。
+       gear  : 背包内护甲 + 武器的件数（⑬盈箧的判据）
+       hasSummon / summonCount : 已有召唤物或召唤道具（⑩御灵的判据）
+       hpMax  : 血上限（残锋 / 尘梦的分档线）
+       sealCount: 自己某刻印的层数（①/⑥/⑦/⑧ 的加成） */
+  const gear = p.bag.filter(it => it.id === 'armor' || (ITEMS[it.id] && ITEMS[it.id].type === 'weapon')).length;
+  return Object.assign({
+    me: sealSnap(p),
+    target: sealSnap(target),
+    field: {
+      round: G.round, mode: G.mode,
+      aliveFoes: foes.length,
+      aliveMates: allEnts().filter(e => e.alive && !e.isSummon && !isEnemyOf(p, e)).length - 1,
+      avgFoeDust: foes.length ? Math.round(foes.reduce((s, e) => s + ((e.st && e.st.dust) || 0), 0) / foes.length) : 0,
+      gear: gear,
+      hasSummon: summonsOf(p).length > 0 || hasItem(p, 'summon'),
+      summonCount: summonsOf(p).length
+    },
+    rules: {
+      dustReducePerLayer: 1,           // 【尘】每层减伤
+      dustAtkNeeds: '12b',             // 尘增伤需持有 ⑫b
+      tearPermanent: true,             // 撕裂层数不清零
+      tearDmgPerLayer: 1,
+      blackCanPreSeal: true            // 黑可封目标尚未持有的刻印（预先封锁）
+    }
+  }, extra || {});
+}
+/* =========================================================
+   插槽 1：选印。返回合法 id 或 undefined（回落 aiPickSeal）。
+
+   候选表 = 内置 aiPickSeal 实际打分过的**全部 id**（含分支键），口径完全照抄：
+     · 基础项：!owned(id) || canStackSeal(id)      ← 内置 canTake
+     · 分支键：owned(基础) && 分支未选              ← 内置 canTakeBranch
+   ⚠ 分支（12b / 6b / 9b / 4b …）在 SEALS 里**没有条目**，它们是独立 id，
+     所以要靠 SEAL_BRANCH_OF 补进来。否则策略里写 add('12b', …) 永远命中不了，
+     装完插件整个分支体系直接归零（这就是 2.3.9 第一版基线跑不平的原因）。
+   ⚠ 占位型分支（⑧凌波）：内置 aiPickSeal 直接打分 8a/8b（从不写占位 '8'），
+     所以候选里第一层就是 8a/8b —— 与内置口径逐位一致，这是基线能对平的前提。
+     '8' 只是「策略想改走分支面板」时才用：返回它主文件会进 showSealBranch，
+     再问 strategyPickSealBranch，不是死分支。
+   ⚠ 8b 有硬前置（需要 8a ≥ 1 层，否则 N=0 是废的）。内置靠给 8b 打 0 分绕开，
+     这里在候选层就摘掉，免得策略写 add('8b', 100) 拿到一枚永远不生效的刻印。
+     同样的过滤放在 human 的 showSealBranch 里（那里是 disabled 灰掉）。 */
+function strategySealCandidates(p){
+  const owned = id => sealCount(p, id) > 0;
+  const cand = [];
+  SEALS.forEach(s => { if (!owned(s.id) || canStackSeal(s.id)) cand.push(s.id); });
+  /* 占位型（⑧凌波）：内置 aiPickSeal 直接打分 8a / 8b，从不写占位 '8'，
+     所以这里必须**按同样的单独口径**放行：两者都在 canStackSeal 白名单里
+     （`canStackSeal('8a')` 与 `canStackSeal('8b')` 均为真），所以一旦拿过就永远可再拿，
+     层数不限 —— 内置就是让它们一直留在池子里，靠打分控制（8b 只在 8a ≥ 2 时才给 58 分）。
+     ⚠ 别用「未持有才给」的过滤：那会让 8a 在拿到 8b 后从池子里消失，
+        实测分布直接从 17 掉到 13（2.3.9 第三版的坑）。
+     ⚠ 别把 ⑧ 交给 SEALS 的循环：'8' 是**占位入口**，SEALS 里那一项是给人类面板用的，
+       内置 AI 从不取它。这里额外放 '8' 只服务「策略想改走分支面板」的写法
+       （返回它 → showSealBranch → strategyPickSealBranch），不影响基线。 */
+  if (cand.indexOf('8a') < 0) cand.push('8a');
+  if (sealCount(p, '8a') > 0 && cand.indexOf('8b') < 0) cand.push('8b');
+  if (owned('8') && !sealBranchTaken(p, '8') && cand.indexOf('8') < 0) cand.push('8');
+  /* 单分支型（6b/9b/12b/4b/5b/2b/10b/13b/11b）：**必须先有基础项**再给分支，
+     否则写出来就是死分支（内置也是靠 canTakeBranch 这么卡的）。 */
+  Object.keys(SEAL_BRANCH_OF).forEach(base => {
+    const br = SEAL_BRANCH_OF[base];
+    if (br.placeholder) return;
+    if (!owned(base) || sealBranchTaken(p, base)) return;
+    if (br.subs.length === 1){ if (cand.indexOf(br.subs[0]) < 0) cand.push(br.subs[0]); return; }
+    br.subs.forEach(bid => { if (cand.indexOf(bid) < 0) cand.push(bid); });
+  });
+  return cand;
+}
+function strategyPickSeal(p){
+  if (!AIStrategy) return undefined;
+  const cand = strategySealCandidates(p);
+  const ctx = aiStrategyCtx(p, null, { candidates: cand });
+  const r = strategyCall('pickSeal', ctx);
+  if (r == null) return undefined;
+  if (typeof r !== 'string' || cand.indexOf(r) < 0){
+    addLog('【AI 策略】pickSeal 返回了不可选的刻印「' + r + '」，回落内置评分。', 'sys');
+    return undefined;
+  }
+  return r;
+}
+/* 插槽 1b：分支二选一（如 ⑧ 的 8a/8b）。合法子键才透传 */
+function strategyPickSealBranch(p, baseId){
+  if (!AIStrategy) return undefined;
+  const br = SEAL_BRANCH_OF[baseId];
+  if (!br || !br.subs) return undefined;
+  const ctx = aiStrategyCtx(p, null, { baseId: baseId, candidates: br.subs.slice() });
+  const r = strategyCall('pickSealBranch', ctx);
+  if (r == null) return undefined;
+  if (typeof r !== 'string' || br.subs.indexOf(r) < 0) return undefined;
+  return r;
+}
+/* =========================================================
+   插槽 2：攻击附加色。返回 {color, sealId?, clearKey?} 或纯色字符串；
+   合法性：color ∈ ctx.candidates（paintColorsOf）；黑须 sealId 为合法基础刻印；
+   灰须 clearKey 在目标实际可解列表里。非法回落 aiHitEffect。 */
+function strategyPickPaint(p, t){
+  if (!AIStrategy) return undefined;
+  const cols = paintColorsOf(p);
+  if (!cols.length) return undefined;
+  const ctx = aiStrategyCtx(p, t, { candidates: cols.slice() });
+  const r = strategyCall('pickPaint', ctx);
+  if (r == null || r === undefined) return undefined;
+  const c = (typeof r === 'string') ? r : (r && r.color);
+  if (typeof c !== 'string' || cols.indexOf(c) < 0){
+    addLog('【AI 策略】pickPaint 返回了不可用颜色「' + c + '」，回落内置。', 'sys');
+    return undefined;
+  }
+  if (c === 'black'){
+    const sid = (r && r.sealId) || null;
+    if (!sid || !SEAL_BY_ID[sid]){
+      addLog('【AI 策略】黑必须带 sealId（合法基础刻印 id），回落内置。', 'sys');
+      return undefined;
+    }
+    if (t.st.blackSeals && t.st.blackSeals.some(x => x.id === sid)) return undefined;  // 已封：回落
+    return { color: 'black', sealId: sid };
+  }
+  if (c === 'grey'){
+    const ck = (r && r.clearKey) || null;
+    const ks = paintClearCandidates(t).map(x => x.key);
+    if (!ck || ks.indexOf(ck) < 0) return undefined;    // 目标身上没这项：回落
+    return { color: 'grey', clearKey: ck };
+  }
+  return c;
+}
+
 function aiPickSeal(p){
   const owned = id => sealCount(p, id) > 0;
   const canTake = id => !owned(id) || canStackSeal(id);
@@ -4880,6 +5242,15 @@ function aiIslandScore(p, island){
 /* 刻印 11 点染：按目标挑附加效果 */
 function aiHitEffect(p, t){
   if (!t) return null;                                      // 没目标：不施加
+  // 2.3.9 插槽：先问策略插件（六色全开放：黑可预封、灰可选解哪项）。
+  // 黑/灰的细节经 p.hitSeal / p.hitClear 带给 attackResolve（与人类面板同一通道）。
+  const sp = strategyPickPaint(p, t);
+  if (sp !== undefined){
+    if (typeof sp === 'string'){ p.hitSeal = null; p.hitClear = null; return sp; }
+    p.hitSeal = sp.sealId || null;
+    p.hitClear = sp.clearKey || null;
+    return sp.color;
+  }
   if (t.st && t.st.white) return null;                      // 对方已经白了 → 再上【白】是浪费
   /* ⚠ 只有选了 11b 才有白/黑/灰。没有分支时 AI 只能出红/蓝/黄，
      否则它会挑到【灰】后被 paintColorsOf 拦下、白白浪费一次命中附加。 */
@@ -5081,6 +5452,14 @@ function aiArtifactSkill(p){
   /* 七弦：唯一的输出手段，有敌人就集火（血线危急且还有药时先去喝药） */
   if (ids.indexOf('yq_qixian') >= 0 && foes.length && !(lowHp && hasPot)){
     executeQixianAI(p); return true;
+  }
+  /* 掷星：单发高方差真伤，打最脆的敌人（补刀优先）。
+     期望 = 上限/2，比七弦的固定 7 点更高；但它是**一次性**的，所以优先砍血最少的，
+     让"掷小了也能补掉"的概率最大。质数送回合是纯白拿，不参与决策。
+     血线危急且还有药时先喝药（与七弦同口径）。 */
+  if (ids.indexOf('yq_zhixing') >= 0 && foes.length && !(lowHp && hasPot)){
+    const t = foes.reduce((a,b) => a.hp <= b.hp ? a : b);
+    executeZhixing(p, t); return true;
   }
   /* 沧溟：点数够多、且沧溟所在岛上有敌人或伤员时才主动分配（否则留着普通攻击） */
   if (ids.indexOf('yq_cangming') >= 0){
@@ -5689,7 +6068,7 @@ function shopMenu(p){
 function shopBuyMenu(p){
   const menu = [
     {label:'📜 刻印', sub:'10 金币 · 自选一项（与开箱同一条选择链路）', run: () => shopBuySeal(p)},
-    {label:'🏺 遗器', sub:'10 金币 · 4 选 1，直接装备', run: () => shopBuyYiqi(p)},
+    {label:'🏺 遗器', sub:'10 金币 · N 选 1，直接装备', run: () => shopBuyYiqi(p)},
   ];
   ['weapon','armor','consume','other'].forEach(g => {
     const names = SHOP_GOODS[g].map(id => ITEMS[id].name).join(' / ');
@@ -5734,8 +6113,8 @@ function shopBuyYiqi(p){
   }
   markActed(p, 'seal');
   addGold(p, -SHOP_PRICE.yiqi, '买入遗器');
-  addLog(p.name + ' 从商店买入一件遗器（−' + SHOP_PRICE.yiqi + ' 金币），4 选 1。', 'hl');
-  // 直接走遗器 4 选 1 面板；free=true → 不结束回合
+  addLog(p.name + ' 从商店买入一件遗器（−' + SHOP_PRICE.yiqi + ' 金币），N 选 1。', 'hl');
+  // 直接走遗器 N 选 1 面板；free=true → 不结束回合
   grantYiqi(p, 1, true);
   return;
 }
@@ -7285,8 +7664,121 @@ $('againBtn').onclick = () => {
 $('resetBtn').onclick = () => {
   $('over').classList.add('hide');
   $('setup').classList.remove('hide');
-  buildSegMode(); buildSeg(); buildPconf(); syncModeUI(); buildSegMap();
+  buildSegMode(); buildSeg(); buildPconf(); syncModeUI(); buildSegMap(); syncExpClearHint();
 };
+/* 清空 AI 经验库（2.3.8 补上 UI 入口：expReset 一直在，但之前没按钮连它）。
+   按钮带确认防误触 —— 清了就真没了（只影响 ±25% 的权重倾向，规则不动）；
+   清空后立刻刷新提示行。 */
+function syncExpClearHint(){
+  const el = $('expClearHint');
+  if (!el) return;
+  const E = expLoad();
+  const g = E.games || 0;
+  el.textContent = g > 0
+    ? 'AI 经验库：已累计 ' + g + ' 局（存 localStorage，约 200 B）'
+    : 'AI 经验库：空（还没学到东西）';
+}
+$('expClearBtn').onclick = () => {
+  const E = expLoad();
+  const g = E.games || 0;
+  const go = () => {
+    expReset();
+    syncExpClearHint();
+    renderExpBox();
+  };
+  if (g <= 0){ go(); return; }        // 空库不用确认
+  /* ⚠ 2.3.9 修复：不能用 showChoice —— 它渲染在对局区的 #actZone 里，
+     而开局面板 #setup 是全屏遮罩（z-index 50），对局区整个被盖在视口外。
+     表现就是：点「清空 AI 经验」→ 确认框其实弹了，但在屏幕外看不见点不着，
+     用户以为按钮坏了（第二次点也一样）。这里改用独立的 fixed 确认弹窗。 */
+  expConfirm('清空 AI 经验库？（已累计 ' + g + ' 局）',
+    'AI 四项权重回到先验 0.5，从零重新学；不影响任何规则。',
+    go);
+};
+/* 开局面板专用确认弹窗（fixed 层，不依赖对局区 DOM）。
+   ⚠ 弹窗节点只建一次，onYes 不能在创建时闭包绑定（否则第二次点会执行上一次的回调），
+     存到模块变量，每次弹出时重挂。取消 / 关闭一律不动数据。 */
+let _expConfirmYes = null;
+function expConfirm(title, sub, onYes){
+  let m = $('expConfirmModal');
+  if (!m){
+    m = document.createElement('div');
+    m.id = 'expConfirmModal';
+    m.className = 'modal hide';
+    m.innerHTML =
+      '<div class="sheet" style="max-width:420px">' +
+      '  <div class="sub">Confirm</div>' +
+      '  <h2 id="expConfirmTitle" style="font-size:19px"></h2>' +
+      '  <p id="expConfirmSub" style="color:#a7b6d6;font-size:12.5px;line-height:1.8;margin:0 0 16px"></p>' +
+      '  <div style="display:flex;gap:10px;justify-content:flex-end">' +
+      '    <button class="sysbtn" id="expConfirmNo" style="padding:9px 18px">取消</button>' +
+      '    <button class="sysbtn" id="expConfirmYes" style="padding:9px 18px;color:#ff7a8a;border-color:rgba(255,122,138,.45)">清空</button>' +
+      '  </div>' +
+      '</div>';
+    document.body.appendChild(m);
+    $('expConfirmNo').onclick  = () => m.classList.add('hide');
+    $('expConfirmYes').onclick = () => { m.classList.add('hide'); if (_expConfirmYes) _expConfirmYes(); };
+    m.onclick = e => { if (e.target === m) m.classList.add('hide'); };
+  }
+  _expConfirmYes = onYes;
+  $('expConfirmTitle').textContent = title;
+  $('expConfirmSub').textContent = sub;
+  m.classList.remove('hide');
+}
+syncExpClearHint();                   // 进设置面板时先亮一次当前局数
+
+/* ---------------- AI 刻印策略：导入 / 卸载（2.3.9） ---------------- */
+function syncStrategyUI(){
+  const el = $('stratHint'), off = $('stratOffBtn');
+  if (!el) return;
+  if (AIStrategy){
+    el.innerHTML = 'AI 刻印策略：<b style="color:#7dd3fc">' + AIStrategyName + '</b>' +
+                   '（接管选印 / 上色 · 灰黑可用）';
+    if (off) off.style.opacity = '1';
+  } else {
+    el.textContent = 'AI 刻印策略：内置';
+    if (off) off.style.opacity = '.45';
+  }
+}
+function stratMsg(t, bad){ const m = $('stratMsg'); if (m){ m.textContent = t; m.style.color = bad ? '#ff7b8a' : '#4ade80'; } }
+$('stratBtn').onclick = () => { $('stratModal').classList.remove('hide'); stratMsg(''); };
+$('stratCloseBtn').onclick = () => { $('stratModal').classList.add('hide'); };
+$('stratOffBtn').onclick = () => { uninstallStrategy(true); stratMsg('已卸载，回到内置策略。'); };
+$('stratFileBtn').onclick = () => $('stratFile').click();
+$('stratFile').onchange = e => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  const fr = new FileReader();
+  fr.onload = () => { $('stratCode').value = String(fr.result || ''); stratMsg('已读取 ' + f.name + '，点「应用」生效。'); };
+  fr.onerror = () => stratMsg('文件读取失败。', true);
+  fr.readAsText(f);
+  e.target.value = '';                 // 允许重复选同一个文件
+};
+$('stratUrlBtn').onclick = async () => {
+  const url = prompt('策略文件网址（同仓库可用相对路径，如 strategies/aggressive.js）：', 'strategies/');
+  if (!url) return;
+  try {
+    if (location.protocol === 'file:' && !/^https?:/i.test(url)){
+      stratMsg('本地双击打开（file://）无法按路径加载，请改用「从文件导入」或粘贴代码。', true);
+      return;
+    }
+    const r = await fetch(url, {cache: 'no-store'});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    $('stratCode').value = await r.text();
+    stratMsg('已拉取 ' + url + '，点「应用」生效。');
+  } catch (err){
+    stratMsg('拉取失败：' + (err.message || err) + '（跨域或路径不对）', true);
+  }
+};
+$('stratApplyBtn').onclick = () => {
+  const code = $('stratCode').value.trim();
+  if (!code){ stratMsg('请先导入文件、粘贴代码或拉取网址。', true); return; }
+  const err = installStrategy(code, '自定义策略');
+  if (err){ stratMsg(err, true); return; }   // 失败：保持未安装，不影响对局
+  stratMsg('已装载「' + AIStrategyName + '」，下一局起 AI 用它决策。');
+  syncStrategyUI();
+};
+syncStrategyUI();
 
 /* 强制结束：立刻按当前局面结算 */
 $('forceEndBtn').onclick = () => {
