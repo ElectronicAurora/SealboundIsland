@@ -1,0 +1,19 @@
+{
+  "strategies": [
+    {
+      "file": "strategies/default.js",
+      "name": "默认基线（与内置一致）",
+      "desc": "内置逻辑的文字版，用于对照实验"
+    },
+    {
+      "file": "strategies/example.js",
+      "name": "示例：残血优先 + 解尘灰",
+      "desc": "演示接口用法，不作强度承诺"
+    },
+    {
+      "file": "strategies/smart.js",
+      "name": "smart：残血保命 + 破壁联动 + 精准上色",
+      "desc": "相对内置改三处：残血优先⑤残锋、厚尘局联动⑨b/⑫b、命中上色看目标（灰解尘/黑预封⑨⑫）"
+    }
+  ]
+}

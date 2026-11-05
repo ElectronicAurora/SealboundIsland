@@ -552,7 +552,7 @@ input[type=number],input[type=text]{
         <div class="rsec">回合结构</div>
         <p>主要回合（含回合开始结算与主要行动）<b>→</b> 召唤物回合 <b>→</b> 召唤物额外回合 <b>→</b> 玩家额外回合 <b>→</b> 下一位玩家。</p>
         <p>额外回合<b>不再触发</b>召唤物回合，也<b>不重复结算</b>回合开始效果。「谁的回合结算谁」：玩家在自己的主要回合开始结算自己的状态，召唤物在召唤物回合开始结算自己的。阵亡但有存活召唤物的玩家仍占回合位。</p>
-        <p><b>⑧b 凌波的插队回合</b>：闪避往往发生在别人的回合，额度当场记下，但不会打断正在结算的那一击；等当前行动者这一整个回合结束后，<b>立刻插入一个属于闪避者的额外回合</b>（N 个就插 N 个），插完再回到原本的回合顺序。阵亡者或⑦蹑景被【黑】时，名下待插入的回合作废。</p>
+        <p><b>插队回合（⑧b 凌波 / 掷星质数）</b>：闪避成功（⑧b）或掷出质数（掷星）都「立即获得」额外回合——额度当场记下，但不会打断正在结算的那一击；等当前行动者这一整个回合结束后，<b>立刻插入属于该玩家的额外回合</b>（N 个就插 N 个），插完再回到原本的回合顺序。日志头会如实标注来源（<b>刻印·凌波 · 闪避</b> / <b>遗器·掷星 · 质数</b>）。阵亡者或⑦蹑景被【黑】时，名下待插入的回合作废。</p>
 
         <div class="rsec">其他</div>
         <p><b>⑬b 盈箧·商店</b>：回合中可与商店交易，<b>不限次数、不占主要行动</b>。开局 0 金币，只能靠卖背包物品起家；<b>买卖同价</b>（刻印 10 / 遗器 10 / 剑·弓·三叉戟·钓竿·击退棒·护甲 各 5 / 药水·传送器 3 / 附魔 1）。<b>卖刻印是永久删除</b>：先按【黑】的口径做完整即时清算，且不回滚（详见 FAQ）。</p>
@@ -1263,7 +1263,8 @@ function newGame(cfg){
     sub: 'main',                        // main / summon / summonExtra / extra
     extraLeft: 0,                       // 当前行动者剩余额外回合数（⑦蹑景等自给的额外回合）
     extraBank: [],                      // 玩家索引 -> 待插入的额外回合数（⑧b 闪避奖励，供作废/计数）
-    insertQueue: [],                    // 待插入的回合（玩家索引，按触发顺序；⑧b 闪避奖励）
+    insertQueue: [],                    // 待插入的回合（玩家索引，按触发顺序；⑧b 闪避 / 掷星质数）
+    insertSrcQ: [],                     // 与 insertQueue 平行的来源标记（纯显示：'刻印·凌波 · 闪避' / '遗器·掷星 · 质数'）
     insertBase: null,                   // 插队前的回合指针，队列清空后据此恢复原顺序
     extraLeftSave: null,                // 被插队者暂存的⑦蹑景未兑现额度（{i,n}；⑧b 队头插队优先于⑦额外回合）
     summonExtraQueue: [],               // 本轮待行动的「召唤物额外回合」
@@ -2198,18 +2199,24 @@ function dealDamage(tgt, raw, opt){
   return dmg;
 }
 
-/* ⑧b 凌波：闪避成功「立即获得」n 个额外回合，以「插队」方式兑现。
+/* 额外回合插队（⑧b 凌波闪避 / 掷星质数共用）：成功「立即获得」n 个额外回合，
+   以「插队」方式兑现。
    不能直接改 G.extraLeft —— 那个计数器会被「当前行动者」消耗，
    闪避往往发生在别人的回合，直接加就会把回合送给攻击方。
    也不能当场切 G.turn：闪避发生在 dealDamage 中间，此刻换人会撕断整条结算链。
    所以立刻把额度入账（日志当场打「立即获得」），由 takeInsertedTurn() 在当前
    行动者的这一个回合结束后立刻插到队头——抢在⑦蹑景的额外回合与下一位玩家
    之前。n 个额度就插 n 个回合；被插队者未兑现的⑦额度暂存 extraLeftSave，插队
-   耗尽后归还。 */
-function grantExtraTurn(p, n){
+   耗尽后归还。
+   src：来源标记（纯显示用），随额度一起进出平行队列 insertSrcQ，
+   缺省 '凌波 · 闪避'（⑧b 的老口径，向后兼容）。 */
+function grantExtraTurn(p, n, src){
   if (!p || p.isSummon || !p.alive) return;
   if (!G.extraBank) G.extraBank = [];
   if (!G.insertQueue) G.insertQueue = [];
+  if (!G.insertSrcQ) G.insertSrcQ = [];
+  const label = src || '刻印·凌波 · 闪避';
+  for (let k = 0; k < n; k++) G.insertSrcQ.push(label);
   G.extraBank[p.i] = (G.extraBank[p.i] || 0) + n;
   for (let k = 0; k < n; k++) G.insertQueue.push(p.i);
 }
@@ -2609,7 +2616,7 @@ function afterSummonPhase(p){
   step();
 }
 
-/* ⑧b 凌波：闪避成功「立即获得」的额外回合以插队方式兑现。
+/* 额外回合插队（⑧b 凌波闪避 / 掷星质数共用）：「立即获得」的额外回合以插队方式兑现。
    不打断正在结算的那一击（闪避在 dealDamage 中间，当场换人会撕断结算链），
    但在当前行动者这一个回合（含召唤物阶段）结束后立刻插入——类似双端队列
    在队头插：抢在⑦蹑景的额外回合与下一位玩家之前。插入回合不结算回合
@@ -2619,6 +2626,8 @@ function takeInsertedTurn(){
   if (!G.insertQueue || !G.insertQueue.length) return false;
   while (G.insertQueue.length){
     const i = G.insertQueue.shift();
+    if (!G.insertSrcQ) G.insertSrcQ = [];
+    const src = G.insertSrcQ.shift() || '刻印·凌波 · 闪避';   // 来源标记与额度同步出队
     const t = G.players[i];
     if (!t || !t.alive) continue;                    // 阵亡者的插入回合作废
     if (G.extraBank && G.extraBank[i] > 0) G.extraBank[i]--;
@@ -2626,7 +2635,7 @@ function takeInsertedTurn(){
     G.turn = i;
     G.turnEnded = false;
     G.sub = 'extra';
-    addLog('—— ' + t.name + ' 插入的额外回合（刻印·凌波 · 闪避）' +
+    addLog('—— ' + t.name + ' 插入的额外回合（' + src + '）' +
            (G.insertQueue.length ? ' · 待插入 ' + G.insertQueue.length : '') + ' ——', 'sys');
     render();
     if (t.isAI){ later(()=>{ aiAct(t); }, 140); }
@@ -2644,7 +2653,7 @@ function runPlayerExtra(p){
   if (G.insertQueue && G.insertQueue.length){
     if (G.extraLeft > 0 && p.alive){
       G.extraLeftSave = { i: p.i, n: G.extraLeft };
-      addLog(p.name + ' 的【蹑景】额外回合顺延：凌波插队优先。', 'sys');
+      addLog(p.name + ' 的【蹑景】额外回合顺延：插队回合优先。', 'sys');
     }
     G.extraLeft = 0;
     if (takeInsertedTurn()) return;
@@ -4120,7 +4129,7 @@ function actZhixing(p){
 }
 function executeZhixing(p, t){
   markActed(p, 'artskill');
-  /* 点数：1 ~ 场上最高 HP 上限（只算存活玩家）的均匀随机整数。
+  /* 点数：1 ~ 开局定死的最高玩家 HP 上限（G.zhixingCap，只算玩家、含已阵亡者）的均匀随机整数。
      吃增伤 / 受尘减伤都在 applySkillDamage → dealDamage 里自动结算，这里不管。 */
   const hi = zhixingMaxRoll();
   const roll = 1 + Math.floor(Math.random() * hi);
@@ -4131,9 +4140,11 @@ function executeZhixing(p, t){
   if (G.phase !== 'play') return;              // 对局已结束，别再发额外回合
   /* 质数 → 立即获得 1 个额外回合。走 grantExtraTurn，与 ⑧b 同源：
      额度当场入账，由 takeInsertedTurn() 在当前回合结束后插到队头
-     （抢在 ⑦蹑景的额外回合与下一位玩家之前）。 */
+     （抢在 ⑦蹑景的额外回合与下一位玩家之前）。来源标记传「遗器·掷星 · 质数」，
+     插队回合的日志头会如实显示 —— 旧版写死「刻印·凌波 · 闪避」，掷星的回合
+     也被标成凌波（用户报的显示错误）。 */
   if (isPrime(roll)){
-    grantExtraTurn(p, 1);
+    grantExtraTurn(p, 1, '遗器·掷星 · 质数');
     addLog('掷出质数 ' + roll + '！' + p.name + ' 立即获得 1 个额外回合。', 'hl');
   } else if (roll === 1){
     addLog('掷出 1 点（1 不是质数），没有额外回合。', 'sys');
