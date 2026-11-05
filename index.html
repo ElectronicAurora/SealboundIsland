@@ -451,7 +451,7 @@ input[type=number],input[type=text]{
           <tr><td>巨兽</td><td>100 HP / 20 ATK · 近战 · 索敌 HP 最高 · 命中后休息 1 回合</td></tr>
           <tr><td>游侠</td><td>6 HP / 4 ATK · 射程 ∞ · 索敌 HP 最低 · 召唤师换岛则跟随</td></tr>
           <tr><td>幽灵</td><td>4 HP / 4 ATK · 近战 · 索敌 HP 最低 · 固有 50% 闪避</td></tr>
-          <tr><td>傀儡</td><td>2 HP / 2 ATK · 近战 · 索敌 HP 最低 · ⑩b 产物，无上限（⑩ 御灵下 3/3）</td></tr>
+          <tr><td>傀儡</td><td>2 HP / 2 ATK · 射程 ∞ · 普攻<b>真实伤害</b>（无视 DEF 与护盾，受【尘】减伤） · 索敌 HP 最低 · ⑩b 产物，无上限（⑩ 御灵下 3/3）</td></tr>
         </table>
 
         <div class="rsec">开箱概率</div>
@@ -807,7 +807,8 @@ const SEAL_EXTRA = {
            const now = hasSeal(p, '10');
            return '傀儡 HP2 / ATK2，' + (now ? '<b>吃御灵 +50% → 3/3</b>' : '⚠ 无御灵加成 → 2/2') +
                   '<br><b>无上限</b>：每回合可召一只，可铺场' +
-                  '<br>索敌 HP 最低 · 近战 · 命中后不休息' +
+                  '<br>索敌 HP 最低 · <b>射程无限</b>（远程，无需走位即可全场点名） · 命中后不休息' +
+                  '<br>普攻为<b>真实伤害</b>：无视 DEF 与护盾（受【尘】减伤）；仍走攻击管线 —— 可暴击①、叠撕裂⑨、上点染⑪、可被闪避、记【受击】' +
                   '<br>暴击只看「攻击 / 技能」，与伤害类型无关：傀儡攻击走普通攻击结算（①劫雷可暴击）；技能一律不暴击' +
                   ' 御灵被【黑】后：加成消失，傀儡回落到 2/2，但<b>保留在场上</b>继续自动作战';
          }},
@@ -849,7 +850,7 @@ const SUMMON_TYPES = {
   3:{key:3, name:'幽灵', icon:'\u{1F47B}', hp:4,   atk:4,  rng:0,        aim:'min', dodge:0.5,  desc:'4HP / 4ATK · 50% 闪避 · 近战 · 索敌 HP 最低'},
   // ⑩御灵 · 分支 10b：无上限铺场，每回合可召一只。基础 2/2，吃御灵 +50% → 常态 3/3；
   // ⑩被【黑】封掉后 1.5 倍加成消失，回落 2/2（maxHp 由 syncSummonMaxHp 双向同步）。
-  10:{key:10,name:'傀儡', icon:'\u{1F9FF}', hp:2,   atk:2,  rng:0,        aim:'min', desc:'2HP / 2ATK · 近战 · 索敌 HP 最低 · 无上限'},
+  10:{key:10,name:'傀儡', icon:'\u{1F9FF}', hp:2,   atk:2,  rng:Infinity, aim:'min', desc:'2HP / 2ATK · 射程无限 · 普攻为真实伤害（无视 DEF 与护盾） · 索敌 HP 最低 · 无上限'},
 };
 
 /* 戒律可禁止的行动 */
@@ -2238,13 +2239,15 @@ function attackResolve(src, tgt, opt){
                 : (src.isSummon ? summonAtk(src) : getAtk(src, opt.weapon));
   const atk = baseAtk + dustAdd;
   const def = getDef(tgt);
-  let dmg = atk - def, crit = false, mult = 1;
+  /* opt.trueDmg（傀儡普攻）：真实伤害口径 —— 不减 DEF、跳过护盾，仍受【尘】减伤；
+     其余攻击管线行为不变（可暴击① / 叠裂帛⑨ / 点染⑪ / 可被闪避 / 记【受击】）。 */
+  let dmg = opt.trueDmg ? atk : atk - def, crit = false, mult = 1;
 
   // 刻印 1 劫雷（暴击）：倍率 2~20 均匀取整。可叠加 —— 第 2 层起暴击概率变为 100%
   const s1 = share ? sealCount(owner, '1') : 0;
   if (s1 > 0 && Math.random() < (s1 >= 2 ? 1 : 0.5)){
     mult = randInt(2, 20);
-    dmg = atk * mult - def;
+    dmg = opt.trueDmg ? atk * mult : atk * mult - def;
     crit = true;
   }
   // 闪避（受击前判定；蓄闪在此消耗并进入冷却）
@@ -2256,7 +2259,7 @@ function attackResolve(src, tgt, opt){
   // 命中才记【受击】；被免疫 / 被护盾吸收（0 伤害）仍算挨了一下，照常计数
   tgt.hits = (tgt.hits || 0) + 1;
   if (crit) addLog('【暴击 ×' + mult + '】' + entLabel(src) + ' 打出暴击！', 'hl');
-  const dealt = dealDamage(tgt, dmg, {srcEnt:src});
+  const dealt = dealDamage(tgt, dmg, {srcEnt:src, trueDmg: !!opt.trueDmg});
   // 刻印 9 裂帛：所有进攻类能力额外 +1 层
   if (share && hasSeal(owner,'9') && dealt >= 0){
     addTear(tgt, 1, src);
@@ -3333,9 +3336,12 @@ function summonActCore(s, owner, done){
   if (!tgt){ addLog(entLabel(s) + ' 附近没有敌方目标，原地待命。'); done(); return; }
   if (islandDist(s.island, tgt.island) <= summonRngOf(s) && !hasBan(s,'atk')){
     if (s.st.blue){ addLog(entLabel(s) + ' 处于【蓝】，无法攻击。'); done(); return; }
-    addLog(entLabel(s) + ' 攻击 ' + entLabel(tgt) + '（ATK ' + summonAtk(s) + ' vs DEF ' + getDef(tgt) + '）');
+    const isPuppet = s.type === 10;    // 傀儡普攻为真实伤害（无视 DEF 与护盾，受【尘】减伤）
+    addLog(entLabel(s) + ' 攻击 ' + entLabel(tgt) +
+           (isPuppet ? '（ATK ' + summonAtk(s) + ' · 真实伤害）'
+                     : '（ATK ' + summonAtk(s) + ' vs DEF ' + getDef(tgt) + '）'));
     markActed(s, 'atk');
-    attackResolve(s, tgt, {effect: entHasSeal(s,'11') ? summonHitEffect(s) : null,
+    attackResolve(s, tgt, {trueDmg: isPuppet, effect: entHasSeal(s,'11') ? summonHitEffect(s) : null,
                      blackSeal: s.hitSeal || null, greyKey: s.hitGreyKey || null});
     done(); return;
   }
@@ -3464,9 +3470,11 @@ function summonHumanGo(s, owner, choice, done){
   else if (choice && choice.act === 'atk'){
     if (s.st.blue){ addLog(entLabel(s) + ' 处于【蓝】，无法攻击。'); }
     else {
-      addLog(entLabel(s) + ' 攻击 ' + entLabel(choice.target) + '（ATK ' + summonAtk(s) + '）');
+      const isPuppet = s.type === 10;   // 傀儡普攻为真实伤害（与自动索敌路径同口径）
+      addLog(entLabel(s) + ' 攻击 ' + entLabel(choice.target) +
+             (isPuppet ? '（ATK ' + summonAtk(s) + ' · 真实伤害）' : '（ATK ' + summonAtk(s) + '）'));
       markActed(s, 'atk');
-      attackResolve(s, choice.target, {effect: entHasSeal(s,'11') ? summonHitEffect(s) : null,
+      attackResolve(s, choice.target, {trueDmg: isPuppet, effect: entHasSeal(s,'11') ? summonHitEffect(s) : null,
                        blackSeal: s.hitSeal || null, greyKey: s.hitGreyKey || null});
     }
   }
@@ -6599,7 +6607,7 @@ function doPaint(p, t, color, sealId){
 
 /* =========================================================
    刻印 10 御灵 · 分支 10b（主动技）
-   召唤一只傀儡（HP2/ATK2，吃御灵 +50% → 常态 3/3）。
+   召唤一只傀儡（HP2/ATK2，吃御灵 +50% → 常态 3/3，射程无限，普攻真实伤害）。
    无上限 —— 每回合可召一只，能铺场。消耗主要行动 · 归【刻印】戒律。
    ========================================================= */
 function actSeal10b(p){
