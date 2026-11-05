@@ -541,7 +541,7 @@ input[type=number],input[type=text]{
         <div class="rsec">机械（⑥天工）</div>
         <p>「建造机械」消耗主要行动：<b>构建炮台</b>（当前岛，固定、无上限）／<b>装填弹药</b>（箭矢 8 ATK 单体、TNT 16 ATK 全岛，装填后<b>弹药无限</b>）／<b>自动化</b>（每主要回合开始前 TNT×1、箭矢×2）／<b>手动发射</b>（1 发）。</p>
         <p><b>发射目标一律可自选</b>：箭矢从全场敌方实体中选 1 个；TNT 从中心岛 + 全部外岛中选 1 个，该岛<b>全部实体</b>挨打（<b>可以选自己所在岛</b>）。每次都有「跳过」，跳过则不开火、<b>手动发射不消耗主要行动</b>。AI 自动索敌，不炸自己人，也不打没有敌人的岛。</p>
-        <p>发射视为「机械来源」攻击：<b>不吃 ①劫雷 / ⑨裂帛 / ⑪点染</b>。炮台<b>不可被攻击</b>。<b>打光敌人立即结算</b>，不再继续后续发射。</p>
+        <p>发射视为「机械来源」攻击：<b>不吃 ①劫雷 / ⑨裂帛 / ⑪点染</b>。炮台<b>不可被攻击</b>。<b>打光敌人立即结算</b>，不再继续后续发射。<b>建造者阵亡后炮台照常自动发射</b>（与卖⑥/黑⑥同口径；人类阵亡后无人可点面板，改自动索敌）。</p>
 
         <div class="rsec">戒律（④敕禁）</div>
         <p>每回合 1 次自由行动，对任一实体（玩家或召唤物）施加一条，持续到<b>施加者下回合开始前</b>：禁止攻击 / 禁止移动（传送器仍可用）/ 禁止开箱 / 禁止使用道具 / 禁止使用遗器技能（<b>被动无视戒律</b>）/ 禁止使用刻印主动能力（封 ④⑦⑥⑨b⑩b⑪b<b>⑤b 主动技</b>与<b>商店交易</b>；<b>炮台自动发射算被动，不受此限</b>）。同类戒律不能叠加。持有分支 <b>4b【敕罚】</b>时：每次成功敕禁给目标叠加 1 层【敕罚】，目标每次进行该行动后受 4×层数点真实伤害（同【撕裂】口径，<b>多人同类禁合并成一次结算</b>）；<b>戒律到期后层数仍在（余罚残留）、无限持续</b>，可被【灰】解除；施加者死亡或 ④/4b 被【黑】/卖出时其挂出的全部敕罚直接清除。</p>
@@ -2511,9 +2511,14 @@ function startTurn(){
   G.sub = 'main';
   const p = cur();
   if (!p.alive){
-    // 召唤师阵亡后保留回合位：其召唤物照常获得召唤物回合（刻印 10 御灵的操控随之失效，改自动）
-    if (summonsOf(p).length){ afterMainAction(p); }
-    else nextPlayer();
+    // 召唤师阵亡后保留回合位：其召唤物照常获得召唤物回合（刻印 10 御灵的操控随之失效，改自动）。
+    // 炮台是「既成事实」（与卖⑥ / 黑⑥同口径）：已建好的照常自动发射——阵亡人类的炮台
+    // 无人可点自选面板，改走 AI 自动索敌（同「无⑩御灵时召唤物只能自动索敌」的先例）。
+    machineAutoFire(p, () => {
+      if (G.phase !== 'play') return;
+      if (summonsOf(p).length){ afterMainAction(p); }
+      else nextPlayer();
+    });
     return;
   }
 
@@ -3508,7 +3513,7 @@ function machineAutoFire(p, done){
     let k = 0;
     const shoot = () => {
       if (G.phase !== 'play' || settleWin()){ done(); return; }
-      if (k++ >= n || !m.ammo || !p.alive){ step(); return; }
+      if (k++ >= n || !m.ammo){ step(); return; }   // 建造者阵亡不拦：炮台是既成事实，照常发射
       fireMachine(m, shoot);
     };
     shoot();
@@ -3555,7 +3560,7 @@ function fireMachine(m, done){
       done(true);
       return true;
     };
-    if (owner.isAI){
+    if (owner.isAI || !owner.alive){    // 阵亡人类无人可点面板 → 与 AI 同路径自动索敌
       const isl = aiPickMachineIsland(m, owner);
       if (isl == null){ addLog('【机械】' + tagM + ' 没有敌方目标，本次不发射。'); done(false); return false; }
       return fire(isl);
@@ -3586,7 +3591,7 @@ function fireMachine(m, done){
     done(true);
     return true;
   };
-  if (owner.isAI){ return fire(foes.reduce((a,b)=> a.hp <= b.hp ? a : b)); }
+  if (owner.isAI || !owner.alive){ return fire(foes.reduce((a,b)=> a.hp <= b.hp ? a : b)); }   // 阵亡人类同走自动索敌
   const opts = foes.map(e => ({
     label: entLabel(e),
     sub: hpDisp(e) + ' · DEF ' + getDef(e) + dustHint(e) +
