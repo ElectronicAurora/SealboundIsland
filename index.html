@@ -3719,7 +3719,7 @@ const YIQI_IDS = Object.keys(ITEMS)
   .sort((a, b) => ITEMS[a].yiqi - ITEMS[b].yiqi);
 
 /* 获得遗器：立即弹「N 选 1」面板（不占回合）；AI 自动按局势自选 */
-function grantYiqi(p, count, free){
+function grantYiqi(p, count, free, onCancel){
   count = count || 1;
   const defs = YIQI_IDS.map(id => ({id: id, d: ITEMS[id]}));
   const N = defs.length;
@@ -3745,7 +3745,9 @@ function grantYiqi(p, count, free){
       label: e.d.icon + ' ' + e.d.name + (hasArtifact(p, e.id) ? '（已有）' : ''),
       sub: e.d.desc,
       run: () => { apply(e.id); step(); }
-    })), () => { left = 0; if (free) render(); else if (G.phase === 'play') finishTurn(p); });
+      // 取消： onCancel（可选）给商店退款用 —— 面板只管选择，扣钱的前一层才知道怎么补。
+      // 不传 → 行为与原来完全一致（只关面板）。
+    })), () => { left = 0; if (onCancel) onCancel(); if (free) render(); else if (G.phase === 'play') finishTurn(p); });
   };
   step();
   return true;
@@ -4172,7 +4174,7 @@ function sealDisplayDesc(id){
 /* 获得刻印：不入背包，立即自选（选择过程不额外占回合）
    count > 1（丰穰 ×N）→ 逐个弹选择；
    free = true → 选完不结束回合，继续当前主要回合（用于回合开始捡拾等不消耗行动的来源） */
-function grantSeal(p, count, free){
+function grantSeal(p, count, free, onCancel){
   count = count || 1;
   if (p.isAI){
     /* 2.3.9：AI 授印走策略插槽（这才是 AI 的真实入口 —— 旧实现直接调 aiPickSeal，
@@ -4185,8 +4187,10 @@ function grantSeal(p, count, free){
     return true;
   }
   let left = count;
-  // 关闭（取消）时的兜底：整串选择结束，按正常流程交接回合，避免卡住
-  const skipAll = () => { left = 0; if (free) render(); else if (G.phase === 'play') finishTurn(p); };
+  // 关闭（取消）时的兜底：整串选择结束，按正常流程交接回合，避免卡住。
+  // onCancel（可选）：商店买入后的「取消要退款」——面板只负责选择，
+  // 前一层（扣钱的那层）才知道怎么补。旧调用方不传 → 行为与原来完全一致。
+  const skipAll = () => { left = 0; if (onCancel) onCancel(); if (free) render(); else if (G.phase === 'play') finishTurn(p); };
   const stepWithCancel = () => {
     if (left <= 0){ if (free) render(); else finishTurn(p); return; }
     left--;
@@ -6112,7 +6116,11 @@ function shopBuySeal(p){
   addGold(p, -SHOP_PRICE.seal, '买入刻印');
   addLog(p.name + ' 从商店买入一枚刻印（−' + SHOP_PRICE.seal + ' 金币），开始自选。', 'hl');
   // 买刻印走与开箱完全同一条链路；free=true → 选完不结束回合（商店不占主要行动）
-  grantSeal(p, 1, true);
+  // 取消 → 退款（第 6115 行已扣的钱在这里补回来；markActed 只记戒律判据，无需还原）
+  grantSeal(p, 1, true, () => {
+    addGold(p, SHOP_PRICE.seal, '买入刻印 · 取消退款');
+    addLog(p.name + ' 取消了这次刻印自选，退还 ' + SHOP_PRICE.seal + ' 金币。', 'sys');
+  });
   if (!G || G.phase !== 'play') return;
   // grantSeal 内部会走面板；选完后回到商店，方便一次性买多件
   return;
@@ -6125,8 +6133,11 @@ function shopBuyYiqi(p){
   markActed(p, 'seal');
   addGold(p, -SHOP_PRICE.yiqi, '买入遗器');
   addLog(p.name + ' 从商店买入一件遗器（−' + SHOP_PRICE.yiqi + ' 金币），N 选 1。', 'hl');
-  // 直接走遗器 N 选 1 面板；free=true → 不结束回合
-  grantYiqi(p, 1, true);
+  // 直接走遗器 N 选 1 面板；free=true → 不结束回合；取消 → 退款
+  grantYiqi(p, 1, true, () => {
+    addGold(p, SHOP_PRICE.yiqi, '买入遗器 · 取消退款');
+    addLog(p.name + ' 取消了这次遗器选择，退还 ' + SHOP_PRICE.yiqi + ' 金币。', 'sys');
+  });
   return;
 }
 function shopSellMenu(p){
