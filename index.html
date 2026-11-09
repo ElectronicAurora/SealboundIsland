@@ -64,50 +64,6 @@ h1{
   border-radius:16px;backdrop-filter:blur(8px);
 }
 #mapWrap{overflow:hidden;border-radius:16px;position:relative;background:var(--sea)}
-/* 手机端：标题条 + 地图一起锁在屏幕顶部，滚动下方按钮/玩家卡/日志时地图恒可见。
-   用「块级流 + 双 sticky」实现：header 钉 top:0、地图钉 top:46px（正好压在标题条下沿），
-   两者高度都定死，粘滞范围覆盖整页。 */
-@media(max-width:900px){
-  /* 关键：html/body 不能再设 overflow——一旦它们变成滚动容器，sticky 子元素
-     会相对「自己不滚动的 body」计算，标题条与地图就钉不住（实测 top 会随页面飞走） */
-  html,body{height:auto;overflow:visible}
-  body{padding:0;display:block}
-  #app{height:auto;min-height:100vh;display:block;max-width:100%;padding:0}
-  header{
-    position:sticky;top:0;z-index:60;height:46px;padding:0 12px;margin-bottom:0;
-    background:var(--bg);border-bottom:1px solid var(--line);
-    flex-wrap:nowrap;overflow:hidden;gap:10px;
-  }
-  header h1{font-size:17px;white-space:nowrap;flex:0 0 auto}
-  header .badge{display:none}
-  header .round{margin-left:auto;font-size:11px;white-space:nowrap;flex:0 0 auto;overflow:hidden}
-  header .round b{font-size:13px}
-  .game{display:block;gap:0;min-height:0}
-  .game>div{display:block;min-height:0;gap:0}
-  #mapWrap{
-    position:sticky;top:46px;z-index:50;height:45vh;min-height:0;border-radius:0;
-    border-bottom:2px solid var(--cyan);box-shadow:0 12px 26px -12px rgba(0,0,0,.85);
-  }
-  #mapWrap canvas{width:100%;height:100%;object-fit:contain}
-  #actZone{margin:8px;padding:10px;border-radius:13px}
-  .acts{grid-template-columns:repeat(4,1fr);gap:6px}
-  .abtn{padding:9px 2px;font-size:12px;border-radius:8px}
-  .abtn small{display:none}
-  .game>div:last-child{padding:0 8px}
-  .plist{margin-bottom:8px;border-radius:13px}
-  #logBox{margin:0 0 16px;border-radius:13px}
-  /* 手机端选项面板展开：行动区放开高度，选项列表单独限高滚动，
-     保证「取消」按钮落在可视区内（46 标题 + 45vh 地图 + 按钮区自身的余量） */
-  body.choosing #actZone{max-height:none;overflow:visible}
-  body.choosing #cOpts{max-height:calc(100dvh - 46px - 45vh - 150px);overflow-y:auto}
-}
-/* 超窄屏（≤420）：顶栏再收一档，保证标题与轮次一行放得下 */
-@media(max-width:420px){
-  header{gap:8px;padding:0 10px}
-  header h1{font-size:15px}
-  header .round{font-size:10px}
-  .abtn{font-size:11px;padding:9px 1px}
-}
 canvas{display:block;width:100%;height:auto}
 #turnbar{
   position:absolute;left:0;right:0;top:0;padding:9px 14px;
@@ -172,6 +128,63 @@ canvas{display:block;width:100%;height:auto}
   display:block;font-weight:400;font-size:11px;color:var(--dim);margin-top:3px;
   line-height:1.35;white-space:normal;word-break:break-word;
 }
+/* 手机端（写在 .acts / .abtn 基础规则之后，否则被反向覆盖）：
+   标题条与地图一起「绝对固定」在屏幕顶部；固定元素脱离文档流，
+   两者高度都定死，粘滞范围覆盖整页。 */
+@media(max-width:900px){
+  /* 移动端：标题条与地图「绝对固定」在屏幕顶部，一起钉住。
+     这里不用 sticky —— 手机上祖先容器（滚动上下文 / 高度计算）会让 sticky 失效，
+     上滑玩家卡时地图被一起顶走；fixed 才能真正恒定不动。
+     两个 fixed 元素都脱离文档流，所以分别用 padding 在流内留出等高占位：
+       #app          padding-top:46px   ← 补偿标题条
+       .game>div:first-child padding-top:45dvh ← 补偿地图 */
+  /* 高度统一走变量：--mmap 取「45vh」与「按画布 720:620 等比算出的 86vw」的较小值，
+     这样多数手机上地图满宽显示、上下没有黑边，且不超出半屏 */
+  :root{--mhd:46px;--mmap:min(45vh,86vw)}
+  html,body{height:auto;overflow:visible}
+  body{padding:0;display:block}
+  #app{height:auto;min-height:100vh;display:block;max-width:100%;padding:var(--mhd) 0 0}
+  header{
+    position:fixed;top:0;left:0;right:0;z-index:60;
+    height:var(--mhd);padding:0 12px;margin:0;
+    background:var(--bg);border-bottom:1px solid var(--line);
+    flex-wrap:nowrap;overflow:hidden;gap:10px;
+  }
+  header h1{font-size:17px;white-space:nowrap;flex:0 0 auto}
+  header .badge{display:none}
+  header .round{margin-left:auto;font-size:11px;white-space:nowrap;flex:0 0 auto;overflow:hidden}
+  header .round b{font-size:13px}
+  .game{display:block;gap:0;min-height:0}
+  .game>div{display:block;min-height:0;gap:0}
+  .game>div:first-child{padding-top:var(--mmap)}   /* 地图占位（fixed 元素脱离文档流） */
+  #mapWrap{
+    position:fixed;top:var(--mhd);left:0;right:0;z-index:50;
+    height:var(--mmap);min-height:0;margin:0;border-radius:0;
+    display:flex;align-items:center;justify-content:center;
+    border-bottom:2px solid var(--cyan);box-shadow:0 12px 26px -12px rgba(0,0,0,.85);
+  }
+  /* 画布自身等比缩放（不用 object-fit）——元素盒子 = 画面区域，不留黑边 */
+  #mapWrap canvas{width:auto;height:auto;max-width:100%;max-height:100%}
+  #actZone{margin:8px;padding:10px;border-radius:13px}
+  .acts{grid-template-columns:repeat(4,1fr);gap:6px}
+  .abtn{padding:9px 2px;font-size:12px;border-radius:8px}
+  .abtn small{display:none}
+  .game>div:last-child{padding:0 8px}
+  .plist{margin-bottom:8px;border-radius:13px}
+  #logBox{margin:0 0 16px;border-radius:13px}
+  /* 手机端选项面板展开：选项列表单独限高滚动，保证「取消」落在可视区内
+     （可视高度 = 100dvh − 46 标题 − 45dvh 地图 − 按钮区余量） */
+  body.choosing #actZone{max-height:none;overflow:visible}
+  body.choosing #cOpts{max-height:calc(100vh - var(--mhd) - var(--mmap) - 150px);overflow-y:auto}
+}
+/* 超窄屏（≤420）：顶栏再收一档，保证标题与轮次一行放得下 */
+@media(max-width:420px){
+  header{gap:8px;padding:0 10px}
+  header h1{font-size:15px}
+  header .round{font-size:10px}
+  .abtn{font-size:11px;padding:9px 1px}
+}
+
 /* ===== 桌面端行动区紧凑化（必须写在上面 .acts / .abtn 基础规则之后，
    否则 @media 不提升优先级、会被基础规则反向覆盖）=====
    目标：16 个行动按钮压进 2~3 行、总高 ≤212px，把纵向空间让给地图。 */
