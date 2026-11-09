@@ -37,13 +37,43 @@ h1{
 
 /* ---------- 布局 ---------- */
 .game{display:grid;grid-template-columns:minmax(0,1fr) 306px;gap:14px;align-items:start}
-@media(max-width:900px){.game{grid-template-columns:1fr}}
+@media(max-width:900px){
+  .game{grid-template-columns:1fr}
+  body{padding:10px}
+}
+/* 桌面端：整页一屏塞下（不出现页面滚动条）——地图按剩余高度等比缩放，
+   行动区内容高度固定，玩家列表与战斗日志各自内部滚动。 */
+@media(min-width:901px){
+  body{overflow:hidden;padding:12px}
+  #app{height:100%;max-width:1240px;display:flex;flex-direction:column}
+  header{margin-bottom:10px}
+  .game{flex:1;min-height:0;align-items:stretch}
+  .game>div{display:flex;flex-direction:column;gap:12px;min-height:0}
+  /* 左列：地图占满扣除行动区之后的剩余高度（等比、不变形） */
+  #mapWrap{flex:1 1 auto;min-height:160px;display:flex;align-items:center;justify-content:center}
+  #mapWrap canvas{width:auto;height:auto;max-width:100%;max-height:100%}
+  #actZone{flex:0 0 auto}
+  #choice .opts{max-height:24vh;overflow-y:auto}   /* 选项列表过长时面板内滚动 */
+  /* 右列：玩家列表 + 日志瓜分高度，各自内部滚动 */
+  .plist{flex:1 1 46%;min-height:0;overflow-y:auto}
+  #logBox{flex:1 1 54%;min-height:0;margin-top:0;max-height:none;overflow:hidden;
+          display:flex;flex-direction:column;padding-bottom:8px}
+  #logBox #log{flex:1;min-height:0;overflow-y:auto}
+}
 
 .card{
   background:var(--panel);border:1px solid var(--line);
   border-radius:16px;backdrop-filter:blur(8px);
 }
 #mapWrap{overflow:hidden;border-radius:16px;position:relative;background:var(--sea)}
+/* 手机端：地图钉在屏幕顶部（写在基础规则之后才能覆盖 position），
+   滚动日志/玩家卡时地图恒可见。
+   display:contents 让中间的列容器从布局树中移除 → sticky 的粘滞范围
+   扩到整个 .game（否则只能钉到左列容器底部就随它滚走）。 */
+@media(max-width:900px){
+  .game>div{display:contents}
+  #mapWrap{position:sticky;top:0;z-index:5;box-shadow:0 14px 34px -14px rgba(0,0,0,.85)}
+}
 canvas{display:block;width:100%;height:auto}
 #turnbar{
   position:absolute;left:0;right:0;top:0;padding:9px 14px;
@@ -132,7 +162,7 @@ body.choosing .abtn:hover{background:rgba(255,255,255,.05);border-color:var(--li
 
 /* ---------- 日志 ---------- */
 #logBox{margin-top:14px;padding:11px 12px;max-height:190px;overflow-y:auto}
-#logBox h4{font-size:11px;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:7px}
+#logBox h4{font-size:11px;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:7px;flex:0 0 auto}
 #log{font-size:11.8px;line-height:1.85;color:#a7b6d6}
 #log div{padding:1px 0;border-bottom:1px solid rgba(255,255,255,.035)}
 #log .hl{color:var(--amber)}
@@ -329,7 +359,7 @@ input[type=number],input[type=text]{
 <div class="modal" id="setup">
   <div class="sheet">
     <h2>末环协议 · RingFall</h2>
-    <div class="sub">对局设置 · v2.4.0</div>
+    <div class="sub">对局设置 · v2.5.0</div>
     <div class="row">
       <label>对战模式</label>
       <div class="seg" id="segMode"></div>
@@ -440,7 +470,7 @@ input[type=number],input[type=text]{
           <tr><td>护甲</td><td>背包内 +4 DEF，默认只算一件（⑬盈箧后可叠）</td></tr>
           <tr><td>药水</td><td>+10 HP（回响附魔 +5）</td></tr>
           <tr><td>剑 / 弓箭 / 三叉戟</td><td>+7 / +8（蓄力后射程 ∞）/ +9（近战）</td></tr>
-          <tr><td>炮台 箭矢 / TNT</td><td>8 ATK 单体（自动 ×2） / 16 ATK 全岛（自动 ×1）</td></tr>
+          <tr><td>炮台 箭矢 / TNT</td><td>基础 8 ATK 单体（自动 ×2） / 基础 16 ATK 全岛（自动 ×1）——均再吃主人残锋⑤ / 尘梦⑫b 加成，可暴击①、可叠裂帛⑨、可上点染⑪</td></tr>
           <tr><td>遗器（N 选 1）</td><td>沧溟 ATK+9 分配 · 七弦连射 7×1 · 斩月 ATK+11 斩杀 · 忘川不死均分 · <b>掷星 1~开局上限 真实伤害（质数送回合）</b></td></tr>
           <tr><td>蓄闪 / 蹑景</td><td>1 主要行动换 1 次必闪，冷却 1 轮 / +N 额外回合（N = 蹑景层数），冷却 2 轮</td></tr>
           <tr><td>每岛箱子</td><td>孤枢散星：外岛 3 个，中心岛无限；叠嶂凝芒：出生岛 3 个，枢纽岛 1 个，中心岛无限</td></tr>
@@ -540,8 +570,8 @@ input[type=number],input[type=text]{
 
         <div class="rsec">机械（⑥天工）</div>
         <p>「建造机械」消耗主要行动：<b>构建炮台</b>（当前岛，固定、无上限）／<b>装填弹药</b>（箭矢 8 ATK 单体、TNT 16 ATK 全岛，装填后<b>弹药无限</b>）／<b>自动化</b>（每主要回合开始前 TNT×1、箭矢×2）／<b>手动发射</b>（1 发）。</p>
-        <p><b>发射目标一律可自选</b>：箭矢从全场敌方实体中选 1 个；TNT 从中心岛 + 全部外岛中选 1 个，该岛<b>全部实体</b>挨打（<b>可以选自己所在岛</b>）。每次都有「跳过」，跳过则不开火、<b>手动发射不消耗主要行动</b>。AI 自动索敌，不炸自己人，也不打没有敌人的岛。</p>
-        <p>发射视为「机械来源」攻击：<b>不吃 ①劫雷 / ⑨裂帛 / ⑪点染</b>。炮台<b>不可被攻击</b>。<b>打光敌人立即结算</b>，不再继续后续发射。<b>建造者阵亡后炮台照常自动发射</b>（与卖⑥/黑⑥同口径；人类阵亡后无人可点面板，改自动索敌）。</p>
+        <p><b>发射目标一律可自选</b>：箭矢从全场<b>任意实体</b>（含友方与自己，<b>【白】挡不住</b>）中选 1 个；TNT 从中心岛 + 全部外岛中选 1 个，该岛<b>全部实体</b>挨打（<b>可以选自己所在岛</b>）。每次都有「跳过」，跳过则不开火、<b>手动发射不消耗主要行动</b>。AI 自动索敌，只打敌人、不炸自己人，也不打没有敌人的岛。</p>
+        <p>发射走<b>炮台专用攻击管线</b>：<b>继承建造者的被动刻印</b>——残锋⑤（按血线加 ATK）、尘梦⑫b（尘增伤）、劫雷①（2~20 倍暴击，2 层起必定）、裂帛⑨（命中叠 1 层【撕裂】，含 ⑨b 的 DEF−1）、点染⑪（人类发射时弹面板自选颜色，AI 自动有【红】上红；TNT 范围攻击只支持红/蓝/黄/白，不支持黑/灰单点操作）；<b>不吃武器与附魔加成</b>。建造者<b>阵亡后不再继承加成</b>，但炮台照常自动发射（与卖⑥/黑⑥同口径；人类阵亡后无人可点面板，改自动索敌）。炮台<b>不可被攻击</b>。<b>打光敌人立即结算</b>，不再继续后续发射。箭矢是物理射击而非技能，<b>【白】挡不住它</b>，且<b>可选友方与自己</b>（帮队友解【蓝】/【白】、自残解控）；TNT 命中目标岛全部实体（含自己人）。</p>
 
         <div class="rsec">戒律（④敕禁）</div>
         <p>每回合 1 次自由行动，对任一实体（玩家或召唤物）施加一条，持续到<b>施加者下回合开始前</b>：禁止攻击 / 禁止移动（传送器仍可用）/ 禁止开箱 / 禁止使用道具 / 禁止使用遗器技能（<b>被动无视戒律</b>）/ 禁止使用刻印主动能力（封 ④⑦⑥⑨b⑩b⑪b<b>⑤b 主动技</b>与<b>商店交易</b>；<b>炮台自动发射算被动，不受此限</b>）。同类戒律不能叠加。持有分支 <b>4b【敕罚】</b>时：每次成功敕禁给目标叠加 1 层【敕罚】，目标每次进行该行动后受 4×层数点真实伤害（同【撕裂】口径，<b>多人同类禁合并成一次结算</b>）；<b>戒律到期后层数仍在（余罚残留）、无限持续</b>，可被【灰】解除；施加者死亡或 ④/4b 被【黑】/卖出时其挂出的全部敕罚直接清除。</p>
@@ -566,8 +596,9 @@ input[type=number],input[type=text]{
           <tr><td>🌙 斩月</td><td>ATK+11 · 近战 / 蓄力远程 ∞ · 主动技「斩杀」：<b>满血</b>时选一名目标直接死亡（<b>无视【忘川】不死</b>，可被闪避——被闪则落空，代价照付），代价自己 HP 减半（下取整，目标死后结算）</td></tr>
           <tr><td>💀 忘川</td><td>无普通攻击 · 被动「不死」：<b>HP 恰好为 0 才死亡</b>，负 HP 仍存活（回血正常计算）· 主动技「均分」：选至少 2 个实体，HP 加总后均分（各不超上限；<b>负 HP 按真实负值计入</b>，结果可能为负，结果为 0 或负时按死亡规则处理）</td></tr>
           <tr><td>🌠 掷星</td><td>ATK 0（无普通攻击），<b>无射程概念</b> · 主动技「掷星」（主要行动）：选一名目标，掷出 <b>1 ~ 本局开局时最高玩家 HP 上限</b>的随机点数，造成等量<b>真实伤害</b>（<b>无视 DEF 与护盾，受【尘】减伤</b>，吃 ⑫b 尘增伤）；<b>走命中环节、可被闪避</b>（闪避则不记受击、不叠 ⑨裂帛）；点数若为<b>质数（1 不算）</b>立即获得 <b>1 个额外回合</b>（与 ⑧b 同源，插到队头）<br><span style="opacity:.75">上限口径：<b>开局扫一次定死</b>，只算玩家（不含召唤物 / 傀儡 / 炮台）、<b>含之后会阵亡的玩家</b>；开局后血上限变动不跟算。例：4 人 30 血开局 → 骰面恒为 1~30，送回合概率 10/30 ≈ 33%</span></td></tr>
+          <tr><td>🕳 心渊</td><td>ATK 0（无普通攻击） · 主动技 1「净化」（主要行动）：全场选一名实体，清除其身上一个可解除效果（同【灰】范围，不能选【白】目标）。主动技 2「掌控」（主要行动）：全场选一名实体（不能选自己），施加<b>精神控制</b>。目标持续至你的下个主要回合开始，期间其所有回合行动由你操纵（包含其召唤物与炮台）。<b>不能连续两个主要回合控制同一目标</b>。多人控制时最后施加的生效。遗器离手/卖出/死亡时立即解除。</td></tr>
         </table>
-        <p><b>技能与「受击」</b>：被有伤害的技能打到<b>也算受击</b>（记次数、可叠加【撕裂】），技能与机械伤害同样<b>走命中环节、可以被闪避</b>，但不触发攻击类效果（击退、拉近、投掷等）。<b>炮台的箭矢 / TNT 同样记受击</b>（未被闪避即计），但不叠 ⑨裂帛、不吃 ⑪点染。</p>
+        <p><b>技能与「受击」</b>：被有伤害的技能打到<b>也算受击</b>（记次数、可叠加【撕裂】），技能与机械伤害同样<b>走命中环节、可以被闪避</b>，但不触发攻击类效果（击退、拉近、投掷等）。<b>炮台的箭矢 / TNT 同样记受击</b>（未被闪避即计），并按建造者的刻印结算 ⑨裂帛 / ⑪点染。</p>
         <p>全游戏数值<b>一律下取整</b>。界面提供「强制结束」「返回主页面」，对局中随时可点开本规则，不影响回合状态。</p>
       </div>
 
@@ -587,14 +618,14 @@ input[type=number],input[type=text]{
         <details class="faq"><summary>护甲能叠加吗？捡了两件为什么只 +4 DEF？</summary><p>默认<b>不叠加</b>，多件只按一件算（取附魔加成最高的那件）。拿到 ⑬盈箧 之后才按件数全叠加。</p></details>
         <details class="faq"><summary>BOSS 死了我方还有好几个人，为什么直接结束了？</summary><p>BOSS 战<b>按阵营判定</b>，不按存活人数。BOSS 一倒下，英雄方立即获胜。</p></details>
         <details class="faq"><summary>炮台会误伤自己人吗？</summary><p>TNT <b>会</b>——命中该岛全部实体，包括自己、队友与召唤物。手动发射可以选择跳过或避开自己所在岛；AI 会主动避开自己人。</p></details>
-        <details class="faq"><summary>炮台能暴击、能附加撕裂吗？</summary><p>不能。发射视为「机械来源」，<b>不吃 ①劫雷 / ⑨裂帛 / ⑪点染</b>，但伤害走命中环节，<b>可以被闪避</b>。</p></details>
+        <details class="faq"><summary>炮台能暴击、能附加撕裂吗？</summary><p><b>能</b>。发射走炮台专用攻击管线，<b>继承建造者的被动刻印</b>：①劫雷照常暴击（2~20 倍）、⑨裂帛照常叠【撕裂】（含 ⑨b 的每层 DEF−1）、⑪点染照常上色、⑤残锋 / ⑫b 尘梦照常加 ATK；只有<b>武器与附魔加成不吃</b>。伤害走命中环节，<b>可以被闪避</b>（【白】挡不住炮台，【蓄闪】能躲）。</p></details>
         <details class="faq"><summary>炮台装填的弹药会用完吗？</summary><p>不会。装填一次即<b>弹药无限</b>，之后只需决定自动化开关与何时手动发射。</p></details>
         <details class="faq"><summary>召唤物刚召唤出来这回合为什么不动？</summary><p>刚召唤的生物处于「正在现身」状态，<b>当回合的召唤物回合与额外回合都跳过</b>，从你的下一个回合起才行动。</p></details>
         <details class="faq"><summary>怎么手动操控召唤物？</summary><p>需要 ⑩御灵。没有 ⑩御灵时，无论人类还是 AI，召唤物都<b>只能自动索敌</b>，不会弹操控面板。</p></details>
         <details class="faq"><summary>召唤物会跟着我换岛吗？</summary><p>只有<b>游侠</b>会跟随（移动、传送、被打飞、被钓竿拉走都算）。巨兽与幽灵按自己的索敌逻辑行动。召唤物本身不能被传送器传送。</p></details>
         <details class="faq"><summary>⑨b 的撕裂把 DEF 压到负数会怎样？</summary><p><b>该实体无法移动</b>。⑨b 拥有者施加的【撕裂】<b>每层令目标 DEF −1</b>（可累加，层数不清零就会一直压着）；当 DEF 被压到 <b>&lt; 0</b>，移动按钮置灰、AI 与召唤物也不会走位。DEF 变负还会让打在它身上的攻击更痛（伤害要减 DEF）。<b>传送器仍可用</b> —— 与戒律「禁止移动（传送器仍可用）」同口径，传送是道具、不走移动流程。想解除就用 ⑪b【灰】选中【撕裂】，层数和 DEF 惩罚一起清掉。</p></details>
         <details class="faq"><summary>点染分支的【灰】能解什么？</summary><p><b>【灰】不上状态、立即生效</b>：选一个目标后，把他身上现有的效果逐项列出（【白】【黑】【蓝】【黄】【撕裂】【尘】【戒律】【敕罚】【蓄闪】），你选一个立即解除（【敕罚】按「目标×禁类×施加者」逐条整条解除）。<b>解【黑】是「黑掉施加者⑪」之外的第二条解黑路径</b>，且解除时 ⑩御灵的血上限会加回。目标身上没有任何效果时【灰】无事可做，会退回颜色选择，不消耗主要行动。</p></details>
-        <details class="faq"><summary>遗器技能会暴击 / 被闪避吗？</summary><p><b>「真实伤害」与「能不能被闪避」是两件事</b>：真实伤害只定义「无视 DEF 与护盾」，<b>【尘】减伤照常生效</b>；能否被闪避只看这一击走不走命中环节。七弦 / 斩月<b>可以被闪避</b>：造成伤害时<b>计入受击</b>并触发 ⑨裂帛，被闪避则都不触发；斩月被闪则斩杀落空，但 HP 减半的代价照付。<b>沧溟的「吸收 HP」不走命中环节，不可被闪避</b>。暴击方面：<b>只看这一击是「攻击」还是「技能」，与是不是真实伤害无关</b>：只有走「攻击」管线的普通攻击（含召唤物、残锋 5b 爆发）才吃 ①劫雷 2~20 倍暴击（① 2 层起必定）；遗器技能、七弦「连射」、沧溟「吸收 HP」、炮台机械伤害、【撕裂】结算都走「技能 / 非攻击」管线，<b>一律不暴击</b> —— 哪怕它们是真实伤害。</p></details>
+        <details class="faq"><summary>遗器技能会暴击 / 被闪避吗？</summary><p><b>「真实伤害」与「能不能被闪避」是两件事</b>：真实伤害只定义「无视 DEF 与护盾」，<b>【尘】减伤照常生效</b>；能否被闪避只看这一击走不走命中环节。七弦 / 斩月<b>可以被闪避</b>：造成伤害时<b>计入受击</b>并触发 ⑨裂帛，被闪避则都不触发；斩月被闪则斩杀落空，但 HP 减半的代价照付。<b>沧溟的「吸收 HP」不走命中环节，不可被闪避</b>。暴击方面：<b>只看这一击是「攻击」还是「技能」，与是不是真实伤害无关</b>：只有走「攻击」管线的普通攻击（含召唤物、残锋 5b 爆发）才吃 ①劫雷 2~20 倍暴击（① 2 层起必定）；遗器技能、七弦「连射」、沧溟「吸收 HP」、【撕裂】结算都走「技能 / 非攻击」管线，<b>一律不暴击</b> —— 哪怕它们是真实伤害；<b>例外是炮台</b>：它继承建造者的①劫雷，可以暴击。</p></details>
         <details class="faq"><summary>忘川携带者被打到负 HP 会死吗？</summary><p><b>不会</b>。只有 HP <b>恰好为 0</b> 才死亡，负 HP 仍存活，之后回血正常计算。</p><p>负血<b>挨打</b>时只会越扣越负（-3 挨 3 点 → -6），伤害永远推不到 0，所以负血不会因为受伤被「洗白回满」；代码里另有一道兜底，任何路径把负血写成 0 都会改写成 <b>-1</b>（下限 -1，不设更低）。<b>但「赋值型」路径不受这条保护</b>：均分把 HP 设为 0、斩月「斩杀」把 HP 置 0，都照样判死 —— 这些不是挨打，是直接改血。</p><p>卖掉忘川同样会当场判死。</p></details>
         <details class="faq"><summary>沧溟的被动每回合都弹面板，能不做吗？</summary><p>可以点「取消」放弃本次被动分配（点数浪费）。被动<b>不占行动</b>，即使被「禁止使用遗器技能」戒律封了主动技，被动画板照样出现（被动无视戒律）。</p></details>
         <details class="faq"><summary>商店怎么用？金币从哪来？</summary><p>需要 ⑬盈箧 的<b>分支</b>：已经拥有 ⑬ 之后再选一次 ⑬，在分支面板里选「盈箧·分支」即解锁商店。商店<b>不限次数、不占主要行动</b>，回合中随时可进出。<b>开局 0 金币</b>，只能先把背包物品卖成金币起家；<b>买卖同价</b>：刻印 10 / 遗器 10 / 剑·弓·三叉戟·钓竿·击退棒·护甲 各 5 / 药水·传送器 3 / 附魔 1。买刻印走「自选一项」、买遗器走「N 选 1」，与开箱同一条链路；<b>面板上点「取消」会全额退款</b>（金币原路退回，可继续再买），选完则不退。装备中的物品卖出会自动卸下。</p></details>
@@ -646,6 +677,8 @@ const ITEMS = {
     desc:'遗器 · 无普通攻击 · 可附魔。被动「不死」：只有 HP 恰好为 0 才死亡，负 HP 仍存活（回血正常计算；负血挨打只会越扣越负，不会被推到 0）。遗器一旦离手（卖出/被拿走）立即失效，若此刻 HP ≤ 0 则当场阵亡。主动技「均分」（主要行动）：选至少 2 个实体，把它们的 HP 加总后均分（各不超过上限；均分是直接赋值，把携带者均到 0 照样判死）'},
   yq_zhixing: {name:'掷星', icon:'\u{1F320}', type:'weapon', atk:0, noAtk:true, ench:true, yiqi:5,
     desc:'遗器 · 无普通攻击 · 可附魔。主动技「掷星」（主要行动）：选一名目标，掷出 1 ~ 本局开局时的最高玩家 HP 上限（只算玩家、含已阵亡者、开局定死后不再变）的随机点数，造成等量真实伤害（无视 DEF 与护盾，受【尘】减伤，吃发起者 ⑫b 尘增伤）；若点数恰好是质数（1 不算），立即获得 1 个额外回合（与 ⑧b 同源，当前回合结束后插到队头）。这一发走命中环节、可被闪避；【白】挡点名'},
+  yq_xinyuan: {name:'心渊', icon:'\u{1F573}', type:'weapon', atk:0, noAtk:true, ench:true, yiqi:6,
+    desc:'遗器 · 无普通攻击 · 可附魔。主动技 1「净化」（主要行动）：全场选一名实体，清除其身上的一个可解除效果（同【灰】的解除范围，选不中【白】目标）。主动技 2「掌控」（主要行动）：全场选一名实体（不能选自己），施加精神控制。目标持续至你的下个主要回合开始，期间所有回合行动由你操纵。不能连续两个主要回合控制同一目标。多人控制时最后施加的生效。遗器离手/卖出/死亡时立即解除。'},
   enchant:  {name:'附魔',   icon:'\u2728', type:'enchant', draft:true, desc:'[草案] 回合外使用：自选一种附魔附加到一件物品上'},
   kb:       {name:'击退棒', icon:'\u{1F528}', type:'weapon', atk:0, rng:0, knock:1, ench:true, desc:'攻击可将目标击退 1 个区域'},
   rod:      {name:'钓竿',   icon:'\u{1F3A3}', type:'weapon', atk:0, rng:1, pull:true, fish:true, ench:true, desc:'射程 +1，命中后将目标拉近 1 个区域；也可用来钓鱼'},
@@ -1107,7 +1140,8 @@ function mkState(){
   return {tear:0, tear9b:0, tearBy:{}, dust:0, red:0, blue:false, yellow:0,
           white:false, whiteBy:null, black:false, blackSeals:[],
           precepts:[],
-          sanctions:[]};   // sanctions：4b 敕罚账（{ban, by, n}，目标×禁类×施加者各记各）
+          sanctions:[],    // sanctions：4b 敕罚账（{ban, by, n}，目标×禁类×施加者各记各）
+          mind:null};      // 精神控制：{ by, atTurn, atRound }
 }
 /* 该实体是否被【黑】掉了某项刻印（含其全部分支）
    判据：被黑的是「基础项」；查分支时看它的基础项有没有被黑。 */
@@ -1744,6 +1778,123 @@ function clearPreceptsBy(p){
   allEnts().forEach(e => { e.st.precepts = e.st.precepts.filter(x => x.by !== p.i); });
 }
 /* =========================================================
+   精神控制 & 操纵权代理（遗器·心渊）
+   ========================================================= */
+function clearMindBy(p){
+  if (!p) return;
+  let n = 0;
+  allEnts().forEach(e => {
+    if (e.st && e.st.mind && e.st.mind.by === p.i){
+      e.st.mind = null;
+      n++;
+    }
+  });
+  if (n) addLog('【精神控制】' + entLabel(p) + ' 施加的控制全部解除。', 'sys');
+}
+/* 获取实体的直接控制者（无控制返回 null） */
+function mindControllerOf(e){
+  if (!e || !e.st || !e.st.mind) return null;
+  return G.players[e.st.mind.by] || null;
+}
+/* 获取实体当前的“操作者”玩家（人类或AI，用于判断面板弹出和行动走谁的逻辑） */
+function actorPlayer(e){
+  if (!e) return null;
+  if (e.isSummon){
+    if (e.st && e.st.mind) return G.players[e.st.mind.by];
+    const o = G.players[e.owner];
+    return mindControllerOf(o) || o;
+  }
+  return mindControllerOf(e) || e;
+}
+/* 当前实体是否由 AI 操纵（原本身是 AI，或者被 AI 控制） */
+function actorIsAI(e){
+  const a = actorPlayer(e);
+  return a ? a.isAI : true;
+}
+/* 行动阵营（被控时为控制者阵营） */
+function actionSide(e){
+  const a = actorPlayer(e);
+  if (a) return a;
+  const p = e.isSummon ? G.players[e.owner] : e;
+  return p;
+}
+/* 敌对目标（基于行动阵营，用于 AI 决策和面板提供） */
+function actionFoes(e){
+  const side = actionSide(e);
+  if (!side) return [];
+  return allEnts().filter(t => t !== e && isEnemyOf(side, t));
+}
+function isActionEnemy(e, t){
+  const side = actionSide(e);
+  return side ? isEnemyOf(side, t) : false;
+}
+/* =========================================================
+   遗器·心渊（精神控制）主要行动分发
+   ========================================================= */
+function actXinyuan(p) {
+  showChoice('心渊 · 选择技能', [
+    { label: '技能 1：净化', sub: '清除全场任一实体身上的一个效果（主要行动）', run: () => actXinyuanClear(p) },
+    { label: '技能 2：掌控', sub: '全场选一名实体施加精神控制（主要行动）', run: () => actXinyuanMind(p) }
+  ], () => render());
+}
+function actXinyuanClear(p) {
+  const tgts = pickable(allEnts(), e => e.alive);
+  if (!tgts.length) { addLog('场上没有可被净化的实体（【白】挡下了点名）。'); render(); return; }
+  showChoice('心渊 · 净化：选择目标（主要行动）', tgts.map(t => ({
+    label: entLabel(t) + (t === p ? '（自己）' : ''),
+    sub: hpDisp(t) + ' · 身上有 ' + paintClearCandidates(t).length + ' 个可清除效果',
+    run: () => {
+      if (rejectIfUnpickable(t, '心渊·净化')) { render(); return; }
+      const cand = paintClearCandidates(t);
+      if (!cand.length) { addLog(entLabel(t) + ' 身上没有可解除的效果，本次不消耗行动。', 'sys'); actXinyuanClear(p); return; }
+      showChoice('选择要清除 ' + entLabel(t) + ' 的哪个效果？', cand.map(c => ({
+        label: c.label,
+        sub: c.sub,
+        run: () => {
+          markActed(p, 'artskill');
+          c.clear();
+          addLog(p.name + ' 发动遗器·心渊【净化】：清除了 ' + entLabel(t) + ' 的 ' + c.label + '。', 'hl');
+          const pos = islandXY(t.island);
+          floatText(pos.x, pos.y - 30, '净化', '#38f0d8');
+          sparks(pos.x, pos.y, '#38f0d8', 16);
+          finishTurn(p);
+        }
+      })), () => actXinyuanClear(p));
+    }
+  })), () => render());
+}
+function actXinyuanMind(p) {
+  const tgts = pickable(allEnts(), e => e.alive && e !== p);
+  if (!tgts.length) { addLog('场上没有可被控制的其他实体（不能选自己，且【白】挡下了点名）。'); render(); return; }
+  showChoice('心渊 · 掌控：选择要控制的实体（主要行动）', tgts.map(t => {
+    const key = preceptKey(t);
+    // 连轮限制检测
+    let repeat = false;
+    if (p.lastMind && p.lastMind.key === key) {
+      if (p.turnSeq - p.lastMind.turnSeq <= 1) repeat = true;
+    }
+    return {
+      label: entLabel(t) + (t.st.mind ? '（已被 ' + byName(t.st.mind.by) + ' 控制）' : ''),
+      sub: repeat ? '⚠ 不能连续两回合控制同一目标' : '施加精神控制，持续至你的下个主要回合',
+      disabled: repeat,
+      disabledTip: '不能连续两个主要回合控制同一目标',
+      run: () => {
+        if (rejectIfUnpickable(t, '心渊·掌控')) { render(); return; }
+        markActed(p, 'artskill');
+        t.st.mind = { by: p.i, atTurn: p.turnSeq, atRound: G.round };
+        if (!p.lastMind) p.lastMind = {};
+        p.lastMind.key = key;
+        p.lastMind.turnSeq = p.turnSeq;
+        addLog(p.name + ' 发动遗器·心渊【掌控】，控制了 ' + entLabel(t) + '！', 'hl');
+        const pos = islandXY(t.island);
+        floatText(pos.x, pos.y - 30, '精神控制', '#8b5cf6');
+        sparks(pos.x, pos.y, '#8b5cf6', 20);
+        finishTurn(p);
+      }
+    };
+  }), () => render());
+}
+/* =========================================================
    ④敕禁 · 分支 4b【敕罚】（口径与【撕裂】完全一致）
    - 记账：目标.st.sanctions = [{ban, by, n}]，目标×禁类×施加者各记各；
    - 施加：addPrecept 成功且施加者有 4b → 叠 1 层（戒律到期后层数仍在，余罚残留）；
@@ -2063,6 +2214,7 @@ function stateText(e){
     out.push('黑·' + s.blackSeals.map(x => sealDisplayName(x.id)).join('+'));
   s.precepts.forEach(x => out.push('禁' + BAN_NAME[x.ban].replace('禁止','')));
   (s.sanctions || []).forEach(x => out.push('罚·' + BAN_NAME[x.ban].replace('禁止','').split('（')[0] + '×' + x.n));
+  if (s.mind) out.push('被控(' + byName(s.mind.by) + ')');
   return out.join(' · ');
 }
 /* 【白】：无法被「单体指向性技能」选中。
@@ -2074,8 +2226,8 @@ function skillSelectable(e){
 }
 /* 点名类技能的候选过滤（人类面板与 AI 决策共用同一口径）。
    filt = 调用方的业务筛子（存活 / 敌对 / 同岛 …）；这里只额外叠一条【白】。
-   用在 7 处：七弦连射 · 斩月斩杀 · 忘川均分 · 沧溟分配 · 裂帛 9b · 敕禁 4 · 炮台箭矢。
-   ⚠ 不用于：普攻（D6）、TNT（选岛）、炮台选岛（区域通吃）。 */
+   用在 6 处：七弦连射 · 斩月斩杀 · 忘川均分 · 沧溟分配 · 裂帛 9b · 敕禁 4。
+   ⚠ 不用于：普攻（D6）、TNT（选岛）、炮台箭矢 / 选岛（物理射击，【白】挡不住）。 */
 function pickable(list, filt){
   const arr = filt ? list.filter(filt) : list.slice();
   return arr.filter(skillSelectable);
@@ -2331,7 +2483,7 @@ function seal5bBurst(e){
 function seal5bBurstFxGate(p, next){
   let need = false;
   try {
-    need = !p.isAI && p.alive && entHasSeal(p, '5b') && hasSeal(p, '11') &&
+    need = !actorIsAI(p) && p.alive && entHasSeal(p, '5b') && hasSeal(p, '11') &&
            (seal5Threshold() - p.hp >= 10) && !p.st.blue && !hasBan(p, 'atk') &&
            allEnts().length > 0;
   } catch (err) { need = false; }
@@ -2532,6 +2684,7 @@ function startTurn(){
   p.enchantUsed = false;
   p.boxThisTurn = false;        // 2.2：每回合最多开 1 箱（防中心岛无限箱刷箱）
   clearPreceptsBy(p);           // 自己施加的【戒律】到自己下回合开始前解除
+  clearMindBy(p);               // 自己施加的精神控制到自己下回合开始前解除
   hideChoice();
 
   // 刻印 6 天工：机械自动发射（建造者主要回合开始、进行主要行动前；人类逐发自选目标）
@@ -2554,7 +2707,7 @@ function startTurn(){
         if (G.phase !== 'play' || settleWin()) return;   // 被动可能直接打光敌人
         if (!p.alive){ afterMainAction(p); return; }
         render();
-        if (p.isAI){ later(()=>{ aiAct(p); }, 150); }
+        if (actorIsAI(p)){ later(()=>{ aiAct(p); }, 150); }
       };
       if (hasCangming(p) && p.alive){ cangmingPassive(p, afterCangming); return; }
       afterCangming();
@@ -2648,7 +2801,7 @@ function takeInsertedTurn(){
     addLog('—— ' + t.name + ' 插入的额外回合（' + src + '）' +
            (G.insertQueue.length ? ' · 待插入 ' + G.insertQueue.length : '') + ' ——', 'sys');
     render();
-    if (t.isAI){ later(()=>{ aiAct(t); }, 140); }
+    if (actorIsAI(t)){ later(()=>{ aiAct(t); }, 140); }
     return true;
   }
   return false;
@@ -2686,7 +2839,7 @@ function runPlayerExtra(p){
     G.turnEnded = false;
     addLog('—— ' + p.name + ' 的额外回合（还剩 ' + G.extraLeft + '）——', 'sys');
     render();
-    if (p.isAI){ later(()=>{ aiAct(p); }, 140); }
+    if (actorIsAI(p)){ later(()=>{ aiAct(p); }, 140); }
     return;
   }
   G.extraLeft = 0;
@@ -2722,7 +2875,7 @@ function later(fn, delay){
 function finishTurn(p, delay){
   G.animating = false;
   render();
-  if (p.isAI){
+  if (actorIsAI(p)){   // 心渊：被 AI 控制的实体也走延迟调度（与 startTurn / 额外回合同口径）
     later(()=>{ if (G.phase === 'play') endCurrentAction(p); }, delay || 140);
   } else {
     endCurrentAction(p);
@@ -3156,6 +3309,7 @@ function kill(victim, killer, toVoid){
   // 死后 if(!p.alive) return 直接跳过，戒律就永久挂在别人身上。
   clearPreceptsBy(victim);
   clearSanctionsBy(victim);   // 4b：施加者死亡 → 其挂出的全部敕罚直接清
+  clearMindBy(victim);        // 心渊：施加者死亡 → 其挂出的全部控制直接清
   const pos = islandXY(victim.island);
   if (!toVoid && victim.bag.length){
     const arr = G.drops[victim.island] || (G.drops[victim.island] = []);
@@ -3361,7 +3515,7 @@ function runOneSummon(s, owner, done){
   const runMain = () => {
     if (!s.alive){ done(); return; }
     // 只有刻印⑩御灵才能人为操控；否则（含无御灵的人类）一律自动索敌
-    if (!owner.isAI && owner.alive && hasSeal(owner,'10')){ s.useSeal7 = false; summonPanel(s, owner, done); return; }
+    if (!actorIsAI(owner) && owner.alive && hasSeal(owner,'10')){ s.useSeal7 = false; summonPanel(s, owner, done); return; }
     let useSeal7 = false;
     if (canSummonUseSeal7(s, owner) && aiSummonWantsSeal7(s, owner)){
       useSeal7 = true; s.seal7cd = owner.turnSeq;
@@ -3402,7 +3556,8 @@ function summonPanel(s, owner, done){
         ' · 预计伤害 ' + estHit(Math.max(0, summonAtk(s) - getDef(t)), t, s),
     run:()=>{ summonHumanGo(s, owner, {act:'atk', target:t}, done); }
   }));
-  canMoveTo(s).forEach(isl => opts.push({
+  // 撕裂压负 DEF / 戒律 /【黄】禁足：与玩家移动同口径，不给可移动选项
+  if (!moveLocked(s)) canMoveTo(s).forEach(isl => opts.push({
     label:'移动到 ' + islandName(isl),
     run:()=>{ summonHumanGo(s, owner, {act:'move', island:isl}, done); }
   }));
@@ -3466,7 +3621,10 @@ function summonHumanGo(s, owner, choice, done){
   // 兜底：休息硬直期间无论选了什么都不能落地（面板已屏蔽，这里防止其他入口绕过）
   if (consumeResting(s)){ done(); return; }
   if (choice && choice.act === 'idle'){ addLog(entLabel(s) + ' 原地待命。'); }
-  else if (choice && choice.act === 'move'){ markActed(s, 'move'); s.island = choice.island; addLog(entLabel(s) + ' 移动到 ' + islandName(s.island) + '。'); }
+  else if (choice && choice.act === 'move'){
+    if (moveLocked(s)){ addLog(entLabel(s) + ' 无法移动（戒律 /【黄】/ ⑨b 把 DEF 压到负数）。'); }
+    else { markActed(s, 'move'); s.island = choice.island; addLog(entLabel(s) + ' 移动到 ' + islandName(s.island) + '。'); }
+  }
   else if (choice && choice.act === 'atk'){
     if (s.st.blue){ addLog(entLabel(s) + ' 处于【蓝】，无法攻击。'); }
     else {
@@ -3494,7 +3652,7 @@ function summonHumanGo(s, owner, choice, done){
     let left = n;
     const step = () => {
       if (left-- <= 0 || !s.alive){ done(); return; }
-      if (!owner.isAI && owner.alive && hasSeal(owner, '10')){ summonPanel(s, owner, step); return; }
+      if (!actorIsAI(owner) && owner.alive && hasSeal(owner, '10')){ summonPanel(s, owner, step); return; }
       summonDoAction(s, owner, step);
     };
     step();
@@ -3533,42 +3691,161 @@ function aiPickMachineIsland(m, owner){
   let best = null, bestScore = -Infinity;
   allIslands().forEach(isl => {
     const ents = allEnts().filter(e => e.island === isl);
-    const foes = ents.filter(e => isEnemyOf(owner, e));
+    const foes = ents.filter(e => isActionEnemy(owner, e));
     if (!foes.length) return;                    // 打空岛纯属浪费这一发，直接跳过
-    const friends = ents.filter(e => e !== owner && !isEnemyOf(owner, e));
+    const friends = ents.filter(e => e !== owner && !isActionEnemy(owner, e));
     const score = foes.length * 10 - friends.length * 12 - (ents.indexOf(owner) >= 0 ? 30 : 0);
     if (score > bestScore){ bestScore = score; best = isl; }
   });
   return best;
 }
-/* 发射视为「机械来源」攻击：不吃刻印 1/9/11，机械本身也不可被攻击
-   目标：TNT 自选岛（全场可达）→ 命中该岛全部实体；箭矢自选敌方实体
+/* ============================================================
+   ★ 炮台专用攻击管线（与新版对齐）
+   —— 继承主人的被动刻印（残锋⑤ / 尘梦⑫b / 劫雷① / 裂帛⑨ / 点染⑪），
+      但独立结算、不吃武器加成；主人阵亡后不再继承加成，炮台照常发射。
+   —— 炮台是「物」不是「技能」：【白】挡不住它（不走 pickable），【蓄闪】照样能躲。
+   ============================================================ */
+function machineAttackResolve(owner, tgt, baseAtk, tag, opt){
+  opt = opt || {};
+  if (!tgt || !tgt.alive) return { evaded: true, dmg: 0 };
+
+  // 1. 攻击力：基础 + 残锋⑤ + 尘梦⑫b（不吃武器加成）；主人已阵亡则不再继承加成
+  const inherited = owner.alive ? (seal5Bonus(owner) + dustAtkBonus(owner)) : 0;
+  const atk = baseAtk + inherited;
+  const def = getDef(tgt);
+
+  // 2. 伤害计算
+  let dmg = Math.max(0, atk - def);
+  let crit = false, mult = 1;
+
+  // 3. 劫雷①暴击判定（倍率 2~20；第 2 层起必定）
+  const s1 = owner.alive ? sealCount(owner, '1') : 0;
+  if (s1 > 0 && Math.random() < (s1 >= 2 ? 1 : 0.5)){
+    mult = randInt(2, 20);
+    dmg = Math.max(0, atk * mult - def);
+    crit = true;
+  }
+
+  // 4. 闪避判定（在这里统一结掉，dealDamage 不再重复判定）
+  const gathered = !dodgeSealed(tgt) && !!tgt.dodgeReady;
+  if (resolveDodge(tgt)){
+    onDodgeEvade(tgt, '炮台' + tag, gathered);
+    return { evaded: true, dmg: 0 };
+  }
+
+  // 5. 命中与伤害结算（命中记【受击】；0 伤害命中照记）
+  tgt.hits = (tgt.hits || 0) + 1;
+  if (crit) addLog('【暴击 ×' + mult + '】' + entLabel(owner) + ' 的炮台打出暴击！', 'hl');
+  const dealt = dealDamage(tgt, dmg, { srcEnt: owner, tag: tag });
+
+  // 6. 刻印 ⑨ 裂帛：命中即叠（不要求真掉血，与普攻同口径）
+  if (owner.alive && hasSeal(owner, '9') && dealt >= 0 && tgt.alive){
+    addTear(tgt, 1, owner);
+    addLog('【裂帛】炮台命中，' + entLabel(tgt) + ' 获得 1 层【撕裂】（当前 ' + tgt.st.tear + ' 层）');
+  }
+
+  // 7. 刻印 ⑪ 点染（读取传入的颜色选择；白/黑/灰需 11b 分支，防「记忆里存着但分支已卖」）
+  if (owner.alive && hasSeal(owner, '11') && opt.effect && tgt.alive){
+    const cols = paintColorsOf(owner);
+    if (cols.indexOf(opt.effect) >= 0){
+      if (opt.effect === 'grey') tgt.__hitGreyKey = opt.greyKey || null;
+      applyHitEffect(tgt, opt.effect, opt.blackSeal || null, owner.i);
+      tgt.__hitGreyKey = null;
+    } else {
+      addLog(entLabel(tgt) + ' 的【' + HITFX[opt.effect].name + '】未生效：' +
+             entLabel(owner).replace(/（.*）$/, '') + ' 没有点染分支（基础 ⑪ 只有红/蓝/黄）。', 'sys');
+    }
+  }
+
+  return { evaded: false, dmg: dealt, crit: crit, mult: mult };
+}
+
+/* AI 代管炮台时的点染选色：有【红】就上红，否则不附加 */
+function machineAiEffect(owner){
+  if (!owner) return null;
+  return paintColorsOf(owner).indexOf('red') >= 0 ? 'red' : null;
+}
+
+/* 发射视为「机械来源」攻击：继承主人被动刻印，机械本身不可被攻击
+   目标：TNT 自选岛（全场可达）→ 命中该岛全部实体；箭矢自选任意实体（含友方与自己）
    done(fired)：fired=false 表示没打出去（没弹药 / 没目标 / 主动跳过） */
 function fireMachine(m, done){
   done = done || function(){};
   const owner = G.players[m.owner];
-  if (!m.ammo){ addLog('炮台没有装填弹药。'); done(false); return false; }
+  if (!owner){ done(false); return false; }
+  if (!m.ammo){ addLog('【机械】炮台没有装填弹药，无法发射。'); done(false); return false; }
   const tagM = '炮台 #' + m.mid + '（' + islandName(m.island) + '）';
   const skip = () => ({label:'跳过本次发射', sub:'本次不发射，继续主要行动', run:()=>{ addLog('【机械】' + tagM + ' 本次跳过发射。'); done(false); }});
+
+  /* ★ 发射 + 上色执行器：箭矢 / TNT 共用同一条命中结算 */
+  const doShoot = (targets, isTnt) => {
+    const tg = (targets || []).filter(e => e && e.alive);
+    const executeHit = (effect, sealId, greyKey) => {
+      if (!tg.length){ addLog('【机械】' + tagM + ' 没有可命中的目标。'); done(false); return; }
+      tg.forEach(e => machineAttackResolve(owner, e, isTnt ? 16 : 8, isTnt ? 'TNT' : '箭矢',
+        { effect: effect, blackSeal: sealId || null, greyKey: greyKey || null }));
+      settleWin();
+      done(true);
+    };
+
+    // 没有 ⑪ 点染，直接打
+    if (!owner.alive || !hasSeal(owner, '11')){ executeHit(null); return; }
+
+    // AI 或阵亡者代管：自动选色
+    if (actorIsAI(owner) || !owner.alive){
+      const fx = isTnt ? 'red' : machineAiEffect(owner);   // TNT 范围攻击默认上红
+      executeHit(fx, null, null);
+      return;
+    }
+
+    // 人类玩家：弹选色面板
+    const cols = paintColorsOf(owner);
+    // TNT 是范围攻击，不支持【黑】/【灰】这种单点操作
+    const availCols = isTnt ? cols.filter(c => c !== 'black' && c !== 'grey') : cols;
+
+    const pickColor = () => {
+      const opts = availCols.map(k => ({
+        label: '【' + HITFX[k].name + '】',
+        sub: HITFX[k].desc,
+        run: () => {
+          if (k === 'black'){
+            const t = tg[0];
+            const cand = paintSealCandidates(t);
+            showChoice('【黑】封住 ' + entLabel(t) + ' 的哪一项？', cand.map(id => ({
+              label: sealDisplayName(id) + (rawSealsOf(t, id) > 0 ? '' : ' · 未持有'),
+              run: () => executeHit(k, id)
+            })).concat([{label:'不附加', run:()=>executeHit(null)}]), pickColor);
+            return;
+          }
+          if (k === 'grey'){
+            const t = tg[0];
+            const cand = paintClearCandidates(t);
+            if (!cand.length){ addLog(entLabel(t) + ' 身上没有可解除的效果。'); executeHit(null); return; }
+            showChoice('【灰】解除 ' + entLabel(t) + ' 的哪个效果？', cand.map(c => ({
+              label: c.label,
+              sub: c.sub,
+              run: () => executeHit(k, null, c.key)
+            })).concat([{label:'不附加', run:()=>executeHit(null)}]), pickColor);
+            return;
+          }
+          executeHit(k);
+        }
+      }));
+      opts.push({label:'本次不附加', run:()=>executeHit(null)});
+      showChoice('炮台发射 · 命中附加哪种效果？（点染）', opts, () => executeHit(null));
+    };
+    pickColor();
+  };
 
   if (m.ammo === 'tnt'){
     const fire = (isl) => {
       const tgts = allEnts().filter(e => e.island === isl);
       addLog('【机械】' + tagM + ' 向 ' + islandName(isl) + ' 发射 TNT：16 ATK · 该岛全部实体（含自己人）', 'hl');
-      if (!tgts.length) addLog('（该岛没有实体）');
-      // 2.3.8：机械命中**记【受击】**（未闪避即计），与普攻/技能口径一致。
-      // 但仍不吃 ⑨裂帛 / ⑪点染 / ①劫雷 —— 那三样只在 attackResolve / applySkillDamage 里挂，
-      // 这里直调 dealDamage，天然绕开，不会误触发。
-      tgts.forEach(e => {
-        const ev = {};
-        dealDamage(e, 16 - getDef(e), {srcEnt:owner, dodgeable:true, tag:'TNT', _ev:ev});
-        if (!ev.evaded) e.hits = (e.hits || 0) + 1;
-      });
-      settleWin();          // 这一发可能直接团灭，立即判胜负，后续发射不再继续
-      done(true);
+      if (!tgts.length){ addLog('（该岛没有实体）'); done(false); return false; }
+      doShoot(tgts, true);
       return true;
     };
-    if (owner.isAI || !owner.alive){    // 阵亡人类无人可点面板 → 与 AI 同路径自动索敌
+    if (actorIsAI(owner) || !owner.alive){    // 阵亡人类无人可点面板 → 与 AI 同路径自动索敌
       const isl = aiPickMachineIsland(m, owner);
       if (isl == null){ addLog('【机械】' + tagM + ' 没有敌方目标，本次不发射。'); done(false); return false; }
       return fire(isl);
@@ -3587,27 +3864,31 @@ function fireMachine(m, done){
     return true;
   }
 
-  // 箭矢：8 ATK 单体 —— 【白】挡点名（D7 表：箭矢是「选单个」）
-  const foes = pickable(allEnts(), e => e !== owner && isEnemyOf(owner, e));
-  if (!foes.length){ addLog('【机械】箭矢没有可被选中的目标（【白】挡下了点名）。'); done(false); return false; }
+  // 箭矢：8 ATK 单体 —— 炮台是物理射击而非技能，【白】挡不住它（不走 pickable）
+  // ★ 可选友方（帮队友解【蓝】/【白】、补刀），也可以选自己（自残解控）；把自己排最后
+  const foes = allEnts().filter(e => e.alive);
+  if (!foes.length){ addLog('【机械】箭矢没有可命中的目标。'); done(false); return false; }
+  const inherited = owner.alive ? (seal5Bonus(owner) + dustAtkBonus(owner)) : 0;
   const fire = (t) => {
-    addLog('【机械】' + tagM + ' 射出箭矢 → ' + entLabel(t) + '（8 ATK）', 'hl');
-    const ev = {};
-    dealDamage(t, 8 - getDef(t), {srcEnt:owner, dodgeable:true, tag:'箭矢', _ev:ev});
-    if (!ev.evaded) t.hits = (t.hits || 0) + 1;      // 2.3.8：机械命中记【受击】（不叠撕裂）
-    settleWin();          // 同上
-    done(true);
+    addLog('【机械】' + tagM + ' 射出箭矢 → ' + entLabel(t) + '（基础 8 ATK + 主人加成 ' + inherited + '）', 'hl');
+    doShoot([t], false);
     return true;
   };
-  if (owner.isAI || !owner.alive){ return fire(foes.reduce((a,b)=> a.hp <= b.hp ? a : b)); }   // 阵亡人类同走自动索敌
-  const opts = foes.map(e => ({
-    label: entLabel(e),
+  if (actorIsAI(owner) || !owner.alive){
+    const enemies = foes.filter(e => e !== owner && isActionEnemy(owner, e));
+    if (!enemies.length){ addLog('【机械】' + tagM + ' 没有敌方目标，本次不发射。'); done(false); return false; }
+    return fire(enemies.reduce((a,b)=> a.hp <= b.hp ? a : b));   // AI 只打敌人，挑血最薄的
+  }
+  const sorted = foes.slice().sort((a,b) => (a === owner) - (b === owner));   // 自己排最后
+  const opts = sorted.map(e => ({
+    label: entLabel(e) + (e === owner ? '（自己）' : ''),
     sub: hpDisp(e) + ' · DEF ' + getDef(e) + dustHint(e) +
-         ' · 预计伤害 ' + estHit(Math.max(0, 8 - getDef(e)), e),
+         ' · 预计伤害 ' + estHit(Math.max(0, 8 + inherited - getDef(e)), e) +
+         (e === owner ? ' ⚠ 会打到自己' : ''),
     run: () => fire(e)
   }));
   opts.push(skip());
-  showChoice('箭矢射向谁？（8 ATK 单体）', opts,
+  showChoice('箭矢射向谁？（8 ATK 单体 · 可选友方与自己）', opts,
     () => { addLog('【机械】' + tagM + ' 本次跳过发射。'); done(false); });   // 取消＝跳过
   return true;
 }
@@ -3722,7 +4003,8 @@ function aiYiqiScores(p){
          实际能掷出的点数脱节（死剩一人时低估、对手满上限时高估）——而阈值是基于
          当前血量算的，估算量必须和它同量纲。 */
     yq_zhixing:  22 + Math.min(30, zhixingMaxRoll() / 2)
-                    + (p.hp <= p.maxHp * .35 ? -10 : 0),
+                   + (p.hp <= p.maxHp * .35 ? -10 : 0),
+    yq_xinyuan:  25 + foes.filter(f => aiHitOf(f, p) > 0).length * 15, // 敌人越强越想控
   };
   return score;
 }
@@ -3774,7 +4056,7 @@ function grantYiqi(p, count, free, onCancel){
    玩家普攻、召唤物（⑩御灵共享刻印时）、残锋 5b 爆发都走这条。
    本轮定稿：能不能暴击只看这一击是「攻击」还是「技能」，与伤害类型（是否真实伤害）
    完全无关 —— 走 applySkillDamage 的技能一律按原值结算、不暴击，无论 opt.trueDmg 是否为真；
-   沧溟「吸收 HP」、七弦「连射」、炮台机械伤害、【撕裂】结算同理。
+   沧溟「吸收 HP」、七弦「连射」、【撕裂】结算同理（炮台除外：走 machineAttackResolve，继承①⑤⑫b⑨⑪）。
    「真实伤害」(trueDmg) 只描述无视 DEF / 护盾、受【尘】减伤，不参与暴击判定。
    applySkillDamage 因此只负责把原值交给 dealDamage 并记一次【受击】。 */
 function applySkillDamage(src, tgt, raw, opt){
@@ -3782,7 +4064,8 @@ function applySkillDamage(src, tgt, raw, opt){
   /* 2.3.5：⑫b 尘增伤扩大到**技能伤害**（用户拍板：七弦每一发、沧溟分配的每个伤害点都要吃）。
      口径与 attackResolve 同源：加在发起者侧的原始值上，承受者的【尘】减伤照常在
      dealDamage 里扣（发起者 6 尘打 9 尘目标：raw+6 再 −9）。
-     机械（炮台箭矢 / TNT）不走本函数，维持「机械不吃刻印」的既有约定。
+     机械（炮台箭矢 / TNT）不走本函数——它们走 machineAttackResolve 专用管线，
+     残锋⑤ / 尘梦⑫b 的加成在那条管线里单独结算。
      斩月（置 0）/ 忘川（均分）无数值，不涉及。 */
   const dust = dustAtkBonus(src);
   if (dust > 0 && raw > 0 && !opt.noDustBonus) raw += dust;
@@ -3825,6 +4108,7 @@ function dispatchYiqi(p, id){
   else if (id === 'yq_zhanyue')  actZhanyue(p);
   else if (id === 'yq_wangchuan')actWangchuan(p);
   else if (id === 'yq_zhixing')  actZhixing(p);
+  else if (id === 'yq_xinyuan')  actXinyuan(p);
 }
 
 /* ---------- 沧溟 · 分配 ---------- */
@@ -3961,7 +4245,7 @@ function cangmingPassive(p, done){
     if (pts > 0) addLog('遗器·沧溟被动触发：射程内没有可分配的目标，' + pts + ' 点浪费。');
     done(); return;
   }
-  if (p.isAI){
+  if (actorIsAI(p)){
     const keyOf = t => t.isSummon ? 's' + t.sid : 'p' + t.i;
     const alloc = {};
     let left = pts;
@@ -5437,7 +5721,7 @@ function aiArtifactSkill(p){
   if (!ids.length) return false;
   // 【白】挡点名：遗器技能（斩月/忘川/七弦）都属于「逐个选实体」，白的目标不该进候选。
   // 这里统一过滤，各分支就不必各自再判 —— 同时也防住了「选中白目标 → 白跑一趟」的空转。
-  const foes = pickable(foesOf(p), e => e.alive);
+  const foes = pickable(actionFoes(p), e => e.alive);
   const keyOf = t => t.isSummon ? 's' + t.sid : 'p' + t.i;
   // 血线告急且身上有药水：先交给后面的「保命」分支喝药，别把行动花在技能上
   const lowHp = p.hp <= Math.max(2, p.maxHp * 0.35);
@@ -5491,6 +5775,38 @@ function aiArtifactSkill(p){
     const t = foes.reduce((a,b) => a.hp <= b.hp ? a : b);
     executeZhixing(p, t); return true;
   }
+  /* 心渊：优先控制威胁最大的敌人；如果没有值得控制的，看看能不能净化自己身上的撕裂/蓝 */
+  if (ids.indexOf('yq_xinyuan') >= 0 && !(lowHp && hasPot)) {
+    // 1. 控制
+    const canControl = foes.filter(t => {
+      const key = preceptKey(t);
+      let repeat = false;
+      if (p.lastMind && p.lastMind.key === key && p.turnSeq - p.lastMind.turnSeq <= 1) repeat = true;
+      return !repeat && !t.st.mind;
+    });
+    if (canControl.length) {
+      const byThreat = canControl.slice().sort((a,b) => aiHitOf(b, p) - aiHitOf(a, p));
+      if (byThreat.length && aiHitOf(byThreat[0], p) >= 5) {
+        markActed(p, 'artskill');
+        const t = byThreat[0];
+        t.st.mind = { by: p.i, atTurn: p.turnSeq, atRound: G.round };
+        p.lastMind = { key: preceptKey(t), turnSeq: p.turnSeq };
+        addLog(p.name + ' 发动遗器·心渊【掌控】，控制了 ' + entLabel(t) + '！', 'hl');
+        finishTurn(p); return true;
+      }
+    }
+    // 2. 净化（自己有严重负面状态时）
+    if (p.st.tear >= 5 || p.st.blue || (p.st.dust === 0 && p.st.yellow > 0)) {
+      const cand = paintClearCandidates(p);
+      const bad = cand.find(c => /^tear|blue|yellow/.test(c.key));
+      if (bad) {
+        markActed(p, 'artskill');
+        bad.clear();
+        addLog(p.name + ' 发动遗器·心渊【净化】，清除了自己的 ' + bad.label + '。', 'hl');
+        finishTurn(p); return true;
+      }
+    }
+  }
   /* 沧溟：点数够多、且沧溟所在岛上有敌人或伤员时才主动分配（否则留着普通攻击） */
   if (ids.indexOf('yq_cangming') >= 0){
     const pts = cangmingPoints(p);
@@ -5525,7 +5841,7 @@ function aiArtifactSkill(p){
 }
 function aiAct(p){
   if (!G || G.phase !== 'play' || !p.alive) return;
-  const enemies = foesOf(p);
+  const enemies = actionFoes(p);
   const wid = uid => itemIdOf(p, uid);      // 实例编号 → 物品类型
 
   // 0. 回合外的免费增强：附魔不占主要行动
@@ -5982,6 +6298,9 @@ function sellArtifact(p, uid){
   addGold(p, price, '卖出遗器');
   addLog(p.name + ' 把遗器【' + d.icon + ' ' + d.name + '】卖给商店，获得 ' + price + ' 金币。', 'hl');
   equipAuto(p);
+  if (it.id === 'yq_xinyuan' && !hasArtifact(p, 'yq_xinyuan')) {
+    clearMindBy(p);
+  }
   // 卖掉忘川：当场重新判死。不死是「查询时实时判」，遗器一离手就不再享有，
   // 所以此刻 HP ≤ 0 的人立刻阵亡 —— 不能等下一次受击才结算。
   if (wasWangchuan && p.alive && p.hp <= 0){
@@ -6320,7 +6639,7 @@ function choiceOpen(){
 }
 
 function isHumanTurn(){
-  return !!G && G.phase === 'play' && !G.animating && cur() && cur().alive && !cur().isAI;
+  return !!G && G.phase === 'play' && !G.animating && cur() && cur().alive && !actorIsAI(cur());
 }
 
 document.querySelectorAll('.abtn').forEach(btn => {
@@ -6516,6 +6835,7 @@ function paintClearCandidates(t){
       () => { s.sanctions = s.sanctions.filter(y => y !== x); }));
   }
   if (t.dodgeReady) push('dodge', '【蓄闪】', '下一次受击必定闪避', () => { t.dodgeReady = false; });
+  if (s.mind) push('mind', '【精神控制】', '当前由 ' + byName(s.mind.by) + ' 操纵', () => { s.mind = null; });
   return out;
 }
 /* 【灰】· 攻击命中版：命中那一下直接把目标身上的一个效果摘掉。
@@ -7429,10 +7749,13 @@ function render(){
                : (G.sub === 'summonExtra') ? ' · <span style="color:#8b5cf6">召唤物额外回合</span>'
                : (G.sub === 'extra') ? ' · <span style="color:#ffca3a">额外回合</span>' : '';
   if (G.phase === 'play' && p){
+    const actor = actorPlayer(p);
+    const isCtrlled = p.st && p.st.mind;
+    const ctrlTxt = isCtrlled ? `<span style="color:#8b5cf6"> · 被 ${byName(p.st.mind.by)} 精神控制</span>` : '';
     tb.style.color = p.color;
     $('turnTxt').innerHTML = '<b style="color:' + p.color + '">' + p.name + '</b> 的回合 · 位于 ' + islandName(p.island) +
-      subTxt +
-      (p.isAI ? ' · <span style="color:#8494b8">电脑思考中…</span>' : ' · 请选择一项行动');
+      subTxt + ctrlTxt +
+      (actorIsAI(p) ? ' · <span style="color:#8494b8">' + (isCtrlled ? '控制者电脑思考中…' : '电脑思考中…') + '</span>' : ' · 请选择一项行动');
   } else {
     tb.style.color = '#8494b8';
     $('turnTxt').textContent = '对局结束';
