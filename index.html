@@ -445,7 +445,7 @@ input[type=number],input[type=text]{
 <div class="modal" id="setup">
   <div class="sheet">
     <h2>末环协议 · RingFall</h2>
-    <div class="sub">对局设置 · v2.5.1</div>
+    <div class="sub">对局设置 · v2.5.2</div>
     <div class="row">
       <label>对战模式</label>
       <div class="seg" id="segMode"></div>
@@ -597,7 +597,7 @@ input[type=number],input[type=text]{
           <tr><td class="no">③</td><td class="nm">丰穰</td><td>开箱同一项物品数量翻倍，<b>可叠加</b>（×2 / ×4 / ×8）</td></tr>
           <tr><td class="no">④</td><td class="nm">敕禁</td><td>每回合 1 次自由行动：对任一实体施加【戒律】禁一类行动（不能连续两轮对同一目标禁同一类）。分支 4b【敕罚】：此后每次成功敕禁同时给目标叠 1 层对应行动的【敕罚】——目标每次进行该行动后受 4×层数点真实伤害（结算口径同【撕裂】：+施加者⑫b尘增伤 − 承受者尘；<b>不同人挂的同类禁算一个效果、只结一次</b>，伤害仍按各施加者算；余罚残留、无限持续，可被【灰】解除；施加者死亡 / ④或4b 被黑被卖时全部清掉；<b>召唤物同样会被戒律、也照常吃敕罚结算</b>）</td></tr>
           <tr><td class="no">⑤</td><td class="nm">残锋</td><td>HP 每比临界值低 1 点，ATK +1、DEF +1（临界<b>初始 5、全场共享</b>，可被 ⑤b 主动技 +10 推高且<b>永不回落</b>）</td></tr>
-          <tr><td class="no">⑥</td><td class="nm">天工</td><td>解锁炮台：构建 / 装填 / 自动化 / 手动发射</td></tr>
+          <tr><td class="no">⑥</td><td class="nm">天工</td><td>解锁炮台：构建 / 装填 / 自动化 / 手动发射（分支 6b：移动、攻击、开箱均无视距离；钓竿可将边缘目标钓入虚空）</td></tr>
           <tr><td class="no">⑦</td><td class="nm">蹑景</td><td>声明后主要行动结束追加 <b>N 个额外回合</b>（<b>可叠加：N = 刻印层数</b>；<b>冷却 2 轮</b>）</td></tr>
           <tr><td class="no">⑧</td><td class="nm">凌波</td><td><b>可重复选</b>，二选一分支 ↓（<b>分支②须先选分支①</b>）</td></tr>
           <tr class="sub"><td></td><td class="nm">⑧a</td><td><b>+30% 闪避</b>（可叠加，封顶 100%），并可花 1 个主要行动<b>蓄闪</b></td></tr>
@@ -699,6 +699,7 @@ input[type=number],input[type=text]{
         <details class="faq"><summary>中了「禁止使用刻印」，已经蓄好的闪会消失吗？</summary><p><b>不会</b>。蓄闪原样保留（不消耗、不解散），但戒律期间不能触发；戒律一解除，下一次受击立刻生效。</p></details>
         <details class="faq"><summary>幽灵有 50% 闪避，被戒律封了刻印为什么还能闪？</summary><p>幽灵的 50% 是<b>生物固有特性</b>，不是刻印效果，因此不受戒律影响。⑧a 的 30% 与蓄闪才是刻印效果，会被封掉。</p></details>
         <details class="faq"><summary>弓箭为什么打不出去？</summary><p>弓箭与三叉戟投掷都要<b>先蓄力</b>（占 1 个主要行动）。另外任何位移都会打断蓄力，包括自己移动、开箱、传送，以及被击退、被钓竿拉走。</p></details>
+        <details class="faq"><summary>能打自己或队友吗？</summary><p>能。人类玩家选目标时，<b>远程射击</b>（弓箭 / 斩月的蓄力释放、三叉戟 / 沧溟的投掷）与<b>所有点名技能</b>（七弦 / 斩月 / 掷星 / 忘川 / 心渊净化 / 沧溟分配 / 裂帛 / 点染 / 敕禁）都把自己和队友列进候选，面板标「（自己）」/「（队友）」。常见用途：自解【蓝】（受击解锁）、忘川均分把自己算进去、直接自杀。三叉戟 / 沧溟投给自己时武器落在脚下、照常等本人捡回。<b>近战不含自己</b>（打自己没意义），<b>心渊【掌控】不能选自己</b>（规则禁止自控）。AI 与「自动行动」永远只打敌人。</p></details>
         <details class="faq"><summary>三叉戟投出去，队友能帮我捡吗？</summary><p>不能。只有<b>投出的本人</b>走到落点岛才会自动捡回，别人站上去也拿不走。</p></details>
         <details class="faq"><summary>在外岛被击退会怎样？</summary><p><b>直接死亡</b>。外岛外面就是虚空，且背包物品、投在外的三叉戟会<b>一并消失</b>（已建成的炮台保留）。</p></details>
         <details class="faq"><summary>护甲能叠加吗？捡了两件为什么只 +4 DEF？</summary><p>默认<b>不叠加</b>，多件只按一件算（取附魔加成最高的那件）。拿到 ⑬盈箧 之后才按件数全叠加。</p></details>
@@ -852,10 +853,10 @@ const SEAL_EXTRA = {
 
   /* ---------------- 天工 · 分支 6b ---------------- */
   '6b': {name:'天工·分支',
-         desc:'行动无视距离：移动可去任意岛；攻击射程无限（空手 / 近战 / 释放·投掷 / 远程武器的近战挥舞，弓无近战除外）（ATK 不变）',
+         desc:'行动无视距离：移动可去任意岛；攻击射程无限（空手 / 近战 / 释放·投掷 / 远程武器的近战挥舞，弓无近战除外）（ATK 不变）。开箱无视距离，用钓竿攻击处于边缘（出生岛/外岛）的目标时，可选择将其钓入虚空秒杀',
          sub: p => {
            const sm = summonsOf(p).length;
-           return '已生效：移动可去任意岛 · 攻击射程 ∞（弓无近战，不享受近战）' +
+           return '已生效：移动可去任意岛 · 攻击射程 ∞（弓无近战，不享受近战） · 开箱无视距离 · 钓竿可将边缘目标（出生岛/外岛）钓入虚空' +
                   (hasSeal(p,'10') ? '<br>御灵联动：你的 ' + sm + ' 个召唤物同步享受移动与射程' : '');
          }},
 
@@ -3117,19 +3118,22 @@ function doMove(p, target){
 }
 
 /* ---------------- 行动：开箱 ---------------- */
-function doOpenBox(p, autoPick){
-  if (p.island !== 0){
-    if (!(G.boxes[p.island] > 0)){
-      addLog(p.name + ' 想开箱，但' + islandName(p.island) + '的箱子已经空了。');
+/* 开箱。targetIsland 缺省 = 本人所在岛；
+   天工 6b（actBox / AI）会传入远端有箱的岛 —— 特效与「箱子扣除」都落在那个岛。 */
+function doOpenBox(p, autoPick, targetIsland){
+  targetIsland = (targetIsland == null) ? p.island : targetIsland;
+  if (targetIsland !== 0){
+    if (!(G.boxes[targetIsland] > 0)){
+      addLog(p.name + ' 想开箱，但' + islandName(targetIsland) + '的箱子已经空了。');
       return false;
     }
-    G.boxes[p.island]--;
+    G.boxes[targetIsland]--;
   }
   breakCharge(p, ' 转而开箱');
   markActed(p, 'box');
 
   const raw = rollItem();
-  const pos = islandXY(p.island);
+  const pos = islandXY(targetIsland);
   // 刻印 3（丰穰）：开箱同一项物品翻倍，可叠加 → ×2 / ×4 / ×8 …
   const mult = Math.pow(2, sealCount(p, '3'));
   const times = n => (n > 1 ? ' ×' + n : '');
@@ -3379,22 +3383,49 @@ function applyHit(p, t, dmg, w, mode, pb){
   // 钓竿：拉近 —— 沿最短路径把目标往攻击者方向退一格。
   // 多条等长最短路时（同心图上很常见：枢纽→中心可经任一出生岛绕），人类也弹面板自选，
   // 与击退同一交互口径；单候选或 AI 决策直接结算。
-  if (wid === 'rod' && t.island !== p.island && t.hp > 0){
-    const cand = pullCandidates(t.island, p.island);
-    const dest = cand.length ? (cand.length === 1 || p.isAI ? pullDest(p, t) : null) : t.island;
-    if (dest == null){
-      // 人类 · 多候选：弹面板挑拉到哪
-      const opts2 = cand.map(isl => ({
-        label: islandName(isl),
-        sub: '离 ' + p.name + ' 还有 ' + islandDist(isl, p.island) + ' 格',
-        run: () => { doPull(t, isl); finishTurn(p); }
-      }));
-      showChoice('钓竿拉近 · 把 ' + entLabel(t) + ' 拉到哪座岛？', opts2,
-        () => { doPull(t, cand[0]); finishTurn(p); });   // 取消＝按默认拉
-      G.animating = false;
-      return;
+  // 【天工 6b 扩展】：目标在边缘（出生岛/外岛）时，可以选择钓入虚空（直接死亡）。
+  //   t.hp > 0 在 attackResolve 之后判断：伤害已经把目标打死的，不会再走钓入虚空。
+  if (wid === 'rod' && t.hp > 0){
+    const isVoidEdge = isSpawnIsle(t.island);          // 出生岛（hub）/ 外岛（star）= 虚空边缘
+    const canVoid = hasSeal(p, '6b') && isVoidEdge;
+    const needPull = t.island !== p.island;
+    const doPullAction = () => {
+      if (!needPull) { finishTurn(p); return; }        // 同岛钓不拉近，只结算伤害
+      const cand = pullCandidates(t.island, p.island);
+      const dest = cand.length ? (cand.length === 1 || p.isAI ? pullDest(p, t) : null) : t.island;
+      if (dest == null){
+        // 人类 · 多候选：弹面板挑拉到哪
+        const opts2 = cand.map(isl => ({
+          label: islandName(isl),
+          sub: '离 ' + p.name + ' 还有 ' + islandDist(isl, p.island) + ' 格',
+          run: () => { doPull(t, isl); finishTurn(p); }
+        }));
+        showChoice('钓竿拉近 · 把 ' + entLabel(t) + ' 拉到哪座岛？', opts2,
+          () => { doPull(t, cand[0]); finishTurn(p); });   // 取消＝按默认拉
+        G.animating = false;
+        return;
+      }
+      if (dest !== t.island) doPull(t, dest);
+      finishTurn(p);
+    };
+    if (canVoid) {
+      if (p.isAI) {
+        addLog('【天工·6b】' + p.name + ' 将 ' + entLabel(t) + ' 钓入虚空！', 'hl');
+        knockbackKill(p, t);
+        finishTurn(p);
+        return;
+      } else {
+        showChoice('钓竿攻击 · 目标在边缘（天工无视距离）', [
+          { label: '\u{1F30C} 钓入虚空（直接死亡）', sub: '目标在出生岛/外岛，会被直接拖入虚空，背包物品一并消失',
+            run: () => { knockbackKill(p, t); finishTurn(p); } },
+          { label: '🪝 拉近到身边', sub: '照常拉近，不进入虚空', run: () => doPullAction() }
+        ], () => { doPullAction(); });   // 取消＝按默认拉近（与击退面板「取消=默认」同口径）
+        G.animating = false;
+        return;
+      }
     }
-    if (dest !== t.island) doPull(t, dest);
+    doPullAction();
+    return;
   }
 
   // 三叉戟 / 沧溟投掷：落入目标岛（连同这一件上的附魔一起留在岛上，只能本人捡回）
@@ -4280,7 +4311,7 @@ function cangmingAllocUI(p, pts, targets, alloc, title, onFinish, onCancel){
     showChoice(title, opts, onCancel);
   };
   /* ── 单实体分配面板 ──
-     2.5.1：点数动辄十几点，原来只能一下一下点「+1」，手要废。改成每项一个数字框，
+     2.5.2：点数动辄十几点，原来只能一下一下点「+1」，手要废。改成每项一个数字框，
      直接填想要的数（夹在 0 ~ 公共剩余 + 自己已占用），± 留作微调。
      「剩余」是全队共享的池子：给 A 填了 3 点，B 那边能填的上限就少 3 点。 */
   const CM_ROWS = [
@@ -4442,7 +4473,7 @@ function actQixian(p){
     // 【白】挡点名：处于【白】的实体不出现在连射候选里（已选中的也要在执行时复检）
     const tgts = pickable(allEnts(), e => e.alive);
     if (!tgts.length){ addLog('场上没有可被连射选中的实体（【白】挡下了点名），剩余 ' + left + ' 次射击浪费。'); finishTurn(p); return; }
-    showChoice('七弦 · 第 ' + (8 - left) + ' 次射击（剩余 ' + left + ' 次 · 1 点真实伤害 · 可选队友）', tgts.map(t => ({
+    showChoice('七弦 · 第 ' + (8 - left) + ' 次射击（剩余 ' + left + ' 次 · 1 点真实伤害 · 可选队友 / 自己）', tgts.map(t => ({
       label: entLabel(t) + targetTag(p, t),
       sub: hpDisp(t) + '/' + t.maxHp + dustHint(t) +
            ' · 真实伤害：无视 DEF / 护盾，受【尘】减伤 · 这一发可被闪避',
@@ -4466,9 +4497,10 @@ function actQixian(p){
 function actZhanyue(p){
   if (p.hp < p.maxHp){ addLog('斩月【斩杀】要求使用者满血（当前 ' + p.hp + '/' + p.maxHp + '）。'); render(); return; }
   // 【白】挡点名：白的目标不进斩杀候选（D7：斩月算选单个）
-  const tgts = pickable(allEnts(), e => e !== p && e.alive);
+  // 2.5.2：技能可以打自己 —— 斩月也能斩自己（等于自杀 + HP 减半），面板标「（自己）」
+  const tgts = pickable(allEnts(), e => e.alive);
   if (!tgts.length){ addLog('场上没有可被斩杀选中的目标（【白】挡下了点名）。'); render(); return; }
-  showChoice('斩月 · 斩杀：选择目标（目标直接死亡，代价：自己 HP 减半 · 可选队友）', tgts.map(t => ({
+  showChoice('斩月 · 斩杀：选择目标（目标直接死亡，代价：自己 HP 减半 · 可选队友 / 自己）', tgts.map(t => ({
     label: entLabel(t) + targetTag(p, t),
     // 负血要照实显示：忘川携带者被打到负 HP 仍存活，夹成 0 会让玩家误判「再补一刀」的分量
     sub: 'HP ' + t.hp + '/' + t.maxHp + (t.hp < 0 ? '（负血）' : '') + ' · DEF ' + getDef(t) +
@@ -4574,7 +4606,7 @@ function actZhixing(p){
   const tgts = pickable(allEnts(), e => e.alive);
   if (!tgts.length){ addLog('场上没有可被掷星选中的实体（【白】挡下了点名）。'); render(); return; }
   const hi = zhixingMaxRoll();
-  showChoice('掷星 · 选择目标（掷 1~' + hi + ' 真实伤害 · 质数送额外回合 · 可选队友）', tgts.map(t => ({
+  showChoice('掷星 · 选择目标（掷 1~' + hi + ' 真实伤害 · 质数送额外回合 · 可选队友 / 自己）', tgts.map(t => ({
     label: entLabel(t) + targetTag(p, t),
     sub: hpDisp(t) + '/' + t.maxHp + dustHint(t) +
          ' · 真实伤害：无视 DEF / 护盾，受【尘】减伤 · 这一发可被闪避',
@@ -6099,9 +6131,15 @@ function aiAct(p){
     }
     // 7d. 没药、不能蓄闪、又没地方躲（比如两外岛之间隔着中心，一步到不了）：
     //     与其把这一回合再扔进「跑一步」的黑洞，不如就地翻箱找药 / 找防具
-    if (!hasBan(p,'box') && isleBoxes(p.island) > 0 && !p.boxThisTurn){
+    //     （有 6b 时同样无视距离：找任意有箱的岛开）
+    if (!hasBan(p,'box') && !p.boxThisTurn && (isleBoxes(p.island) > 0 || hasSeal(p, '6b'))){
       p.boxThisTurn = true;
-      const r = doOpenBox(p, true);
+      let boxIsle = p.island;
+      if (isleBoxes(p.island) <= 0 && hasSeal(p, '6b')){
+        const avail = allIslands().filter(i => isleBoxes(i) > 0);
+        if (avail.length) boxIsle = avail.includes(0) ? 0 : avail[0];
+      }
+      const r = doOpenBox(p, true, boxIsle);
       if (r !== 'wait') return;
     }
   }
@@ -6247,12 +6285,18 @@ function aiAct(p){
 
   // 11. 开箱：打不动任何人时必开（否则双方互相免疫，局面僵死）；否则按局势决定概率
   //     发育期见箱就开；残局只剩一个对手时别再浪费回合翻箱，直接去收人头
+  //     有 6b 时，无视距离，可随时找有箱子的岛开（优先中心岛无限箱）
   /* 11. 开箱：开箱是**正收益**行为 —— 武器、遗器、刻印、药水、金币都从箱子里来，
      这是变强的主要途径，不该压制。2.2 只保留一条真正的护栏：**每回合最多开 1 箱**
      （中心岛箱子是 Infinity，没有这道闸门时 AI 会在一回合内连续开几十次，
       那不是"爱开箱"而是死循环；每回合 1 箱既符合规则节奏，也保留开箱的价值）。
      其余判定保持宽松：打不到人 / 没武器 / 打不动人 都鼓励开。 */
-  const hasBox = isleBoxes(p.island) > 0;
+  let hasBox = isleBoxes(p.island) > 0;
+  let boxIsland = p.island;
+  if (!hasBox && hasSeal(p, '6b')){
+    const avail = allIslands().filter(i => isleBoxes(i) > 0);
+    if (avail.length) { hasBox = true; boxIsland = avail.includes(0) ? 0 : avail[0]; }
+  }
   /* hopeless 走 S.walledAll 的口径（扣掉【尘】之后一点都打不动人）。
      旧版用 aiDmgTo（只减 DEF），高尘局里它恒为「还有得打」→ 不开箱、只反复做 0 伤害攻击。 */
   const hopeless = S.walledAll || (enemies.length && enemies.every(t => aiDmgTo(p, W, t) <= 0));
@@ -6268,7 +6312,7 @@ function aiAct(p){
   if (hasBox && !hasBan(p,'box') && !p.boxThisTurn && boxWanted){
     p.boxThisTurn = true;
     expMark(p, 'box');               // 2.3 学习记录：这一回合选择了开箱
-    const r = doOpenBox(p, true);
+    const r = doOpenBox(p, true, boxIsland);
     if (r !== 'wait') return;       // afterItem -> finishTurn 会交接
   }
 
@@ -7211,11 +7255,25 @@ function actMove(p){
 }
 
 function actBox(p){
-  if (!(isleBoxes(p.island) > 0)){
-    addLog(islandName(p.island) + ' 的箱子已经开完了。'); render(); return;
+  if (!hasSeal(p, '6b')) {
+    if (!(isleBoxes(p.island) > 0)){
+      addLog(islandName(p.island) + ' 的箱子已经开完了。'); render(); return;
+    }
+    const r = doOpenBox(p);
+    if (r !== 'wait') { render(); }
+    return;
   }
-  const r = doOpenBox(p);
-  if (r !== 'wait') { render(); }
+  // 有 6b：无视距离，可以从任意有箱子的岛开
+  const boxes = allIslands().filter(i => isleBoxes(i) > 0);
+  if (!boxes.length) { addLog('全场箱子都已经空了。'); render(); return; }
+  if (boxes.length === 1 && boxes[0] === p.island) {
+    const r = doOpenBox(p); if (r !== 'wait') render(); return;
+  }
+  showChoice('天工：从哪个岛开箱？', boxes.map(i => ({
+    label: islandName(i) + (i === p.island ? '（当前所在）' : ''),
+    sub: '箱 ' + (isleBoxes(i) === BOX_INF ? '∞' : isleBoxes(i)) + (i !== p.island ? ' · 无视距离' : ''),
+    run: () => { const r = doOpenBox(p, false, i); if (r !== 'wait') render(); }
+  })), () => render());
 }
 
 function actAttack(p){
@@ -7294,7 +7352,9 @@ function rngLabel(p){
 function isCharged(p, uid){ return !!uid && p.charging === uid && !!itemOf(p, uid); }
 
 function actAttackTarget(p, w){
-  /* 索敌放开：候选 = 全体存活实体（含队友与自己的召唤物），不再是「只列敌人」 */
+  /* 索敌放开：候选 = 全体存活实体（含队友与自己的召唤物），不再是「只列敌人」。
+     2.5.2：**远程射击（蓄力释放 / 投掷）连自己也算目标** —— 射程 ∞ 本来就够得到自己，
+     用来射自己解【蓝】（受击解锁）、触发受击类效果、或纯粹自杀。近战仍不含自己。 */
   const enemies = targetsFor(p);
   const wid = itemIdOf(p, w);
   const charged = isCharged(p, w);
@@ -7305,7 +7365,7 @@ function actAttackTarget(p, w){
   if (charged){
     const mode = throwable ? 'throw' : 'release';
     const verb = throwable ? '投掷' : '释放';
-    showChoice(verb + ITEMS[wid].name + '蓄力一击 · 选择目标（可选队友）', enemies.map(t => ({
+    showChoice(verb + ITEMS[wid].name + '蓄力一击 · 选择目标（可选队友 / 自己）', targetsFor(p, {self:true}).map(t => ({
       label: entLabel(t) + targetTag(p, t),
       sub: hpDisp(t) + '/' + t.maxHp + ' · DEF ' + getDef(t) + dustHint(t) +
            ' · 预计伤害 ' + estHit(Math.max(0, getAtk(p,w) - getDef(t)), t, p),
@@ -7405,11 +7465,13 @@ function specialThrow(p, w){
 }
 
 function pickTarget(p, w, mode){
-  /* 索敌放开：队友 / 自己的召唤物同样是合法目标（面板会标出归属） */
-  const enemies = targetsFor(p);
-  const inR = enemies.filter(t => inRange(p, w, t, mode));
+  /* 索敌放开：队友 / 自己的召唤物同样是合法目标（面板会标出归属）。
+     2.5.2：非近战（释放 / 投掷）连自己也能选 —— 远程射击够得到自己；近战打自己没意义，排除。 */
+  const pool = targetsFor(p, { self: mode !== 'normal' });
+  const inR = pool.filter(t => inRange(p, w, t, mode));
   if (!inR.length){ addLog('射程内没有目标。'); render(); return; }
-  const label = isCharged(p, w) ? '释放蓄力一击，目标？（可选队友）' : '攻击谁？（可选队友）';
+  const label = isCharged(p, w) ? '释放蓄力一击，目标？（可选队友 / 自己）'
+    : (mode === 'normal' ? '攻击谁？（可选队友）' : '攻击谁？（可选队友 / 自己）');
   showChoice(label, inR.map(t => ({
     label: entLabel(t) + targetTag(p, t),
     sub: hpDisp(t) + '/' + t.maxHp + ' · DEF ' + getDef(t) + dustHint(t) +
