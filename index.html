@@ -51,7 +51,7 @@ h1{
   #mapWrap canvas{width:auto;height:auto;max-width:100%;max-height:100%}
   /* 行动区紧凑化写在下方 .abtn 基础样式之后（否则会被基础规则覆盖） */
   #actZone{flex:0 0 auto}
-  #choice .opts{max-height:24vh;overflow-y:auto}   /* 选项列表过长时面板内滚动 */
+  #choice .opts{max-height:28vh;overflow-y:auto}   /* 选项列表过长时面板内滚动（28vh 恰好放下分配页三行输入+两个按钮） */
   /* 右列：玩家列表 + 日志瓜分高度，各自内部滚动 */
   .plist{flex:1 1 46%;min-height:0;overflow-y:auto}
   #logBox{flex:1 1 54%;min-height:0;margin-top:0;max-height:none;overflow:hidden;
@@ -228,6 +228,19 @@ body.choosing .abtn:hover{background:rgba(255,255,255,.05);border-color:var(--li
 .opt:hover:not(:disabled){background:rgba(255,202,58,.13);border-color:rgba(255,202,58,.55)}
 .opt:disabled{opacity:.34;cursor:not-allowed;border-style:dashed}
 .opt .sub{font-size:10px;color:var(--dim);display:block;margin-top:1px}
+/* 沧溟【分配】的数值输入区：三行（回复 / 护盾 / 伤害），每行一个数字框 + ± 微调 */
+.allocrows{display:flex;flex-direction:column;gap:6px;width:100%;margin-bottom:8px}
+.allocrow{
+  display:flex;align-items:center;gap:7px;padding:4px 10px;border-radius:9px;
+  border:1px solid var(--line);background:rgba(255,255,255,.03);
+}
+.allocrow .alab{font-size:12.5px;color:var(--text);flex:1 1 auto;min-width:0;cursor:help}
+.allocrow input[type=number]{width:64px;flex:none;padding:5px 6px;font-size:13px;text-align:center}
+.allocrow .sbtn{
+  flex:none;width:28px;height:28px;line-height:1;border-radius:8px;cursor:pointer;font-family:inherit;
+  font-size:15px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--text);transition:.15s;
+}
+.allocrow .sbtn:hover{background:rgba(56,240,216,.16);border-color:rgba(56,240,216,.5);color:var(--cyan)}
 .cancel{
   margin-left:6px;background:none;border:none;color:#6b7899;cursor:pointer;font-size:12px;font-family:inherit;
 }
@@ -432,7 +445,7 @@ input[type=number],input[type=text]{
 <div class="modal" id="setup">
   <div class="sheet">
     <h2>末环协议 · RingFall</h2>
-    <div class="sub">对局设置 · v2.5.0</div>
+    <div class="sub">对局设置 · v2.5.1</div>
     <div class="row">
       <label>对战模式</label>
       <div class="seg" id="segMode"></div>
@@ -624,7 +637,7 @@ input[type=number],input[type=text]{
         <p><b>击退</b>沿「攻击者 → 目标」再推 1 格。孤枢散星：目标在<b>外岛</b> → 坠入虚空<b>直接死亡</b>；目标在<b>中心岛</b> → 飞进另一侧外岛（不会是攻击者所在岛）。叠嶂凝芒：目标在<b>出生岛</b> → 坠入虚空<b>直接死亡</b>；目标在<b>枢纽岛</b> → 攻击者三选一（两侧出生岛或中心岛）；目标在<b>中心岛</b> → 攻击者自选任一枢纽岛。</p>
 
         <div class="rsec">战斗</div>
-        <p>伤害 = ATK − DEF，低于 0 无伤害（仍记 1 次【受击】）。每次被击打记 1 次受击。攻击目标可为玩家或召唤物。</p>
+        <p>伤害 = ATK − DEF，低于 0 无伤害（仍记 1 次【受击】）。每次被击打记 1 次受击。攻击目标可为玩家或召唤物；<b>人类玩家的选目标面板会列出全场存活实体 —— 队友、自己的召唤物同样可选</b>（面板标「（队友）」/「（自己的召唤物）」以示区分），可用于帮队友解【蓝】/【白】或补刀。<b>AI 不受此放开影响，永远只打敌人</b>。</p>
         <p><b>武器</b>：剑 +7；击退棒 ATK 0 但命中后击退 1 格；钓竿 ATK 0，射程 +1、命中后拉近 1 格，并可当道具钓鱼；弓箭 +8，<b>没有近战</b>——必须先蓄力，1 回合后释放、射程 ∞；三叉戟 +9，近战无需蓄力，投掷需蓄力 1 回合、射程 ∞，投出后<b>只能本人</b>到落点岛捡回；遗器斩月 +11，<b>近战无需蓄力</b>，也可蓄力 1 回合后远程释放（射程 ∞，无需捡回）。</p>
         <p><b>蓄力会被任何位移打断</b>——主动的移动 / 开箱 / 传送，被动的被击退 / 被钓竿拉走，都算，需重新蓄力。</p>
 
@@ -639,7 +652,7 @@ input[type=number],input[type=text]{
         <div class="rsec">召唤物</div>
         <p>使用「召唤物」道具后自选生物，出现在你所在的岛。在你的主要回合之后获得独立的召唤物回合，每只<b>只行动 1 次</b>：能打到就打，打不到就移动 1 步追击，<b>绝不主动走进虚空</b>。</p>
         <p><b>召唤当回合不行动</b>：刚召唤的生物「正在现身」，本回合的召唤物回合与召唤物额外回合都跳过（凌波给的额外行动也作废），从<b>你的下一个回合</b>起才行动；在额外回合里召唤的，本轮已过召唤物回合，下轮正常行动。</p>
-        <p>召唤师阵亡后<b>保留原回合位继续行动</b>；人头记给召唤师。DEF 恒为 0，可被攻击 / 击退 / 施加状态。<b>没有⑩御灵时只能自动索敌</b>（人类玩家也一样，不弹操控面板），且不享受召唤师刻印。召唤物不能被传送器传送。</p>
+        <p>召唤师阵亡后<b>保留原回合位继续行动</b>；人头记给召唤师。DEF 恒为 0，可被攻击 / 击退 / 施加状态。<b>没有⑩御灵时只能自动索敌</b>（人类玩家也一样，不弹操控面板），且不享受召唤师刻印。召唤物不能被传送器传送。<br><b>人工操控时目标范围放开</b>：射程内的队友、自己的其它召唤物、自己的召唤师都在候选里（面板标「（队友）」/「（自己的召唤物）」/「（自己主人）」）；「自动行动」仍只打敌人。</p>
 
         <div class="rsec">机械（⑥天工）</div>
         <p>「建造机械」消耗主要行动：<b>构建炮台</b>（当前岛，固定、无上限）／<b>装填弹药</b>（箭矢 8 ATK 单体、TNT 16 ATK 全岛，装填后<b>弹药无限</b>）／<b>自动化</b>（每主要回合开始前 TNT×1、箭矢×2）／<b>手动发射</b>（1 发）。</p>
@@ -694,7 +707,7 @@ input[type=number],input[type=text]{
         <details class="faq"><summary>炮台能暴击、能附加撕裂吗？</summary><p><b>能</b>。发射走炮台专用攻击管线，<b>继承建造者的被动刻印</b>：①劫雷照常暴击（2~20 倍）、⑨裂帛照常叠【撕裂】（含 ⑨b 的每层 DEF−1）、⑪点染照常上色、⑤残锋 / ⑫b 尘梦照常加 ATK；只有<b>武器与附魔加成不吃</b>。伤害走命中环节，<b>可以被闪避</b>（【白】挡不住炮台，【蓄闪】能躲）。</p></details>
         <details class="faq"><summary>炮台装填的弹药会用完吗？</summary><p>不会。装填一次即<b>弹药无限</b>，之后只需决定自动化开关与何时手动发射。</p></details>
         <details class="faq"><summary>召唤物刚召唤出来这回合为什么不动？</summary><p>刚召唤的生物处于「正在现身」状态，<b>当回合的召唤物回合与额外回合都跳过</b>，从你的下一个回合起才行动。</p></details>
-        <details class="faq"><summary>怎么手动操控召唤物？</summary><p>需要 ⑩御灵。没有 ⑩御灵时，无论人类还是 AI，召唤物都<b>只能自动索敌</b>，不会弹操控面板。</p></details>
+        <details class="faq"><summary>怎么手动操控召唤物？</summary><p>需要 ⑩御灵。没有 ⑩御灵时，无论人类还是 AI，召唤物都<b>只能自动索敌</b>，不会弹操控面板。手动操控时可以把队友、自己的其它召唤物甚至自己的召唤师选为攻击目标（用于解控 / 自残换状态），面板会标出归属；AI 与「自动行动」永远只打敌人。</p></details>
         <details class="faq"><summary>召唤物会跟着我换岛吗？</summary><p>只有<b>游侠</b>会跟随（移动、传送、被打飞、被钓竿拉走都算）。巨兽与幽灵按自己的索敌逻辑行动。召唤物本身不能被传送器传送。</p></details>
         <details class="faq"><summary>⑨b 的撕裂把 DEF 压到负数会怎样？</summary><p><b>该实体无法移动</b>。⑨b 拥有者施加的【撕裂】<b>每层令目标 DEF −1</b>（可累加，层数不清零就会一直压着）；当 DEF 被压到 <b>&lt; 0</b>，移动按钮置灰、AI 与召唤物也不会走位。DEF 变负还会让打在它身上的攻击更痛（伤害要减 DEF）。<b>传送器仍可用</b> —— 与戒律「禁止移动（传送器仍可用）」同口径，传送是道具、不走移动流程。想解除就用 ⑪b【灰】选中【撕裂】，层数和 DEF 惩罚一起清掉。</p></details>
         <details class="faq"><summary>点染分支的【灰】能解什么？</summary><p><b>【灰】不上状态、立即生效</b>：选一个目标后，把他身上现有的效果逐项列出（【白】【黑】【蓝】【黄】【撕裂】【尘】【戒律】【敕罚】【蓄闪】），你选一个立即解除（【敕罚】按「目标×禁类×施加者」逐条整条解除）。<b>解【黑】是「黑掉施加者⑪」之外的第二条解黑路径</b>，且解除时 ⑩御灵的血上限会加回。目标身上没有任何效果时【灰】无事可做，会退回颜色选择，不消耗主要行动。</p></details>
@@ -1521,6 +1534,27 @@ function isEnemyOf(a, b){
 }
 /* 敌对实体（含敌方召唤物） */
 function foesOfEnt(e){ return allEnts().filter(t => isEnemyOf(e, t)); }
+
+/* 索敌放开（2.5.1）：人类玩家可以把「队友 / 自己的召唤物」也选为攻击或技能目标
+   —— 用途是帮队友解【蓝】/【白】、补刀救人（如忘川均分）、配合裂帛叠层等。
+   ⚠ 只影响「面板给哪些候选」。AI 决策链（aiHitOf / actionFoes / foesOfEnt / aiPickTarget）
+      一律不改，仍旧只认敌人，所以 AI 不会自残或打队友、平衡不受影响。 */
+function targetsFor(p, opt){
+  const self = !!(opt && opt.self);
+  return allEnts().filter(e => e.alive && (self || e !== p));
+}
+/* 目标归属标注（纯显示）：让玩家一眼分清敌/友，避免手滑打到自己人 */
+function targetTag(p, t){
+  if (!p || !t) return '';
+  if (t === p) return '（自己）';
+  const pa = p.isSummon ? G.players[p.owner] : p;
+  const pb = t.isSummon ? G.players[t.owner] : t;
+  if (pa && pa === pb){
+    if (t === pa) return p.isSummon ? '（自己主人）' : '（自己）';   // 召唤物打自己的召唤师
+    return t.isSummon ? '（自己的召唤物）' : '（队友）';
+  }
+  return isEnemyOf(p, t) ? '' : '（队友）';
+}
 
 /* =========================================================
    刻印查询（含刻印 2 同契：池化，层数相加）
@@ -3622,9 +3656,11 @@ function summonPanel(s, owner, done){
                 ' · ATK ' + summonAtk(s) + ' · 射程 ' + rngTxt(summonRngOf(s)) + '）';
   const opts = [];
   opts.push({label:'自动行动', sub:'按索敌逻辑执行（推荐）', run:()=>{ summonHumanGo(s, owner, null, done); }});
-  const foes = foesOfEnt(s).filter(t => islandDist(s.island, t.island) <= summonRngOf(s));
+  /* 索敌放开：召唤物也能打队友 / 自己的其它召唤物（面板标出归属）
+     ——「自动行动」走 summonDoAction，那边仍是只认敌人，不会自己打自己人 */
+  const foes = targetsFor(s).filter(t => islandDist(s.island, t.island) <= summonRngOf(s));
   foes.forEach(t => opts.push({
-    label:'攻击 ' + entLabel(t),
+    label:'攻击 ' + entLabel(t) + targetTag(s, t),
     sub: hpDisp(t) + ' · DEF ' + getDef(t) + dustHint(t) +
         ' · 预计伤害 ' + estHit(Math.max(0, summonAtk(s) - getDef(t)), t, s),
     run:()=>{ summonHumanGo(s, owner, {act:'atk', target:t}, done); }
@@ -4227,7 +4263,7 @@ function cangmingTargets(p){
    onFinish(alloc) 确认后回调；onCancel() 取消后回调（未消耗点数视为浪费） */
 function cangmingAllocUI(p, pts, targets, alloc, title, onFinish, onCancel){
   const keyOf = t => t.isSummon ? 's' + t.sid : 'p' + t.i;
-  const usedOf = t => { const a = alloc[keyOf(t)]; return a ? a.heal + a.shield + a.dmg : 0; };
+  const usedOf = t => { const a = alloc[keyOf(t)]; return a ? (a.heal||0) + (a.shield||0) + (a.dmg||0) : 0; };
   const leftAll = () => pts - targets.reduce((s,t) => s + usedOf(t), 0);
   const mainPanel = () => {
     const opts = targets.map(t => {
@@ -4243,25 +4279,73 @@ function cangmingAllocUI(p, pts, targets, alloc, title, onFinish, onCancel){
       run: () => onFinish(alloc)});
     showChoice(title, opts, onCancel);
   };
+  /* ── 单实体分配面板 ──
+     2.5.1：点数动辄十几点，原来只能一下一下点「+1」，手要废。改成每项一个数字框，
+     直接填想要的数（夹在 0 ~ 公共剩余 + 自己已占用），± 留作微调。
+     「剩余」是全队共享的池子：给 A 填了 3 点，B 那边能填的上限就少 3 点。 */
+  const CM_ROWS = [
+    ['heal',   '回复',        '恢复目标 HP（不超过上限）'],
+    ['shield', '护盾',        '为目标添加护盾（优先于 HP 扣减）'],
+    ['dmg',    '伤害（真实）', '真实伤害：无视 DEF 与护盾，受【尘】减伤 · 不走命中环节，不可被闪避 · 主动技属「技能」，不暴击']
+  ];
   const allocMenu = (t) => {
     const key = keyOf(t);
-    const a = alloc[key] || {heal:0, shield:0, dmg:0};
-    const cur = leftAll() + usedOf(t);
-    const opt = (label, k, sub) => ({
-      label, sub,
-      run: () => {
-        if (leftAll() <= 0){ addLog('没有剩余点数了。'); allocMenu(t); return; }
-        a[k]++; alloc[key] = a; allocMenu(t);
-      }
-    });
-    showChoice('分配给 ' + entLabel(t) + '（剩余 ' + leftAll() + ' 点）', [
-      opt('回复 +1', 'heal', '恢复目标 HP（不超过上限）· 当前已分配回复 ' + a.heal),
-      opt('护盾 +1', 'shield', '为目标添加护盾（优先于 HP 扣减）· 当前已分配护盾 ' + a.shield),
-      opt('伤害 +1（真实）', 'dmg', '吸收 HP：真实伤害（无视 DEF 与护盾，受【尘】减伤）· 不走命中环节，不可被闪避 · 主动技属「技能」，不暴击（与伤害类型无关）· 当前已分配伤害 ' + a.dmg),
+    const a = alloc[key] || (alloc[key] = {heal:0, shield:0, dmg:0});
+    const titleOf = () => '分配给 ' + entLabel(t) + '（剩余 ' + leftAll() + ' 点 · 数字可直接输入）';
+    showChoice(titleOf(), [
       {label: '重置', sub: '清除对该实体的分配',
         run: () => { delete alloc[key]; allocMenu(t); }},
       {label: '← 返回', run: () => mainPanel()}
     ], onCancel);
+    const box = $('cOpts');
+    if (!box) return;                       // 无 DOM 的环境（纯逻辑测试）跳过输入区，分配逻辑照旧
+    const wrap = document.createElement('div');
+    wrap.className = 'allocrows';
+    const syncs = [];
+    /* 某一项当前最多能填多少：公共剩余 + 它自己已占用的部分 */
+    const capOf = k => leftAll() + (a[k] || 0);
+    const setVal = (k, v) => {
+      const n = Math.max(0, Math.min(capOf(k), Math.floor(Number(v) || 0)));
+      a[k] = n;
+      return n;
+    };
+    const syncAll = (skip) => {
+      $('cTitle').textContent = titleOf();
+      syncs.forEach(s => { if (s.el !== skip) s.fn(); });
+    };
+    const mk = (k, txt, delta, aria) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'sbtn'; b.textContent = txt;
+      b.setAttribute('aria-label', aria);
+      b.onclick = () => { setVal(k, (a[k] || 0) + delta); syncAll(); };
+      return b;
+    };
+    CM_ROWS.forEach(([k, name, tip]) => {
+      const row = document.createElement('div');
+      row.className = 'allocrow';
+      const lab = document.createElement('span');
+      lab.className = 'alab'; lab.textContent = name; lab.title = tip;
+      const inp = document.createElement('input');
+      inp.type = 'number'; inp.min = '0'; inp.step = '1'; inp.inputMode = 'numeric';
+      inp.setAttribute('aria-label', name + '分配点数');
+      const show = () => { inp.value = String(a[k] || 0); inp.max = String(capOf(k)); };
+      /* 输入过程中不改写输入框（否则光标会跳），只在合法范围内实时入账；
+         失焦 / 回车时再夹一次，保证越界的输入会被拉回上限 */
+      inp.oninput = () => {
+        const v = parseInt(inp.value, 10);
+        if (Number.isFinite(v) && v >= 0 && v <= capOf(k)){ setVal(k, v); syncAll(inp); }
+      };
+      inp.onblur = () => { setVal(k, inp.value); syncAll(); };
+      inp.onkeydown = ev => { if (ev.key === 'Enter'){ setVal(k, inp.value); syncAll(); } };
+      show();
+      row.appendChild(lab);
+      row.appendChild(mk(k, '−', -1, name + ' 减 1'));
+      row.appendChild(inp);
+      row.appendChild(mk(k, '+', 1, name + ' 加 1'));
+      wrap.appendChild(row);
+      syncs.push({el: inp, fn: show});
+    });
+    box.insertBefore(wrap, box.firstChild);
   };
   mainPanel();
 }
@@ -4358,8 +4442,8 @@ function actQixian(p){
     // 【白】挡点名：处于【白】的实体不出现在连射候选里（已选中的也要在执行时复检）
     const tgts = pickable(allEnts(), e => e.alive);
     if (!tgts.length){ addLog('场上没有可被连射选中的实体（【白】挡下了点名），剩余 ' + left + ' 次射击浪费。'); finishTurn(p); return; }
-    showChoice('七弦 · 第 ' + (8 - left) + ' 次射击（剩余 ' + left + ' 次 · 1 点真实伤害）', tgts.map(t => ({
-      label: entLabel(t),
+    showChoice('七弦 · 第 ' + (8 - left) + ' 次射击（剩余 ' + left + ' 次 · 1 点真实伤害 · 可选队友）', tgts.map(t => ({
+      label: entLabel(t) + targetTag(p, t),
       sub: hpDisp(t) + '/' + t.maxHp + dustHint(t) +
            ' · 真实伤害：无视 DEF / 护盾，受【尘】减伤 · 这一发可被闪避',
       run: () => {
@@ -4384,8 +4468,8 @@ function actZhanyue(p){
   // 【白】挡点名：白的目标不进斩杀候选（D7：斩月算选单个）
   const tgts = pickable(allEnts(), e => e !== p && e.alive);
   if (!tgts.length){ addLog('场上没有可被斩杀选中的目标（【白】挡下了点名）。'); render(); return; }
-  showChoice('斩月 · 斩杀：选择目标（目标直接死亡，代价：自己 HP 减半）', tgts.map(t => ({
-    label: entLabel(t),
+  showChoice('斩月 · 斩杀：选择目标（目标直接死亡，代价：自己 HP 减半 · 可选队友）', tgts.map(t => ({
+    label: entLabel(t) + targetTag(p, t),
     // 负血要照实显示：忘川携带者被打到负 HP 仍存活，夹成 0 会让玩家误判「再补一刀」的分量
     sub: 'HP ' + t.hp + '/' + t.maxHp + (t.hp < 0 ? '（负血）' : '') + ' · DEF ' + getDef(t) +
          (hasArtifact(t, 'yq_wangchuan') ? ' · 【忘川】不死也会死' : ''),
@@ -4419,7 +4503,7 @@ function actWangchuan(p){
       const key = t.isSummon ? 's' + t.sid : 'p' + t.i;
       const on = sel.indexOf(key) >= 0;
       return {
-        label: (on ? '☑ ' : '☐ ') + entLabel(t),
+        label: (on ? '☑ ' : '☐ ') + entLabel(t) + targetTag(p, t),
         sub: 'HP ' + t.hp + (t.hp < 0 ? '（负血 · 按 ' + t.hp + ' 计入）' : '') + '/' + t.maxHp,
         run: () => {
           const i = sel.indexOf(key);
@@ -4490,8 +4574,8 @@ function actZhixing(p){
   const tgts = pickable(allEnts(), e => e.alive);
   if (!tgts.length){ addLog('场上没有可被掷星选中的实体（【白】挡下了点名）。'); render(); return; }
   const hi = zhixingMaxRoll();
-  showChoice('掷星 · 选择目标（掷 1~' + hi + ' 真实伤害 · 质数送额外回合）', tgts.map(t => ({
-    label: entLabel(t),
+  showChoice('掷星 · 选择目标（掷 1~' + hi + ' 真实伤害 · 质数送额外回合 · 可选队友）', tgts.map(t => ({
+    label: entLabel(t) + targetTag(p, t),
     sub: hpDisp(t) + '/' + t.maxHp + dustHint(t) +
          ' · 真实伤害：无视 DEF / 护盾，受【尘】减伤 · 这一发可被闪避',
     run: () => {
@@ -7210,7 +7294,8 @@ function rngLabel(p){
 function isCharged(p, uid){ return !!uid && p.charging === uid && !!itemOf(p, uid); }
 
 function actAttackTarget(p, w){
-  const enemies = foesOf(p);
+  /* 索敌放开：候选 = 全体存活实体（含队友与自己的召唤物），不再是「只列敌人」 */
+  const enemies = targetsFor(p);
   const wid = itemIdOf(p, w);
   const charged = isCharged(p, w);
 
@@ -7220,8 +7305,8 @@ function actAttackTarget(p, w){
   if (charged){
     const mode = throwable ? 'throw' : 'release';
     const verb = throwable ? '投掷' : '释放';
-    showChoice(verb + ITEMS[wid].name + '蓄力一击 · 选择目标', enemies.map(t => ({
-      label: entLabel(t),
+    showChoice(verb + ITEMS[wid].name + '蓄力一击 · 选择目标（可选队友）', enemies.map(t => ({
+      label: entLabel(t) + targetTag(p, t),
       sub: hpDisp(t) + '/' + t.maxHp + ' · DEF ' + getDef(t) + dustHint(t) +
            ' · 预计伤害 ' + estHit(Math.max(0, getAtk(p,w) - getDef(t)), t, p),
       run: () => { launchAttack(p, w, t, mode); }
@@ -7320,12 +7405,13 @@ function specialThrow(p, w){
 }
 
 function pickTarget(p, w, mode){
-  const enemies = foesOf(p);
+  /* 索敌放开：队友 / 自己的召唤物同样是合法目标（面板会标出归属） */
+  const enemies = targetsFor(p);
   const inR = enemies.filter(t => inRange(p, w, t, mode));
   if (!inR.length){ addLog('射程内没有目标。'); render(); return; }
-  const label = isCharged(p, w) ? '释放蓄力一击，目标？' : '攻击谁？';
+  const label = isCharged(p, w) ? '释放蓄力一击，目标？（可选队友）' : '攻击谁？（可选队友）';
   showChoice(label, inR.map(t => ({
-    label: entLabel(t) + (t.isSummon ? '' : ''),
+    label: entLabel(t) + targetTag(p, t),
     sub: hpDisp(t) + '/' + t.maxHp + ' · DEF ' + getDef(t) + dustHint(t) +
          ' · 预计伤害 ' + estHit(Math.max(0, getAtk(p,w) - getDef(t)), t, p),
     run: () => { launchAttack(p, w, t, mode); }
