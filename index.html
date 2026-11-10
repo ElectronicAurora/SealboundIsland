@@ -413,6 +413,7 @@ input[type=number],input[type=text]{
           <button class="abtn" data-a="seal5b">残锋<small>刻印 5b · 全场临界 +10</small></button>
           <button class="abtn" data-a="paint">点染<small>刻印 11b · 【白】/【黑】/【灰】解效果</small></button>
           <button class="abtn" data-a="puppet">傀儡<small>刻印 10b · 召唤一只傀儡</small></button>
+          <button class="abtn" data-a="guixu">归墟<small>刻印 16b · 直接摧毁</small></button>
           <button class="abtn" data-a="dodge">蓄闪<small>刻印 8 · 必定闪避</small></button>
           <button class="abtn" data-a="precept">敕禁<small>刻印 4 · 自由行动</small></button>
           <button class="abtn" data-a="machine">天工<small>刻印 6 · 建造/发射</small></button>
@@ -445,7 +446,7 @@ input[type=number],input[type=text]{
 <div class="modal" id="setup">
   <div class="sheet">
     <h2>末环协议 · RingFall</h2>
-    <div class="sub">对局设置 · v2.5.2</div>
+    <div class="sub">对局设置 · v2.5.3</div>
     <div class="row">
       <label>对战模式</label>
       <div class="seg" id="segMode"></div>
@@ -608,7 +609,10 @@ input[type=number],input[type=text]{
           <tr><td class="no">⑪</td><td class="nm">点染</td><td><b>基础只有【红】/【蓝】/【黄】三色</b>，攻击命中可自选附加其中之一（命中才生效，每次都能改、都能跳过）。<b>选 11b 分支后</b>才解锁【白】/【黑】/【灰】三色与点染主动技。<b>【黑】可封目标尚未持有的刻印（预先封锁，他之后选到即失效）</b>；<b>【灰】命中那一下解除目标一个已有状态</b></td></tr>
           <tr><td class="no">⑫</td><td class="nm">尘梦</td><td>回合开始时未受伤则 +1 层【尘】（每层减伤 1），受伤即清空。<b>【尘】的攻击增伤只在持有 ⑫b 分支时生效</b>；基础 ⑫ 只减伤、不增伤</td></tr>
           <tr><td class="no">⑬</td><td class="nm">盈箧</td><td>背包内护甲 DEF 可叠加、武器 ATK 可叠加（空手也生效）</td></tr>
-        </table>
+          <tr><td class="no">⑭</td><td class="nm">无咎</td><td>获得特殊护盾。激活时可完全抵消一次受到的影响（伤害、状态、撕裂/敕罚结算免伤不扣层数）。进行战斗会导致失效。从当前回合结束至下回合结束仅可触发一次。分支 14b：主动战斗不再导致失效。</td></tr>
+          <tr><td class="no">⑮</td><td class="nm">狂骨</td><td>可叠加。普攻时可以选择消耗自身生命值（真伤，吃自身【尘】减伤），使本次攻击基础伤害增加（宣布消耗值 × 层数）。</td></tr>
+          <tr><td class="no">⑯</td><td class="nm">归墟</td><td>普攻命中后，可选择永久摧毁目标一件物品（无掉落，装备自动卸下）。分支 16b：可摧毁刻印（触发清算），并解锁主动技（选目标直接摧毁其物品/刻印）。</td></tr>
+          </table>
 
         <div class="rsec">刻印 ⑧a ·【蓄闪】</div>
         <table class="rtb">
@@ -749,7 +753,7 @@ const ITEMS = {
      normal 模式射程恒为 0 且攻击菜单里只给「蓄力」。 */
   bow:      {name:'弓箭',   icon:'\u{1F3F9}', type:'weapon', atk:8,  rng:Infinity, ranged:true, noMelee:true, charge:true, ench:true, desc:'无近战。蓄力 1 回合后释放：射程无限、ATK +8'},
   trident:  {name:'三叉戟', icon:'\u{1F531}', type:'weapon', atk:9,  rng:Infinity, ranged:true, throwable:true, charge:true, ench:true, desc:'近战 ATK+9（无需蓄力）；投掷需蓄力 1 回合，射程∞，投出后需到落点岛由本人捡回'},
-  seal:     {name:'刻印',   icon:'\u{1F4DC}', type:'consume', desc:'获得时立即自选一项永久强化：13 选 1，不占回合（重复选一般不叠加；不入背包、死亡不掉落）'},
+  seal:     {name:'刻印',   icon:'\u{1F4DC}', type:'consume', desc:'获得时立即自选一项永久强化：16 选 1，不占回合（重复选一般不叠加；不入背包、死亡不掉落）'},
   summon:   {name:'召唤物', icon:'\u{1F47B}', type:'consume', desc:'使用后自选一种生物召唤（巨兽 / 游侠 / 幽灵）· 召唤当回合不行动，下个自己的回合起行动'},
   /* ---- 遗器（5 件特殊武器）----
      yiqi 编号用于获得时的「遗器 · N 选 1」面板（N = YIQI_IDS.length）；
@@ -798,7 +802,7 @@ const ENCHANTS = [
 const PCOLORS = ['#ff3d9a','#38f0d8','#ffca3a','#8b5cf6','#fb923c','#4ade80'];
 
 /* =========================================================
-   刻印（13 项）—— 获得即选（不入背包）；一般不可叠加；死亡不掉落
+   刻印（16 项）—— 获得即选（不入背包）；一般不可叠加；死亡不掉落
    ========================================================= */
 const SEALS = [
   {id:'1',  name:'劫雷', icon:'\u{1F4A5}', desc:'攻击 50% 触发暴击：倍率在 2~20 间随机取整，伤害 = ATK × 倍率 − DEF（可叠加：第 2 层起必定暴击）'},
@@ -814,6 +818,9 @@ const SEALS = [
   {id:'11', name:'点染', icon:'\u{1F9EA}', desc:'攻击命中可自选附加【红】/【蓝】/【黄】之一（均需命中才生效，每次都能改、都能跳过）；选 11b 分支后解锁【白】/【黑】/【灰】与主动技'},
   {id:'12', name:'尘梦', icon:'\u{1F32B}', desc:'回合开始时若未受伤则 +1 层【尘】（每层减伤 1，含真实伤害），受伤即清空'},
   {id:'13', name:'盈箧', icon:'\u{1F392}', desc:'背包内护甲 DEF 可叠加、武器 ATK 可叠加；已拥有后再选可解锁分支「商店」（回合内不限次数交易，不占主要行动）'},
+  {id:'14', name:'无咎', icon:'\u{1F6E1}', desc:'获得特殊护盾。激活时可完全抵消一次受到的影响（伤害、状态、撕裂/敕罚结算免伤不扣层数）。进行战斗会导致失效。从当前回合结束至下回合结束仅可触发一次。'},
+  {id:'15', name:'狂骨', icon:'\u{1FA78}', desc:'可叠加。普攻时可以选择消耗自身生命值（真伤，吃自身【尘】减伤），使本次攻击基础伤害增加（宣布消耗值 × 层数）。'},
+  {id:'16', name:'归墟', icon:'\u{1F480}', desc:'普攻命中后，可选择永久摧毁目标一件物品（无掉落，装备自动卸下）。已拥有后再选可解锁分支「归墟」（可摧毁刻印并解锁主动技）。'},
 ];
 const SEAL_BY_ID = {}; SEALS.forEach(s => SEAL_BY_ID[s.id] = s);
 
@@ -836,6 +843,8 @@ const SEAL_BRANCH_OF = {
   '10': {subs:['10b'],     placeholder:false},   // 御灵：召唤傀儡（HP2/ATK2，吃御灵 +50%）
   '13': {subs:['13b'],     placeholder:false},   // 盈箧：商店交易（回合中不限次数，不占主要行动）
   '4':  {subs:['4b'],      placeholder:false},   // 敕禁：敕罚（见 SEAL_EXTRA）
+  '14': {subs:['14b'],     placeholder:false},   // 无咎：解除战斗限制
+  '16': {subs:['16b'],     placeholder:false},   // 归墟：可毁刻印 + 主动技
 };
 const SEAL_EXTRA = {
   '8a': {name:'凌波·分支①',
@@ -914,7 +923,7 @@ const SEAL_EXTRA = {
          sub: p => '<b>解锁</b>：持有本分支后，攻击命中可选的颜色由【红】【蓝】【黄】扩为六色（多了白/黑/灰），并开放下方主动技' +
                    '<br><b>【白】</b>无法被单体指向性技能选中（普攻、范围伤害仍可打到）· <b>永久</b>（与【黑】同）' +
                    '<br><b>【黑】</b>指定一项基础刻印永久失效，其名下全部分支一并失效（可多项叠加）。' +
-                   '<b>13 项全列（⑪ 自己除外）：目标现在没有的刻印也能预先封</b>——' +
+                   '<b>16 项全列（⑪ 自己除外）：目标现在没有的刻印也能预先封</b>——' +
                    '他以后选到就该刻印时，一入手即失效' +
                    '<br><b>【灰】</b><b>不上状态、立即生效</b>：选目标身上一个效果（白/黑/蓝/黄/撕裂/尘/戒律/敕罚/蓄闪）立即解除；' +
                    '解【黑】是 N7 之外的第二条解黑路径' +
@@ -932,6 +941,16 @@ const SEAL_EXTRA = {
                   '<br>暴击只看「攻击 / 技能」，与伤害类型无关：傀儡攻击走普通攻击结算（①劫雷可暴击）；技能一律不暴击' +
                   ' 御灵被【黑】后：加成消失，傀儡回落到 2/2，但<b>保留在场上</b>继续自动作战';
          }},
+
+  /* ---------------- 无咎 · 分支 14b ---------------- */
+  '14b':{name:'无咎·分支',
+         desc:'主动进行战斗不再导致【无咎】失效（但受到抵消后依然会失效）。',
+         sub: p => '已解锁：打人不再破盾'},
+
+  /* ---------------- 归墟 · 分支 16b ---------------- */
+  '16b':{name:'归墟·分支',
+         desc:'普攻命中后可选择摧毁刻印；解锁主动技「归墟」（算战斗）：选目标直接摧毁其物品/刻印。',
+         sub: p => '已解锁主动技与摧毁刻印'},
 
   /* ---------------- 敕禁 · 分支 4b ---------------- */
   '4b': {name:'敕禁·分支',
@@ -1210,6 +1229,8 @@ function createPlayer(i, name, isAI, maxHp){
     /* ---- ⑬b 盈箧·商店 ---- */
     gold: 0,                // 金币（开局 0，只能靠卖背包物品起家）
     shopUsed: 0,            // 本回合已交易笔数（不限次数，仅用于日志/审计）
+    wujiuReady: false,      // 无咎是否激活
+    wujiuCombat:  false,    // 本回合是否进行了战斗
   };
 }
 /* 状态效果容器
@@ -2053,6 +2074,12 @@ function settleSanctions(e){
   if (!e || !e.alive) return 0;
   const s = e.st.sanctions;
   if (!s || !s.length) return 0;
+  /* 刻印 14 无咎：抵消一次【敕罚】结算（层数保留，actdBans 照常清空） */
+  if (e.wujiuReady && hasSeal(e, '14')) {
+    e.wujiuReady = false;
+    addLog('【无咎】' + entLabel(e) + ' 的庇护抵消了【敕罚】结算。', 'h1');
+    return 0;
+  }
   // 去重：保证「同一禁类只结一次」不依赖调用方是否用 markActed 打标
   const bans = [];
   (e.actedBans || []).forEach(b => {
@@ -2186,6 +2213,12 @@ function addTear(tgt, n, src){
   tgt.st.tearBy[by === null ? '-' : by] = (tgt.st.tearBy[by === null ? '-' : by] || 0) + n;
 }
 function applyHitEffect(tgt, effect, sealId, byI){
+  /* 刻印 14 无咎：激活时抵消一次「状态附加」（不生效，也不消耗层数本身——消耗的是庇护） */
+  if (tgt.wujiuReady && hasSeal(tgt, '14')) {
+    tgt.wujiuReady = false;
+    addLog('【无咎】' + entLabel(tgt) + ' 的庇护抵消了状态附加。', 'h1');
+    return;
+  }
   const by = (byI === undefined || byI === null) ? null : byI;
   if (effect === 'red'){ addTear(tgt, 1, by == null ? null : G.players[by]); addLog(entLabel(tgt) + ' 受到【红】：【撕裂】+1（当前 ' + tgt.st.tear + ' 层）'); }
   else if (effect === 'blue'){ tgt.st.blue = true; addLog(entLabel(tgt) + ' 受到【蓝】：下次受击前无法攻击'); }
@@ -2323,6 +2356,8 @@ function stateText(e){
   s.precepts.forEach(x => out.push('禁' + BAN_NAME[x.ban].replace('禁止','')));
   (s.sanctions || []).forEach(x => out.push('罚·' + BAN_NAME[x.ban].replace('禁止','').split('（')[0] + '×' + x.n));
   if (s.mind) out.push('被控(' + byName(s.mind.by) + ')');
+  if (e.wujiuReady && hasSeal(e, '14')) out.push('无咎');
+  else if (hasSeal(e, '14')) out.push('无咎(失效)');
   return out.join(' · ');
 }
 /* 【白】：无法被「单体指向性技能」选中。
@@ -2390,6 +2425,15 @@ function hpDisp(t){
 
 function dealDamage(tgt, raw, opt){
   opt = opt || {};
+  /* 刻印 14 无咎：激活时完全抵消一次受到的**伤害**（isWujiu 标记的来源不消耗，
+     预留给「无咎自身逻辑内部」的伤害，避免自抵消死循环）。 */
+  if (tgt.wujiuReady && hasSeal(tgt, '14') && !opt.isWujiu) {
+    tgt.wujiuReady = false;
+    const pos = islandXY(tgt.island);
+    floatText(pos.x, pos.y - 30, '无咎', '#38f0d8');
+    addLog('【无咎】' + entLabel(tgt) + ' 的庇护抵消了这次伤害。', 'h1');
+    return 0;
+  }
   let dmg = Math.max(0, Math.floor(raw));
   const before = tgt.hp;
   // 命中环节闪避判定（技能伤害 / 机械伤害同样可被闪避，与伤害类型无关）
@@ -2484,20 +2528,44 @@ function grantExtraTurn(p, n, src){
   for (let k = 0; k < n; k++) G.insertQueue.push(p.i);
 }
 
+/* 刻印 14 无咎：战斗判定入口（普攻 / 蓄力 / 投掷等走 launchAttack→doAttack→attackResolve
+   的都会在这里打标；召唤物的攻击不算主人的战斗）。主动技「归墟」也在 actGuixu 里显式 triggerCombat。 */
+function triggerCombat(p) {
+  if (!p || p.isSummon) return;
+  if (hasSeal(p, '14') && !hasSeal(p, '14b')) {
+    p.wujiuCombat = true;
+    p.wujiuReady = false;
+  }
+}
+
 /* 一次「攻击」结算：src 可以是玩家或召唤物 */
 function attackResolve(src, tgt, opt){
   opt = opt || {};
   const owner = src.isSummon ? G.players[src.owner] : src;
+  if (!src.isSummon) triggerCombat(src);
   const share = src.isSummon ? hasSeal(owner, '10') : true;   // 召唤物默认不吃刻印，刻印 10 御灵才共享
   /* ⑫b 尘梦分支：伤害额外 + 自身当前尘层数。
      落点必须在 atk 上（而不是 dealDamage 里），这样 普通攻击 (atk+尘)-def 与
      暴击 (atk+尘)×倍率-def 两种口径同时成立，且不污染 dealDamage 这类不经 attackResolve 的独立管线。
      判据统一走 dustAtkBonus：必须有 ⑫b 才增伤；黑⑫ 时 hasSeal('12b') 自动归零。 */
   const dustAdd = dustAtkBonus(src);
-  // atkOverride：残锋 5b 的爆发用固定 10 ATK —— 不吃任何 ATK 加成（含残锋自己），但仍然吃【尘】增伤
+  // atkOverride：残锋 5b 的爆发用固定 10 ATK
   const baseAtk = (opt.atkOverride != null) ? opt.atkOverride
                 : (src.isSummon ? summonAtk(src) : getAtk(src, opt.weapon));
-  const atk = baseAtk + dustAdd;
+  /* 刻印 15 狂骨：普攻时宣布消耗 HP（真实消耗，吃自身【尘】减伤），换基础增伤 = 消耗 × 层数。
+     增伤只落在 atk 上（不吃暴击倍率放大的那部分不成立——暴击按 (atk+尘+狂骨)×倍率−DEF 全口径放大），
+     消耗本身不经 dealDamage：不触发受击、不解除蓝/白。 */
+  let extraAtk = 0;
+  if (!src.isSummon && src.kuangguCost > 0) {
+    const dust = src.st.dust || 0;
+    const realCost = Math.max(0, src.kuangguCost - dust);
+    src.hp -= realCost;
+    src.st.dust = 0;
+    extraAtk = src.kuangguCost * sealCount(src, '15');
+    addLog('【狂骨】' + src.name + ' 宣布消耗 ' + src.kuangguCost + ' HP，尘减免 ' + dust + '，实际扣除 ' + realCost + ' HP（当前 ' + src.hp + '），增加 ' + extraAtk + ' 攻击力。', 'h1');
+    src.kuangguCost = 0;
+  }
+  const atk = baseAtk + dustAdd + extraAtk;
   const def = getDef(tgt);
   /* opt.trueDmg（傀儡普攻）：真实伤害口径 —— 不减 DEF、跳过护盾，仍受【尘】减伤；
      其余攻击管线行为不变（可暴击① / 叠裂帛⑨ / 点染⑪ / 可被闪避 / 记【受击】）。 */
@@ -2539,6 +2607,8 @@ function attackResolve(src, tgt, opt){
              entLabel(src).replace(/（.*）$/, '') + ' 没有点染分支（基础 ⑪ 只有红/蓝/黄）。', 'sys');
     }
   }
+  // 狂骨自噬：消耗 HP 可能把自己扣死（无咎护盾 / 忘川不死各自接管）
+  if (!src.isSummon && src.hp <= 0 && src.alive && !hasArtifact(src, 'yq_wangchuan')) killEnt(src, null, false);
   // 巨兽：命中后休息 1 回合（含 0 伤害命中）
   if (src.isSummon && SUMMON_TYPES[src.type].rest) src.resting = true;
   return {evaded:false, dmg:dealt, crit:crit, mult:mult};
@@ -2613,6 +2683,7 @@ function seal5bBurstFxGate(p, next){
 function actSeal5b(p){
   if (!hasSeal(p, '5b')){ render(); return; }
   if (hasBan(p, 'seal')){ addLog(p.name + ' 被【戒律·禁止使用刻印主动能力】限制，无法发动。'); render(); return; }
+  triggerCombat(p);
   /* 4b 敕罚：⑤b 主动技（临界 +10）归「禁刻印主动能力」禁类，先记账再抬临界
      必须走 markActed（自带去重）—— 直接 concat 会推入第二个 'seal'，
      本轮若已经记过该类（商店买卖等），finishTurn 收口时就会当成两条、重复结算一次 */
@@ -2636,6 +2707,12 @@ function settleTear(e, opt){
   opt = opt || {};
   const n = e.st.tear || 0;
   if (n <= 0 || !e.alive) return 0;
+  /* 刻印 14 无咎：抵消一次【撕裂】结算（免伤不扣层数，下次还能挡） */
+  if (e.wujiuReady && hasSeal(e, '14')) {
+    e.wujiuReady = false;
+    addLog('【无咎】' + entLabel(e) + ' 的庇护抵消了【撕裂】结算（层数保留）。', 'h1');
+    return 0;
+  }
   // 逐层汇总「施加者 ⑫b 尘增伤」：Σ(该来源层数 × 其 ⑫b 尘增伤)
   const buckets = (e.st.tearBy && typeof e.st.tearBy === 'object') ? e.st.tearBy : {};
   let bonus = 0;
@@ -2840,6 +2917,18 @@ function endCurrentAction(p){
   if (p && p.alive && p.actedBans && p.actedBans.length){
     settleSanctions(p);
     p.actedBans = [];
+  }
+  /* 刻印 14 无咎：回合结束刷新。
+     · 本回合进行过战斗（14b 分支豁免）：惩罚 → 下回合庇护失效，并打日志；
+     · 没战斗：正常刷新 → 庇护就绪（从当前回合结束至下回合结束可触发一次）。 */
+  if (p && p.alive && hasSeal(p, '14')) {
+    if (p.wujiuCombat) {
+      p.wujiuReady = false; // 惩罚：下一轮失效
+      addLog('【无咎】因本回合进行战斗，下回合庇护无法生效。', 'sys');
+    } else {
+      p.wujiuReady = true;  // 正常刷新
+    }
+    p.wujiuCombat = false;
   }
   if (G.sub === 'extra') runPlayerExtra(p);
   else afterMainAction(p);
@@ -3354,13 +3443,37 @@ function applyHit(p, t, dmg, w, mode, pb){
                                  blackSeal: p.hitSeal, greyKey: p.hitClear || null});
   if (r.evaded){ finishTurn(p); return; }
 
+  /* 刻印 16 归墟：普攻命中后摧毁（放在管线末尾，等所有位移/面板都结算完毕）。
+     目标被打死则不再触发（尸体上没有可摧毁的东西，走正常掉落）。
+     AI：自动摧毁背包第一件非刻印/附魔物品；没有则 16b 下摧毁第一枚刻印。
+     人类：弹面板自选，选完 / 放弃由 onDone 回调执行 finishTurn。
+     下面的击退 / 钓竿拉面板、钓入虚空等收尾点统一改走 guixuTail()。 */
+  const guixuTail = () => {
+    if (!p.isSummon && p.alive && hasSeal(p, '16') && t.alive) {
+      if (p.isAI) {
+        const bag = (t.bag || []).filter(it => it.id !== 'seal' && ITEMS[it.id].type !== 'enchant');
+        let bestItem = bag.length ? bag[0] : null;
+        if (bestItem) destroyItem(t, bestItem.uid);
+        else if (hasSeal(p, '16b')) {
+          const seals = Object.keys(t.seals || {}).filter(id => rawSealsOf(t, id) > 0);
+          if (seals.length) destroySeal(t, seals[0]);
+        }
+        finishTurn(p);
+      } else {
+        doGuixuPrompt(p, t, false, () => { finishTurn(p); });
+      }
+      return;
+    }
+    finishTurn(p);
+  };
+
   // 击退棒
   if (wid === 'kb'){
-    if (!t.alive){ finishTurn(p); return; }
+    if (!t.alive){ guixuTail(); return; }
     const kb = knockbackOptions(p, t);
     if (kb.dead){
       knockbackKill(p, t);
-      finishTurn(p);
+      guixuTail();
       return;
     }
     // AI 已在 knockbackOptions 之外决策：这里统一走「人类弹面板 / AI 直接结算」
@@ -3370,10 +3483,10 @@ function applyHit(p, t, dmg, w, mode, pb){
       const opts2 = kb.opts.map(isl => ({
         label: islandName(isl),
         sub: isleKind(isl, curMap(), G.n) === 'birth' ? '（对方在这里不会再被击退，但站上去易守难攻）' : '',
-        run: () => { resolveKnockback(p, t, isl); finishTurn(p); }
+        run: () => { resolveKnockback(p, t, isl); guixuTail(); }
       }));
       showChoice('击退落点 · 要把 ' + entLabel(t) + ' 推到哪座岛？', opts2,
-        () => { resolveKnockback(p, t, kb.opts[0]); finishTurn(p); });
+        () => { resolveKnockback(p, t, kb.opts[0]); guixuTail(); });
       G.animating = false;
       return;
     }
@@ -3390,7 +3503,7 @@ function applyHit(p, t, dmg, w, mode, pb){
     const canVoid = hasSeal(p, '6b') && isVoidEdge;
     const needPull = t.island !== p.island;
     const doPullAction = () => {
-      if (!needPull) { finishTurn(p); return; }        // 同岛钓不拉近，只结算伤害
+      if (!needPull) { guixuTail(); return; }            // 同岛钓不拉近，只结算伤害
       const cand = pullCandidates(t.island, p.island);
       const dest = cand.length ? (cand.length === 1 || p.isAI ? pullDest(p, t) : null) : t.island;
       if (dest == null){
@@ -3398,26 +3511,26 @@ function applyHit(p, t, dmg, w, mode, pb){
         const opts2 = cand.map(isl => ({
           label: islandName(isl),
           sub: '离 ' + p.name + ' 还有 ' + islandDist(isl, p.island) + ' 格',
-          run: () => { doPull(t, isl); finishTurn(p); }
+          run: () => { doPull(t, isl); guixuTail(); }
         }));
         showChoice('钓竿拉近 · 把 ' + entLabel(t) + ' 拉到哪座岛？', opts2,
-          () => { doPull(t, cand[0]); finishTurn(p); });   // 取消＝按默认拉
+          () => { doPull(t, cand[0]); guixuTail(); });   // 取消＝按默认拉
         G.animating = false;
         return;
       }
       if (dest !== t.island) doPull(t, dest);
-      finishTurn(p);
+      guixuTail();
     };
     if (canVoid) {
       if (p.isAI) {
         addLog('【天工·6b】' + p.name + ' 将 ' + entLabel(t) + ' 钓入虚空！', 'hl');
         knockbackKill(p, t);
-        finishTurn(p);
+        guixuTail();
         return;
       } else {
         showChoice('钓竿攻击 · 目标在边缘（天工无视距离）', [
           { label: '\u{1F30C} 钓入虚空（直接死亡）', sub: '目标在出生岛/外岛，会被直接拖入虚空，背包物品一并消失',
-            run: () => { knockbackKill(p, t); finishTurn(p); } },
+            run: () => { knockbackKill(p, t); guixuTail(); } },
           { label: '🪝 拉近到身边', sub: '照常拉近，不进入虚空', run: () => doPullAction() }
         ], () => { doPullAction(); });   // 取消＝按默认拉近（与击退面板「取消=默认」同口径）
         G.animating = false;
@@ -3438,7 +3551,7 @@ function applyHit(p, t, dmg, w, mode, pb){
     addLog(ITEMS[thrownWid].name + '落在 ' + islandName(t.island) + '，只能由 ' + p.name + ' 本人前往捡回。');
   }
 
-  finishTurn(p);          // 无论是否致死都由这里统一收尾（kill 已在伤害管线内处理）
+  guixuTail();            // 无论是否致死都由这里统一收尾（kill 已在伤害管线内处理；命中后归墟在此结算）
 }
 
 function kill(victim, killer, toVoid){
@@ -4242,6 +4355,7 @@ function actArtifactSkill(p){
   })), () => render());   // 取消：技能未发动
 }
 function dispatchYiqi(p, id){
+  triggerCombat(p);
   markActed(p, 'artskill');
   if (id === 'yq_cangming')      actCangming(p);
   else if (id === 'yq_qixian')   actQixian(p);
@@ -4392,6 +4506,89 @@ function actCangming(p){
     () => render());   // 取消：技能未发动
 }
 /* 执行一次分配（人类确认 / 沧溟被动共用）；endTurn=true 时结算后结束回合 */
+/* ---------- 刻印 16 归墟：永久摧毁 ----------
+   destroyItem：摧毁一件背包物品（无掉落，装备自动卸下 —— 移除后若正装备着则清空装备槽并自动补装）。
+   destroySeal：摧毁一枚刻印（走 onSealBlackened 清算 + 分支联动，等效于按【黑】口径删除但不可回滚）。
+   doGuixuPrompt：摧毁选择面板。isActive=true（主动技「归墟」，消耗主要行动）→ 选完 finishTurn；
+                  isActive=false（普攻命中的被动触发）→ 选完只刷新画面。 */
+function destroyItem(t, uid) {
+  const inst = itemOf(t, uid);
+  if (!inst) return;
+  const d = ITEMS[inst.id];
+  if (t.weapon === uid) t.weapon = null;
+  removeUid(t, uid);
+  addLog('【归墟】' + entLabel(t) + ' 的 ' + d.name + ' 被永久摧毁！', 'hl');
+  if (d.yiqi) {
+    if (inst.id === 'yq_wangchuan' && t.alive && t.hp <= 0) {
+      addLog('【归墟】忘川被毁，不死失效，' + t.name + ' 当场阵亡！', 'kill');
+      killEnt(t, null, false);
+      settleWin();
+    }
+    if (inst.id === 'yq_cangming') {
+      const idx = G.thrown.findIndex(th => th.owner === t.i && th.item.id === 'yq_cangming');
+      if (idx >= 0) { G.thrown.splice(idx, 1); addLog('（地上的沧溟一同销毁）'); }
+    }
+  }
+}
+function destroySeal(t, id) {
+  if (!t.seals || !t.seals[id]) return;
+  onSealBlackened(t, id);
+  const br = SEAL_BRANCH_OF[id];
+  if (br && !br.placeholder) {
+    br.subs.forEach(s => { if (t.seals[s]) { delete t.seals[s]; } });
+  }
+  delete t.seals[id];
+  addLog('【归墟】' + entLabel(t) + ' 的刻印【' + sealDisplayName(id) + '】被永久摧毁！', 'hl');
+  if (id === '10') { syncSummonMaxHp(t, '御灵被毁'); recheckWin(t.name + ' 的御灵被毁'); }
+}
+function doGuixuPrompt(p, t, isActive, onDone) {
+  const done = onDone || (() => { if (isActive) finishTurn(p); else render(); });
+  const opts = [];
+  ((t && t.bag) || []).forEach(it => {
+    if (it.id === 'seal') return;
+    opts.push({
+      label: ITEMS[it.id].icon + ' ' + ITEMS[it.id].name,
+      sub: '永久摧毁该物品',
+      run: () => { destroyItem(t, it.uid); done(); }
+    });
+  });
+  if (hasSeal(p, '16b')) {
+    for (const id in (t && t.seals) || {}) {
+      if (rawSealsOf(t, id) > 0) {
+        opts.push({
+          label: '📜 刻印：' + sealDisplayName(id),
+          sub: '永久摧毁并触发清算',
+          run: () => { destroySeal(t, id); done(); }
+        });
+      }
+    }
+  }
+  if (!opts.length) {
+    if (isActive) { addLog('目标没有可摧毁的物品或刻印，行动取消。'); render(); }
+    else done();
+    return;
+  }
+  opts.push({ label: '放弃摧毁', run: () => done() });
+  showChoice('归墟：选择摧毁 ' + entLabel(t) + ' 的哪一项？', opts, () => { if (isActive) render(); else done(); });
+}
+function actGuixu(p) {
+  if (!hasSeal(p, '16b')) { render(); return; }
+  if (hasBan(p, 'seal')) { addLog(p.name + ' 被【戒律·禁止使用刻印主动能力】限制，无法发动。'); render(); return; }
+  if (G.sub !== 'main') { addLog('归墟只能在主要回合发动。'); render(); return; }
+  const tgts = pickable(allEnts(), e => e.alive && e !== p);
+  if (!tgts.length) { addLog('没有可剥夺的目标（【白】挡下了点名）。'); render(); return; }
+  showChoice('归墟 · 剥夺：选择目标（主要行动）', tgts.map(t => ({
+    label: entLabel(t),
+    sub: '拥有 ' + t.bag.length + ' 件物品，' + Object.keys(t.seals||{}).filter(id=>rawSealsOf(t,id)>0).length + ' 枚刻印',
+    run: () => {
+      if (rejectIfUnpickable(t, '归墟')) { render(); return; }
+      triggerCombat(p);
+      markActed(p, 'seal');
+      doGuixuPrompt(p, t, true);
+    }
+  })), () => render());
+}
+
 function executeCangming(p, alloc, targets, endTurn){
   if (endTurn) markActed(p, 'artskill');   // 4b 敕罚：主动「分配」归「禁遗器技能」禁类；被动（endTurn=false）无视戒律、不结算
   const pos = islandXY(p.island);
@@ -4645,7 +4842,7 @@ function executeZhixing(p, t){
 
 /* 可叠加的刻印：③丰穰 / ⑧凌波两分支 / ①劫雷（2 层起必定暴击）/ ⑦蹑景（每层 +1 额外回合） */
 function canStackSeal(id){
-  return id === '3' || id === '8a' || id === '8b' || id === '1' || id === '7';
+  return id === '3' || id === '8a' || id === '8b' || id === '1' || id === '7' || id === '15';
 }
 function sealDisplayName(id){
   const x = SEAL_EXTRA[id];
@@ -4736,7 +4933,7 @@ function showSealChoice(p, done, onCancel){
       }
     };
   });
-  showChoice('刻印 · 自选一项永久强化（13 选 1 · 立即生效 · 不占回合）', opts, onCancel);
+  showChoice('刻印 · 自选一项永久强化（16 选 1 · 立即生效 · 不占回合）', opts, onCancel);
 }
 /* 分支面板（表驱动）：baseId 对应的分支子键二选一。新增分支只改 SEAL_BRANCH_OF / SEAL_EXTRA
    单分支（天工 6b / 裂帛 9b / 尘梦 12b）没有"选哪条"的问题，直接生效，不弹面板；
@@ -5155,6 +5352,9 @@ function aiPickSeal(p){
   add('8a', sealCount(p, '8a') > 0 ? 54 : 40);                         // 凌波①：越叠越能闪
   add('8b', sealCount(p, '8a') >= 2 ? 58 : 0);                         // 凌波②：没①就是废的
   add('3',  26);                                                       // 丰穰：可叠加，兜底
+  add('14', 44);                                                       // 无咎：每回合一次免伤
+  add('15', 36 + 6 * sealCount(p, '15'));                              // 狂骨：可叠加，层数越多越敢烧血
+  add('16', 40);                                                       // 归墟：拆别人装备
 
   /* 分支层：必须先有基础项、且分支没选过。
      分值明显高于同级基础项 —— 拿到基础之后补分支基本没有理由不补：
@@ -5163,6 +5363,8 @@ function aiPickSeal(p){
   if (canTakeBranch('6'))  add('6b',  hasSeal(p,'10') && summonsOf(p).length ? 190 : 165);
   if (canTakeBranch('9'))  add('9b',  155);                            // 裂帛分支：多一份无视护盾的真实伤害
   if (canTakeBranch('12')) add('12b', p.maxHp >= 12 ? 180 : 130);      // 尘梦分支：血厚才敢攒尘
+  if (canTakeBranch('14')) add('14b', 150);                            // 无咎分支：打人不破盾
+  if (canTakeBranch('16')) add('16b', 160);                            // 归墟分支：解锁主动技 + 毁刻印
 
   if (!sc.length) return '3';
   // 按分数「加权随机」抽取，而不是永远取最高分。
@@ -5789,6 +5991,9 @@ const AI_BLACK_PRIORITY = {
   '12': 4,  // 尘梦：增伤
   '13': 3,  // 丰穰：资源
   '1': 2,   // 拾遗
+  '16': 5,  // 归墟：拆装备/拆刻印
+  '15': 4,  // 狂骨：烧血爆发
+  '14': 5,  // 无咎：每回合一次免伤
 };
 function aiPaintPick(p, enemies, tgtHere, S){
   // ---- A. 黑：挑最值得削的那个人 + 那一项 ----
@@ -6172,6 +6377,19 @@ function aiAct(p){
     const wdef = ITEMS[wid(W)];
     if (wdef && wdef.charge && wdef.ranged && wid(W) !== 'trident' && wid(W) !== 'yq_zhanyue'){
       beginCharge(p, W); return;
+    }
+    // AI 狂骨：如果能补足伤害击杀（或者打残高威胁目标），且不致死自己，则消耗
+    if (hasSeal(p, '15') && !p.charging) {
+      const currentDmg = aiTrueDmgTo(p, W, tgtHere);
+      const diff = tgtHere.hp - currentDmg;
+      const lv = sealCount(p, '15');
+      if (diff > 0) {
+        const needed = Math.ceil(diff / lv);
+        // 扣血量不能超过自身最大生命值的一半，且当前血量扣除后要大于 2
+        if (needed > 0 && needed <= p.maxHp * 0.5 && p.hp - needed > 2) {
+          p.kuangguCost = needed;
+        }
+      }
     }
     doAttack(p, W, tgtHere, 'normal');
     return;
@@ -6860,6 +7078,7 @@ document.querySelectorAll('.abtn').forEach(btn => {
     else if (a === 'seal5b') actSeal5b(p);
     else if (a === 'paint') actPaint(p);
     else if (a === 'puppet') actSeal10b(p);
+    else if (a === 'guixu') actGuixu(p);
     else if (a === 'dodge') actDodgeCharge(p);
     else if (a === 'precept') actPrecept(p);
     else if (a === 'machine') actMachine(p);
@@ -6881,6 +7100,7 @@ function actPass(p){
    ========================================================= */
 function actDodgeCharge(p){
   if (!canChargeDodge(p)){ render(); return; }
+  triggerCombat(p);
   p.dodgeReady = true;
   markActed(p, 'seal');
   addLog(p.name + ' 蓄闪：下一次受击【必定闪避成功】（花掉本回合主要行动）。', 'hl');
@@ -6918,6 +7138,7 @@ function actTear(p){
 }
 function doTearStrike(p, t){
   if (!p.alive || !t || !t.alive){ render(); return; }
+  triggerCombat(p);
   markActed(p, 'seal');
   // ① 先施加 1 层（直接叠加，不走 applySkillDamage —— 否则基础 ⑨ 会再送 1 层变成 +2）
   addTear(t, 1, p);
@@ -7096,7 +7317,7 @@ function pickPaintSeal(p, t){
     return;
   }
   const sealed = (t.st.blackSeals || []).map(x => x.id);
-  showChoice('对 ' + entLabel(t) + ' 黑掉哪一项刻印？（13 项全列 · 可预先封锁尚未持有的）', cand.map(id => {
+  showChoice('对 ' + entLabel(t) + ' 黑掉哪一项刻印？（16 项全列 · 可预先封锁尚未持有的）', cand.map(id => {
     const owned = rawSealsOf(t, id) > 0;
     const has = sealed.indexOf(id) >= 0;
     const desc = sealDisplayDesc(id).replace(/<[^>]+>/g, '');
@@ -7112,6 +7333,7 @@ function pickPaintSeal(p, t){
 function doPaint(p, t, color, sealId){
   if (!p.alive || !t || !t.alive){ render(); return; }
   if (color === 'grey'){ pickPaintClear(p, t); return; }
+  triggerCombat(p);
   markActed(p, 'seal');   // 【灰】走立即解除路径，不经过 applyHitEffect
   if (color === 'white' && t.st.white){
     addLog(entLabel(t) + ' 已经有【白】了，本次不重复施加。', 'sys');
@@ -7133,6 +7355,7 @@ function doPaint(p, t, color, sealId){
    ========================================================= */
 function actSeal10b(p){
   if (!hasSeal(p, '10b')){ render(); return; }
+  triggerCombat(p);
   markActed(p, 'seal');
   if (G.sub !== 'main'){ addLog('召唤傀儡只能在自己的主要行动回合发动。'); render(); return; }
   if (hasBan(p, 'seal')){ addLog(p.name + ' 被【戒律·禁止使用刻印主动能力】限制，无法发动。'); render(); return; }
@@ -7487,7 +7710,29 @@ function pickTarget(p, w, mode){
      【黑】需要指明封哪一项 → 再弹一层刻印面板（记住 p.hitSeal）；
      【灰】不挂状态，命中那一下直接解除目标身上一个已有状态 → 再弹一层效果面板（记住 p.hitClear）。
    ⚠ 所有六种都是「命中才生效」：被闪避 / 被【白】挡 / 攻击取消，则一律不施加，也不消耗记忆。 */
+/* 刻印 15 狂骨：攻击入口。持 ⑮ 时先弹「消耗多少 HP」分配面板（可叠加：增伤 = 消耗 × 层数），
+   确认后写入 p.kuangguCost，交给 afterKuanggu 继续原有的点染选色 → doAttack 链。
+   取消 = 本次攻击取消（不消耗回合，回到当前回合）。 */
 function launchAttack(p, w, t, mode){
+  if (hasSeal(p, '15')) {
+    if (p.kuangguTemp == null) p.kuangguTemp = 0;
+    const renderPanel = () => {
+      const cost = p.kuangguTemp;
+      const bonus = cost * sealCount(p, '15');
+      showChoice('狂骨：分配要消耗的生命值（当前已分配 ' + cost + '）', [
+        { label: '消耗 +1 HP', sub: '当前层数增伤 +' + (1 * sealCount(p, '15')), run: () => { p.kuangguTemp += 1; renderPanel(); } },
+        { label: '消耗 +5 HP', sub: '当前层数增伤 +' + (5 * sealCount(p, '15')), run: () => { p.kuangguTemp += 5; renderPanel(); } },
+        { label: '消耗 +10 HP', sub: '当前层数增伤 +' + (10 * sealCount(p, '15')), run: () => { p.kuangguTemp += 10; renderPanel(); } },
+        { label: '🔥 确认打出（消耗 ' + cost + ' HP · 增伤 +' + bonus + '）',
+          run: () => { p.kuangguCost = p.kuangguTemp; p.kuangguTemp = null; afterKuanggu(p, w, t, mode); } }
+      ], () => { p.kuangguTemp = null; render(); });
+    };
+    renderPanel();
+    return;
+  }
+  afterKuanggu(p, w, t, mode);
+}
+function afterKuanggu(p, w, t, mode){
   if (!hasSeal(p, '11')){ p.hitPick = null; doAttack(p, w, t, mode); return; }
   if (p.hitPick === undefined) p.hitPick = 'red';
   /* 颜色集合随分支变化：基础⑪ 只有红/蓝/黄；选了 11b 才有白/黑/灰。
@@ -7514,7 +7759,7 @@ function launchAttack(p, w, t, mode){
           };
         }).concat([
           {label:'⏭ 本次不附加', sub: '这一击不施加任何颜色；不影响下次', run: () => { p.hitPick = null; doAttack(p, w, t, mode); }}
-        ]), () => launchAttack(p, w, t, mode));
+        ]), () => afterKuanggu(p, w, t, mode));
         return;
       }
       if (k === 'grey'){
@@ -7534,7 +7779,7 @@ function launchAttack(p, w, t, mode){
            run: () => { p.hitPick = 'grey'; p.hitClear = null; doAttack(p, w, t, mode); }},
           {label:'本次不附加', sub: '这一击不施加任何颜色；不影响下次',
            run: () => { p.hitPick = null; doAttack(p, w, t, mode); }}
-        ]), () => launchAttack(p, w, t, mode));
+        ]), () => afterKuanggu(p, w, t, mode));
         return;
       }
       p.hitPick = k; doAttack(p, w, t, mode);
@@ -7548,7 +7793,7 @@ function launchAttack(p, w, t, mode){
     {label:'⏭ 本次不附加（跳过）', sub: '这一击不施加任何颜色；不影响下次',
      run: () => { p.hitPick = null; doAttack(p, w, t, mode); }},
     {label:'【白】【黑】【灰】要选 11b 分支才有', sub: '基础⑪ 只给【红】【蓝】【黄】',
-     run: () => launchAttack(p, w, t, mode)}
+     run: () => afterKuanggu(p, w, t, mode)}
   ]),
   () => render());   // 取消：本次攻击取消，回到当前回合
 }
@@ -8067,6 +8312,7 @@ function render(){
       if (a === 'dodge')   dis = !canChargeDodge(p);       // ⑧a 专属；已蓄闪 / 冷却 / 戒律 都禁用
       if (a === 'paint')   dis = hasBan(p,'seal') || !hasSeal(p,'11b');
       if (a === 'puppet')  dis = hasBan(p,'seal') || !(hasSeal(p,'10b') && G.sub === 'main');
+      if (a === 'guixu')   dis = hasBan(p,'seal') || !(hasSeal(p,'16b') && G.sub === 'main');
       if (a === 'precept') dis = hasBan(p,'seal') || !(hasSeal(p,'4') && !p.freeActUsed);
       if (a === 'machine') dis = hasBan(p,'seal') || !hasSeal(p,'6');
     }
