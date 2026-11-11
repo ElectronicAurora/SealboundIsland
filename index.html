@@ -446,7 +446,7 @@ input[type=number],input[type=text]{
 <div class="modal" id="setup">
   <div class="sheet">
     <h2>末环协议 · RingFall</h2>
-    <div class="sub">对局设置 · v2.5.3</div>
+    <div class="sub">对局设置 · v2.5.4</div>
     <div class="row">
       <label>对战模式</label>
       <div class="seg" id="segMode"></div>
@@ -558,7 +558,7 @@ input[type=number],input[type=text]{
           <tr><td>药水</td><td>+10 HP（回响附魔 +5）</td></tr>
           <tr><td>剑 / 弓箭 / 三叉戟</td><td>+7 / +8（蓄力后射程 ∞）/ +9（近战）</td></tr>
           <tr><td>炮台 箭矢 / TNT</td><td>基础 8 ATK 单体（自动 ×2） / 基础 16 ATK 全岛（自动 ×1）——均再吃主人残锋⑤ / 尘梦⑫b 加成，可暴击①、可叠裂帛⑨、可上点染⑪</td></tr>
-          <tr><td>遗器（N 选 1）</td><td>沧溟 ATK+9 分配 · 七弦连射 7×1 · 斩月 ATK+11 斩杀 · 忘川不死均分 · <b>掷星 1~开局上限 真实伤害（质数送回合）</b></td></tr>
+          <tr><td>遗器（开箱/钓鱼随机获得）</td><td>沧溟 ATK+9 分配 · 七弦连射 7×1 · 斩月 ATK+11 斩杀 · 忘川不死均分 · <b>掷星 1~开局上限 真实伤害（质数送回合）</b></td></tr>
           <tr><td>蓄闪 / 蹑景</td><td>1 主要行动换 1 次必闪，冷却 1 轮 / +N 额外回合（N = 蹑景层数），冷却 2 轮</td></tr>
           <tr><td>每岛箱子</td><td>孤枢散星：外岛 3 个，中心岛无限；叠嶂凝芒：出生岛 3 个，枢纽岛 1 个，中心岛无限</td></tr>
         </table>
@@ -576,7 +576,7 @@ input[type=number],input[type=text]{
           <tr><td>药水 10 · 护甲 10 · 剑 10</td><td>进背包</td></tr>
           <tr><td>传送器 10 · 三叉戟 10 · 附魔 10（×3） · 自选武器 10</td><td>进背包 / 附魔给 3 个道具 / 自选武器二选一</td></tr>
           <tr><td><b>刻印 15</b></td><td><b>立即自选，不入背包</b></td></tr>
-          <tr><td>弓箭 5 · 召唤物 5 · <b>遗器 5</b></td><td>弓箭进背包；召唤物使用后自选生物；<b>遗器当场 N 选 1 直接装备</b></td></tr>
+          <tr><td>弓箭 5 · 召唤物 5 · <b>遗器 5</b></td><td>弓箭进背包；召唤物使用后自选生物；<b>遗器当场随机 1 件直接装备（不占回合）</b></td></tr>
         </table>
 
         <div class="rsec">行动消耗</div>
@@ -678,8 +678,8 @@ input[type=number],input[type=text]{
 
         <div class="rsec">其他</div>
         <p><b>⑬b 盈箧·商店</b>：回合中可与商店交易，<b>不限次数、不占主要行动</b>。开局 0 金币，只能靠卖背包物品起家；<b>买卖同价</b>（刻印 10 / 遗器 10 / 剑·弓·三叉戟·钓竿·击退棒·护甲 各 5 / 药水·传送器 3 / 附魔 1）。买刻印 / 遗器先扣钱、后弹自选面板，面板上点「取消」<b>全额退款</b>（选完不退）。<b>卖刻印是永久删除</b>：先按【黑】的口径做完整即时清算，且不回滚（详见 FAQ）。</p>
-        <div class="rsec">遗器（N 选 1 特殊武器）</div>
-        <p>开箱 / 钓鱼 5% 获得，<b>当场从全部遗器中自选 1 件直接装备</b>（不占回合），可重复获得（多件并存、⑬盈箧下 ATK 叠加）。遗器是武器：<b>可被附魔</b>、死亡掉落（虚空除外）。主动技消耗主要行动，属于「技能」：<b>不走普攻的 ①劫雷 / ⑪点染判定，不触发击退 / 拉近等攻击类效果，可以在命中环节被闪避（沧溟的「吸收 HP」除外）</b>；造成伤害时<b>触发 ⑨裂帛、计入目标【受击】</b>（被闪避则不计）。<b>「真实伤害」只描述无视 DEF 与护盾，与能否闪避无关</b>（详见下方 FAQ）。受戒律「禁止使用遗器技能」封禁，但<b>沧溟 / 忘川的被动无视戒律</b>。</p>
+        <div class="rsec">遗器（特殊武器）</div>
+        <p>开箱 / 钓鱼 5% 获得，<b>当场从全部遗器中随机获得 1 件直接装备</b>（不占回合，人类与 AI 一视同仁，允许与已有遗器重复；商店购买仍为 N 选 1 自选）。可重复获得（多件并存、⑬盈箧下 ATK 叠加）。遗器是武器：<b>可被附魔</b>、死亡掉落（虚空除外）。主动技消耗主要行动，属于「技能」：<b>不走普攻的 ①劫雷 / ⑪点染判定，不触发击退 / 拉近等攻击类效果，可以在命中环节被闪避（沧溟的「吸收 HP」除外）</b>；造成伤害时<b>触发 ⑨裂帛、计入目标【受击】</b>（被闪避则不计）。<b>「真实伤害」只描述无视 DEF 与护盾，与能否闪避无关</b>（详见下方 FAQ）。受戒律「禁止使用遗器技能」封禁，但<b>沧溟 / 忘川的被动无视戒律</b>。</p>
         <table class="rtb">
           <tr><td>🌊 沧溟</td><td>ATK+9 · 近战（无需蓄力）/ 蓄力投掷 ∞（投出需本人捡回）/ 特殊投掷（不造成伤害）· 主动技「分配」：把 ATK 点分给<b>近战射程内实体</b>（轻盈附魔可扩 · ⑥b 天工无限）——回复 HP / 加护盾 / <b>吸收 HP（真实伤害：无视 DEF 与护盾，受【尘】减伤；伤害点吃 ⑫b 尘增伤）</b>；该伤害不走命中环节，<b>不可被闪避</b>；主动技属于「技能」，<b>不暴击</b>（暴击只看「攻击 / 技能」，与是否真实伤害无关）。被动：回合开始自动释放一次（AI 自动分配；人类弹面板，不占行动）</td></tr>
           <tr><td>🎵 七弦</td><td>无普通攻击 · 主动技「连射」：全场任意实体连续 7 次 ×1 真实伤害（<b>无视 DEF / 护盾，受【尘】减伤</b>；每发吃 ⑫b 尘增伤），每一发走命中环节、<b>可被闪避</b>；每次可换目标或随时跳过（浪费）</td></tr>
@@ -719,7 +719,7 @@ input[type=number],input[type=text]{
         <details class="faq"><summary>遗器技能会暴击 / 被闪避吗？</summary><p><b>「真实伤害」与「能不能被闪避」是两件事</b>：真实伤害只定义「无视 DEF 与护盾」，<b>【尘】减伤照常生效</b>；能否被闪避只看这一击走不走命中环节。七弦 / 斩月<b>可以被闪避</b>：造成伤害时<b>计入受击</b>并触发 ⑨裂帛，被闪避则都不触发；斩月被闪则斩杀落空，但 HP 减半的代价照付。<b>沧溟的「吸收 HP」不走命中环节，不可被闪避</b>。暴击方面：<b>只看这一击是「攻击」还是「技能」，与是不是真实伤害无关</b>：只有走「攻击」管线的普通攻击（含召唤物、残锋 5b 爆发）才吃 ①劫雷 2~20 倍暴击（① 2 层起必定）；遗器技能、七弦「连射」、沧溟「吸收 HP」、【撕裂】结算都走「技能 / 非攻击」管线，<b>一律不暴击</b> —— 哪怕它们是真实伤害；<b>例外是炮台</b>：它继承建造者的①劫雷，可以暴击。</p></details>
         <details class="faq"><summary>忘川携带者被打到负 HP 会死吗？</summary><p><b>不会</b>。只有 HP <b>恰好为 0</b> 才死亡，负 HP 仍存活，之后回血正常计算。</p><p>负血<b>挨打</b>时只会越扣越负（-3 挨 3 点 → -6），伤害永远推不到 0，所以负血不会因为受伤被「洗白回满」；代码里另有一道兜底，任何路径把负血写成 0 都会改写成 <b>-1</b>（下限 -1，不设更低）。<b>但「赋值型」路径不受这条保护</b>：均分把 HP 设为 0、斩月「斩杀」把 HP 置 0，都照样判死 —— 这些不是挨打，是直接改血。</p><p>卖掉忘川同样会当场判死。</p></details>
         <details class="faq"><summary>沧溟的被动每回合都弹面板，能不做吗？</summary><p>可以点「取消」放弃本次被动分配（点数浪费）。被动<b>不占行动</b>，即使被「禁止使用遗器技能」戒律封了主动技，被动画板照样出现（被动无视戒律）。</p></details>
-        <details class="faq"><summary>商店怎么用？金币从哪来？</summary><p>需要 ⑬盈箧 的<b>分支</b>：已经拥有 ⑬ 之后再选一次 ⑬，在分支面板里选「盈箧·分支」即解锁商店。商店<b>不限次数、不占主要行动</b>，回合中随时可进出。<b>开局 0 金币</b>，只能先把背包物品卖成金币起家；<b>买卖同价</b>：刻印 10 / 遗器 10 / 剑·弓·三叉戟·钓竿·击退棒·护甲 各 5 / 药水·传送器 3 / 附魔 1。买刻印走「自选一项」、买遗器走「N 选 1」，与开箱同一条链路；<b>面板上点「取消」会全额退款</b>（金币原路退回，可继续再买），选完则不退。装备中的物品卖出会自动卸下。</p></details>
+        <details class="faq"><summary>商店怎么用？金币从哪来？</summary><p>需要 ⑬盈箧 的<b>分支</b>：已经拥有 ⑬ 之后再选一次 ⑬，在分支面板里选「盈箧·分支」即解锁商店。商店<b>不限次数、不占主要行动</b>，回合中随时可进出。<b>开局 0 金币</b>，只能先把背包物品卖成金币起家；<b>买卖同价</b>：刻印 10 / 遗器 10 / 剑·弓·三叉戟·钓竿·击退棒·护甲 各 5 / 药水·传送器 3 / 附魔 1。买刻印走「自选一项」、买遗器走「N 选 1 自选」（开箱 / 钓鱼获得遗器则随机 1 件、无面板无取消）；<b>面板上点「取消」会全额退款</b>（金币原路退回，可继续再买），选完则不退。装备中的物品卖出会自动卸下。</p></details>
         <details class="faq"><summary>卖刻印会怎样？</summary><p><b>永久删除，且不可回滚</b> —— 比【黑】更狠：【黑】是遮罩（刻印数据还在，撤掉遮罩就回来），卖出是真的把刻印抹掉。卖出瞬间会先按【黑】的口径做一次<b>即时清算</b>：④ 立即解除<b>自己施加出去</b>的全部戒律与敕罚（别人挂给你的戒律不动）、⑦ 作废已攒未兑现的额外回合、⑧ 已蓄的闪作废并重置冷却、⑩ 召唤物血上限回落并重判胜负、⑪ 清掉自己施加出去的全部白黑；卖的是<b>基础项</b>时，名下分支一并消失。所以「拿 ④ 解完戒律马上卖掉换钱」这类白嫖不成立。</p><p><b>卖出后仍然保留</b>：自动炮台（已建好的照常运作，只是不能再新建）、【撕裂】【红】【黄】【蓝】【尘】—— 这些是<b>既成事实</b>：刻印只是当初把它们挂上去，挂上之后就是目标自己的状态，不存在「由哪枚刻印持续供给」的关系，所以卖刻印不会把它们清掉，卖 ⑫ 尘梦也不会清掉已有的【尘】层数。</p><p><b>被【黑】的刻印照样能卖</b>：【黑】只是遮罩，刻印数据还在，判定「有没有这一项」只看数据本身（不看黑）。卖掉即真删，卖掉之后【黑】那条记录仍留在身上（它记的是「谁黑了你哪一项」），但已经没有可删的刻印了。</p></details>
         <details class="faq"><summary>卖掉【遗器·忘川】会当场判死吗？</summary><p><b>会。</b>忘川的「不死」是<b>查询时实时判</b>（每次死亡检查都去背包里看这件遗器在不在），不是获得时打上的标记 —— 所以遗器一离手，「不死」立刻失效。卖出忘川时如果 HP ≤ 0，<b>当场阵亡</b>，不必等下一次挨打；阵亡后按正常流程掉落背包（此时忘川已经卖掉了，不在掉落里）。HP &gt; 0 时卖只是退掉保险，人没事。<br>顺带一提：负血的下限是 <b>-1</b> —— 负血者再受伤害永远不会被打到 0（也就不会因为「恰好为 0」而死，还白送回满血），最低停在 -1，回血才往上走。</p></details>
         <details class="faq"><summary>物品后面的 #编号是什么意思？</summary><p>只有<b>能被附魔</b>的物品（武器 / 护甲 / 药水 / 遗器）才有独立编号，因为附魔绑定到具体那一件。给一把剑附魔不会影响另一把剑。</p></details>
@@ -756,7 +756,7 @@ const ITEMS = {
   seal:     {name:'刻印',   icon:'\u{1F4DC}', type:'consume', desc:'获得时立即自选一项永久强化：16 选 1，不占回合（重复选一般不叠加；不入背包、死亡不掉落）'},
   summon:   {name:'召唤物', icon:'\u{1F47B}', type:'consume', desc:'使用后自选一种生物召唤（巨兽 / 游侠 / 幽灵）· 召唤当回合不行动，下个自己的回合起行动'},
   /* ---- 遗器（5 件特殊武器）----
-     yiqi 编号用于获得时的「遗器 · N 选 1」面板（N = YIQI_IDS.length）；
+     yiqi 编号用于商店购买时的「遗器 · N 选 1」面板（N = YIQI_IDS.length；开箱 / 钓鱼获得为随机 1 件）；
      noAtk:true —— 没有普通攻击（只能靠主动技），不会出现在攻击武器列表里 */
   yq_cangming: {name:'沧溟', icon:'\u{1F30A}', type:'weapon', atk:9, rng:Infinity, ranged:true, charge:true, ench:true, yiqi:1,
     desc:'遗器 · 近战 ATK+9（无需蓄力）/ 蓄力投掷射程∞（投出后需本人到落点捡回）/ 特殊投掷：不蓄力不造成伤害，直接投到任意岛 · 可附魔。主动技「分配」（主要行动）：把 ATK 点分给同岛实体——回复 HP / 加护盾 / 吸收 HP（真实伤害：无视 DEF 与护盾，受【尘】减伤）；该伤害不走命中环节，不可被闪避；主动技属于「技能」，不暴击（暴击只看「攻击 / 技能」，与是否真实伤害无关）。被动：每回合开始自动释放一次（无视戒律）'},
@@ -787,7 +787,7 @@ const DROP_TABLE = [
   {id:'trident',   w:10},
   {id:'seal',      w:15},
   {id:'summon',    w:5 },
-  {id:'yiqi',      w:5 },   // 遗器：roll 到后弹「N 选 1」面板（不占回合）
+  {id:'yiqi',      w:5 },   // 遗器：roll 到后随机 1 件直接装备（不占回合，不弹面板）
   {id:'enchant',   w:10},   // 附魔 ×3
   {id:'kb_or_rod', w:10},   // 自选击退棒或钓竿
 ];
@@ -1892,6 +1892,11 @@ function isPreceptRepeat(p, tgt, ban){
 }
 function addPrecept(tgt, ban, by){
   if (hasBan(tgt, ban)) return false;
+  if (tgt.wujiuReady && hasSeal(tgt, '14')) {
+    tgt.wujiuReady = false;
+    addLog('【无咎】' + entLabel(tgt) + ' 的庇护抵消了【戒律】。', 'hl');
+    return true; // 消耗对方的自由行动
+  }
   if (isPreceptRepeat(by, tgt, ban)){
     addLog('【戒律·连轮限制】' + by.name + ' 上一轮刚对 ' + entLabel(tgt) + ' 施加过【' +
            BAN_NAME[ban] + '】，本轮不能对同一目标重复同一禁类（换目标或换禁类）。', 'sys');
@@ -1982,6 +1987,12 @@ function actXinyuanClear(p) {
         label: c.label,
         sub: c.sub,
         run: () => {
+          // 【无咎】分情况判定：只有试图清除增益（【尘】）时才触发无咎。清负面（蓝/撕裂/敕罚/黑等）属于帮助，不触发。
+          if (c.key === 'dust' && t !== p && t.wujiuReady && hasSeal(t, '14')) {
+            t.wujiuReady = false;
+            addLog('【无咎】' + entLabel(t) + ' 的庇护抵消了【净化】。', 'hl');
+            finishTurn(p); return;
+          }
           markActed(p, 'artskill');
           c.clear();
           addLog(p.name + ' 发动遗器·心渊【净化】：清除了 ' + entLabel(t) + ' 的 ' + c.label + '。', 'hl');
@@ -2012,6 +2023,11 @@ function actXinyuanMind(p) {
       run: () => {
         if (rejectIfUnpickable(t, '心渊·掌控')) { render(); return; }
         markActed(p, 'artskill');
+        if (t.wujiuReady && hasSeal(t, '14')) {
+          t.wujiuReady = false;
+          addLog('【无咎】' + entLabel(t) + ' 的庇护抵消了【精神控制】。', 'hl');
+          finishTurn(p); return;
+        }
         t.st.mind = { by: p.i, atTurn: p.turnSeq, atRound: G.round };
         if (!p.lastMind) p.lastMind = {};
         p.lastMind.key = key;
@@ -2545,6 +2561,16 @@ function attackResolve(src, tgt, opt){
   opt = opt || {};
   const owner = src.isSummon ? G.players[src.owner] : src;
   if (!src.isSummon) triggerCombat(src);
+
+  // 【无咎】判定：完全抵消这次攻击（含伤害、裂帛、点染、击退）
+  if (tgt.wujiuReady && hasSeal(tgt, '14')) {
+    tgt.wujiuReady = false;
+    const pos = islandXY(tgt.island);
+    floatText(pos.x, pos.y - 30, '无咎', '#38f0d8');
+    addLog('【无咎】' + entLabel(tgt) + ' 的庇护抵消了 ' + entLabel(src) + ' 的攻击。', 'hl');
+    return { evaded: false, blocked: true, dmg: 0 };
+  }
+
   const share = src.isSummon ? hasSeal(owner, '10') : true;   // 召唤物默认不吃刻印，刻印 10 御灵才共享
   /* ⑫b 尘梦分支：伤害额外 + 自身当前尘层数。
      落点必须在 atk 上（而不是 dealDamage 里），这样 普通攻击 (atk+尘)-def 与
@@ -2652,7 +2678,7 @@ function seal5bBurst(e){
     }
     const r = attackResolve(e, t, {atkOverride:10, effect: fx,
                                    blackSeal: e.hitSeal, greyKey: e.hitClear || null});
-    if (r && !r.evaded) n++;
+    if (r && !r.evaded && !r.blocked) n++;   // 【无咎】抵消（blocked）不算命中
   });
   return n;
 }
@@ -2920,10 +2946,12 @@ function endCurrentAction(p){
     settleSanctions(p);
     p.actedBans = [];
   }
-  /* 刻印 14 无咎：回合结束刷新。
+  /* 刻印 14 无咎：仅在「主要回合」结束时刷新。
+     额外回合结束时也会调用本函数，但不应重置无咎周期，加上 G.sub === 'main' 限制后，
+     就能保证只在主要回合完全结束时结算惩罚，避免被多次调用提前洗掉标记。
      · 本回合进行过战斗（14b 分支豁免）：惩罚 → 下回合庇护失效，并打日志；
      · 没战斗：正常刷新 → 庇护就绪（从当前回合结束至下回合结束可触发一次）。 */
-  if (p && p.alive && hasSeal(p, '14')) {
+  if (p && p.alive && hasSeal(p, '14') && G.sub === 'main') {
     if (p.wujiuCombat) {
       p.wujiuReady = false; // 惩罚：下一轮失效
       addLog('【无咎】因本回合进行战斗，下回合庇护无法生效。', 'sys');
@@ -3249,10 +3277,10 @@ function doOpenBox(p, autoPick, targetIsland){
     return 'wait';
   }
   if (raw === 'yiqi'){
-    addLog(p.name + ' 开出 遗器' + times(mult) + '，立即自选一件装备（不占回合）。', 'hl');
+    addLog(p.name + ' 开出 遗器' + times(mult) + '，随机获得一件（不占回合）。', 'hl');
     floatText(pos.x, pos.y - 30, '+ 遗器', '#ffca3a');
     sparks(pos.x, pos.y, '#ffca3a', 14);
-    return grantYiqi(p, mult, false);
+    return grantYiqi(p, mult, false, null, true);
   }
   if (raw === 'enchant'){
     for (let k=0;k<3*mult;k++) addItem(p, 'enchant');
@@ -3443,7 +3471,7 @@ function applyHit(p, t, dmg, w, mode, pb){
   // 【黑】需要 p.hitSeal 指明封哪一项；【灰】需要 p.hitClear 指明解哪一项（null = 自动挑最有利的）
   const r = attackResolve(p, t, {weapon:w, effect: p.hitPick === undefined ? null : p.hitPick,
                                  blackSeal: p.hitSeal, greyKey: p.hitClear || null});
-  if (r.evaded){ finishTurn(p); return; }
+  if (r.evaded || r.blocked){ finishTurn(p); return; }
 
   /* 刻印 16 归墟：普攻命中后摧毁（放在管线末尾，等所有位移/面板都结算完毕）。
      目标被打死则不再触发（尸体上没有可摧毁的东西，走正常掉落）。
@@ -3964,6 +3992,15 @@ function machineAttackResolve(owner, tgt, baseAtk, tag, opt){
   opt = opt || {};
   if (!tgt || !tgt.alive) return { evaded: true, dmg: 0 };
 
+  // 【无咎】判定
+  if (tgt.wujiuReady && hasSeal(tgt, '14')) {
+    tgt.wujiuReady = false;
+    const pos = islandXY(tgt.island);
+    floatText(pos.x, pos.y - 30, '无咎', '#38f0d8');
+    addLog('【无咎】' + entLabel(tgt) + ' 的庇护抵消了炮台' + tag + '。', 'hl');
+    return { evaded: false, blocked: true, dmg: 0 };
+  }
+
   // 1. 攻击力：基础 + 残锋⑤ + 尘梦⑫b（不吃武器加成）；主人已阵亡则不再继承加成
   const inherited = owner.alive ? (seal5Bonus(owner) + dustAtkBonus(owner)) : 0;
   const atk = baseAtk + inherited;
@@ -4196,9 +4233,9 @@ function useConsume(p, uid){
       return grantSeal(p, mult, false);
     }
     if (got === 'yiqi'){
-      addLog(p.name + ' 钓上 遗器' + (mult > 1 ? ' ×' + mult : '') + '，立即自选一件装备（不占回合）。', 'hl');
+      addLog(p.name + ' 钓上 遗器' + (mult > 1 ? ' ×' + mult : '') + '，随机获得一件（不占回合）。', 'hl');
       floatText(pos.x, pos.y - 34, '钓到 遗器', '#38f0d8');
-      return grantYiqi(p, mult, false);
+      return grantYiqi(p, mult, false, null, true);
     }
     if (got === 'enchant'){ for(let k=0;k<3*mult;k++) addItem(p, 'enchant'); addLog(p.name + ' 钓上 附魔 ×' + (3*mult) + '！', 'hl'); }
     else { for(let k=0;k<mult;k++) addItem(p, got); addLog(p.name + ' 钓上 ' + ITEMS[got].name + (mult>1 ? ' ×' + mult : '') + '！', 'hl'); }
@@ -4211,8 +4248,8 @@ function useConsume(p, uid){
 }
 
 /* =========================================================
-   遗器（4 件特殊武器：沧溟 / 七弦 / 斩月 / 忘川）
-   - 获得即「N 选 1」直接装备（开箱 / 钓鱼权重 5%，不占回合）
+   遗器（特殊武器：沧溟 / 七弦 / 斩月 / 忘川 / 掷星 / 心渊）
+   - 开箱 / 钓鱼获得：随机 1 件直接装备（不占回合，无面板无取消）；商店购买：N 选 1 自选
    - 可附魔、受刻印影响（⑬盈箧按武器叠加 ATK）
    - 主动技属于「技能」：不触发 ①劫雷 / ⑪点染，不触发击退等攻击类效果；
      造成伤害时触发 ⑨裂帛、计入目标【受击】；均分不触发裂帛
@@ -4270,8 +4307,10 @@ const YIQI_IDS = Object.keys(ITEMS)
   .filter(id => ITEMS[id].yiqi)
   .sort((a, b) => ITEMS[a].yiqi - ITEMS[b].yiqi);
 
-/* 获得遗器：立即弹「N 选 1」面板（不占回合）；AI 自动按局势自选 */
-function grantYiqi(p, count, free, onCancel){
+/* 获得遗器：
+   - rand=true（开箱 / 钓鱼）：随机获得 —— 人类与 AI 一视同仁，全凭运气，不弹面板；
+   - rand 省略（商店购买）：弹「N 选 1」面板（不占回合）；AI 自动按局势自选 */
+function grantYiqi(p, count, free, onCancel, rand){
   count = count || 1;
   const defs = YIQI_IDS.map(id => ({id: id, d: ITEMS[id]}));
   const N = defs.length;
@@ -4284,6 +4323,12 @@ function grantYiqi(p, count, free, onCancel){
     floatText(pos.x, pos.y - 34, d.icon + ' ' + d.name, '#ffca3a');
     sparks(pos.x, pos.y, '#ffca3a', 14);
   };
+  if (rand){
+    // 随机模式：不弹面板、没有取消（随机给到什么算什么，允许与已有遗器重复）
+    for (let k=0;k<count;k++) apply(pick(YIQI_IDS));
+    if (free) render(); else finishTurn(p);
+    return true;
+  }
   if (actorIsAI(p)){
     for (let k=0;k<count;k++) apply(aiPickYiqi(p));
     if (free) render(); else finishTurn(p);
@@ -4316,6 +4361,16 @@ function grantYiqi(p, count, free, onCancel){
    applySkillDamage 因此只负责把原值交给 dealDamage 并记一次【受击】。 */
 function applySkillDamage(src, tgt, raw, opt){
   opt = opt || {};
+
+  // 【无咎】判定：完全抵消技能伤害及后续附加
+  if (tgt.wujiuReady && hasSeal(tgt, '14')) {
+    tgt.wujiuReady = false;
+    const pos = islandXY(tgt.island);
+    floatText(pos.x, pos.y - 30, '无咎', '#38f0d8');
+    addLog('【无咎】' + entLabel(tgt) + ' 的庇护抵消了技能伤害。', 'hl');
+    return 0;
+  }
+
   /* 2.3.5：⑫b 尘增伤扩大到**技能伤害**（用户拍板：七弦每一发、沧溟分配的每个伤害点都要吃）。
      口径与 attackResolve 同源：加在发起者侧的原始值上，承受者的【尘】减伤照常在
      dealDamage 里扣（发起者 6 尘打 9 尘目标：raw+6 再 −9）。
@@ -4545,6 +4600,11 @@ function destroySeal(t, id) {
 }
 function doGuixuPrompt(p, t, isActive, onDone) {
   const done = onDone || (() => { if (isActive) finishTurn(p); else render(); });
+  if (t.wujiuReady && hasSeal(t, '14')) {
+    t.wujiuReady = false;
+    addLog('【无咎】' + entLabel(t) + ' 的庇护抵消了【归墟】。', 'hl');
+    done(); return;
+  }
   const opts = [];
   ((t && t.bag) || []).forEach(it => {
     if (it.id === 'seal') return;
@@ -4713,6 +4773,9 @@ function executeZhanyue(p, t){
   const gathered = !dodgeSealed(t) && !!t.dodgeReady;
   if (resolveDodge(t)){
     onDodgeEvade(t, p.name, gathered);   // 被闪避：斩杀落空，代价照付（不计【受击】）
+  } else if (t.wujiuReady && hasSeal(t, '14')) {
+    t.wujiuReady = false;
+    addLog('【无咎】' + entLabel(t) + ' 的庇护抵消了【斩杀】。', 'hl');
   } else {
     t.hits += 1;            // 命中才记【受击】；被闪避则不计（与其余伤害一致）
     t.hp = 0;               // 直接设置 HP=0：无视【忘川】的不死
@@ -4765,13 +4828,18 @@ function executeWangchuan(p, keys){
   const each = Math.floor(total / ents.length);      // 负数同样向下取整（-5/2 → -3）
   addLog(p.name + ' 发动遗器·忘川【均分】：' + ents.map(entLabel).join('、') +
          '，总 HP ' + total + ' → 每人 ' + each + '。', 'hl');
-  ents.forEach(t => { t.hp = Math.min(t.maxHp, each); });
-  addLog('均分完成：' + ents.map(t => entLabel(t) + ' ' + t.hp + '/' + t.maxHp).join('、'));
   ents.forEach(t => {
+    if (t.wujiuReady && hasSeal(t, '14')) {
+      t.wujiuReady = false;
+      addLog('【无咎】' + entLabel(t) + ' 的庇护抵消了【均分】。', 'hl');
+      return;
+    }
+    t.hp = Math.min(t.maxHp, each);
     // 均分结果为 0：按死亡规则处理（忘川携带者 HP 恰好为 0 也死）
     const wc = !t.isSummon && hasArtifact(t, 'yq_wangchuan');
     if (t.hp <= 0 && (!wc || t.hp === 0)) killEnt(t, p);
   });
+  addLog('均分完成：' + ents.map(t => entLabel(t) + ' ' + t.hp + '/' + t.maxHp).join('、'));
   settleWin();
   finishTurn(p);
 }
@@ -6181,7 +6249,8 @@ function aiArtifactSkill(p){
       return !repeat && !t.st.mind;
     });
     if (canControl.length) {
-      const byThreat = canControl.slice().sort((a,b) => aiHitOf(b, p) - aiHitOf(a, p));
+      const byThreat = canControl.filter(t => !(t.wujiuReady && hasSeal(t, '14')))
+                                 .slice().sort((a,b) => aiHitOf(b, p) - aiHitOf(a, p));
       if (byThreat.length && aiHitOf(byThreat[0], p) >= 5) {
         markActed(p, 'artskill');
         const t = byThreat[0];
@@ -7142,6 +7211,11 @@ function doTearStrike(p, t){
   if (!p.alive || !t || !t.alive){ render(); return; }
   triggerCombat(p);
   markActed(p, 'seal');
+  if (t.wujiuReady && hasSeal(t, '14')) {
+    t.wujiuReady = false;
+    addLog('【无咎】' + entLabel(t) + ' 的庇护抵消了【裂帛】。', 'hl');
+    finishTurn(p); return;
+  }
   // ① 先施加 1 层（直接叠加，不走 applySkillDamage —— 否则基础 ⑨ 会再送 1 层变成 +2）
   addTear(t, 1, p);
   addLog(p.name + ' 发动刻印·裂帛：对 ' + entLabel(t) + ' 施加 1 层【撕裂】（当前 ' +
@@ -7258,7 +7332,6 @@ function paintClearCandidates(t){
       '每次进行该行动后受 ' + (4 * x.n) + ' 点真实伤害（解一层全部 ' + x.n + ' 层）',
       () => { s.sanctions = s.sanctions.filter(y => y !== x); }));
   }
-  if (t.dodgeReady) push('dodge', '【蓄闪】', '下一次受击必定闪避', () => { t.dodgeReady = false; });
   if (s.mind) push('mind', '【精神控制】', '当前由 ' + byName(s.mind.by) + ' 操纵', () => { s.mind = null; });
   return out;
 }
@@ -7302,6 +7375,12 @@ function pickPaintClear(p, t){
 function doPaintClear(p, t, c){
   if (!p.alive || !t || !t.alive){ render(); return; }
   markActed(p, 'seal');
+  // 【无咎】分情况判定：只有试图清除增益（【尘】）时触发无咎，清负面不触发。
+  if (c.key === 'dust' && t.wujiuReady && hasSeal(t, '14')) {
+    t.wujiuReady = false;
+    addLog('【无咎】' + entLabel(t) + ' 的庇护抵消了【灰】。', 'hl');
+    finishTurn(p); return;
+  }
   c.clear();
   const pos = islandXY(t.island);
   floatText(pos.x, pos.y - 30, '灰', '#9aa6bd');
@@ -7334,9 +7413,9 @@ function pickPaintSeal(p, t){
 }
 function doPaint(p, t, color, sealId){
   if (!p.alive || !t || !t.alive){ render(); return; }
-  if (color === 'grey'){ pickPaintClear(p, t); return; }
+  if (color === 'grey'){ triggerCombat(p); pickPaintClear(p, t); return; }
   triggerCombat(p);
-  markActed(p, 'seal');   // 【灰】走立即解除路径，不经过 applyHitEffect
+  markActed(p, 'seal');
   if (color === 'white' && t.st.white){
     addLog(entLabel(t) + ' 已经有【白】了，本次不重复施加。', 'sys');
     render(); return;                        // 不结束回合：什么都没发生
