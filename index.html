@@ -5053,6 +5053,19 @@ function applySeal(p, id, opt){
   floatText(pos.x, pos.y - 30, '刻印·' + sealDisplayName(id), '#8b5cf6');
   sparks(pos.x, pos.y, '#8b5cf6', 20);
   if (id === '2' && G.mode === 'ffa') addLog('（混战模式没有队友，同契的队友池暂时无效；2b 选敌人不受影响）', 'sys');
+
+  // 【同契】分支 2b 异步步进：先弹选人面板、选完再收尾 ——
+  // 否则同步 finishTurn 会立刻 startTurn 下一位，面板刚弹出就被 hideChoice 关掉。
+  // （AI / 被控人类仍走下方 sealOnAcquire 同步路径：自动选目标、不弹面板）
+  if (id === '2b' && !actorIsAI(p)){
+    pickShareTarget(p, () => {
+      if (opt.done){ opt.done(); return; }
+      if (opt.silent) return;
+      if (G.phase === 'play') finishTurn(p);
+    });
+    return;
+  }
+
   sealOnAcquire(p, id);          // 获得即生效的衍生态（③丰穰道具 / ⑫b 尘梦 +6 层尘 …）
   if (opt.done){ opt.done(); return; }
   if (opt.silent) return;
@@ -5094,12 +5107,13 @@ function dustSyncAllSummons(p, reason){
 function shareCandidates(p){
   return G.players.filter(q => q && q !== p && !q.isSummon && isEnemyOf(p, q));
 }
-function pickShareTarget(p){
-  if (!p || p.isSummon) return;
+function pickShareTarget(p, done){
+  if (!p || p.isSummon){ if (done) done(); return; }
   const cand = shareCandidates(p);
   if (!cand.length){
     p.shareTarget = -1;
     addLog(p.name + ' 的刻印·同契（分支）没有可选的敌人（场上没别人）。', 'sys');
+    if (done) done();
     return;
   }
   if (actorIsAI(p)){
@@ -5110,6 +5124,7 @@ function pickShareTarget(p){
     });
     p.shareTarget = best.i;
     addLog(p.name + ' 的刻印·同契（分支）锁定 ' + best.name + '，享受其全部刻印。', 'hl');
+    if (done) done();
     return;
   }
   showChoice('同契 · 分支：选一名敌人，单向享受他的全部刻印（立即生效 · 之后不可更改）',
@@ -5121,6 +5136,7 @@ function pickShareTarget(p){
         p.shareTarget = q.i;
         addLog(p.name + ' 的刻印·同契（分支）锁定 ' + q.name + '，享受其全部刻印。', 'hl');
         render();
+        if (done) done();
       }
     })), () => {
       // 取消：退化成自动挑一个（不能让 2b 白拿不发）
@@ -5129,6 +5145,7 @@ function pickShareTarget(p){
       p.shareTarget = best.i;
       addLog(p.name + ' 未选择，默认锁定 ' + best.name + '。', 'sys');
       render();
+      if (done) done();
     });
 }
 
