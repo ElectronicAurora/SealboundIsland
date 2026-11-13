@@ -381,6 +381,15 @@ input[type=number],input[type=text]{
 .faq[open] summary{margin-bottom:5px}
 .faq p{margin:0;color:#8d9bbd;font-size:12px;line-height:1.85}
 .rules-fold{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:11.5px;color:#7c8aae}
+/* ★ 联机：轮到别人时把面板盖成「等待」状态（视觉层，拦截逻辑在补丁里） */
+#choice{position:relative}
+body.net-wait #choice.on::after{
+  content:attr(data-netwait);
+  position:absolute;inset:0;display:grid;place-items:center;
+  background:rgba(8,12,24,.88);border-radius:12px;
+  font-size:12px;letter-spacing:.06em;color:#a9b6d6;
+  z-index:5;text-align:center;padding:0 12px;
+}
 </style>
 </head>
 <body>
@@ -475,6 +484,18 @@ input[type=number],input[type=text]{
     <div class="row" style="align-items:flex-start">
       <label style="padding-top:5px">玩家</label>
       <div style="flex:1;min-width:200px" id="pconf"></div>
+    </div>
+    <div class="row" style="align-items:flex-start">
+      <label style="padding-top:5px">局域网联机</label>
+      <div style="flex:1;min-width:200px">
+        <div style="display:flex;gap:8px">
+          <button class="sysbtn" id="hostBtn" style="flex:1;padding:9px">作为房主开始</button>
+          <button class="sysbtn" id="joinBtn" style="flex:1;padding:9px">加入房间…</button>
+        </div>
+        <div id="netStatus" style="font-size:11.5px;color:var(--dim);line-height:1.7;margin-top:6px">
+          单机模式。联机：房主先在电脑上运行 <code>node server.js</code>（需 npm install ws），再点上方「作为房主开始」；队友浏览器打开 <code>http://房主IP:8080/</code> 点「加入房间…」即可。
+        </div>
+      </div>
     </div>
     <button class="big" id="goBtn">开始游戏</button>
     <div class="rules-fold">
@@ -8767,6 +8788,590 @@ addEventListener('keydown', e => {
     if (btn && !btn.disabled) btn.click();
   }
 });
+
+  /* ===========================================================================
+   局域网联机补丁 v2（NetPlay）—— 深渊回响同款架构
+   ---------------------------------------------------------------------------
+   架构：房主权威（host-authoritative）+ 状态快照 + 面板 DOM 镜像。
+     · 回合推进 / AI / 随机数 / 结算 全部只在房主侧发生；
+     · 房主在 render / 日志 / 面板 DOM 变化后节流（55ms）广播一份全量快照：
+       { g: G 的纯数据序列化, ui: 面板/结算的 DOM 镜像 }；
+     · 客户端收快照 → 重建 G → 重渲染 → 重建日志 → 渲染镜像面板，零游戏逻辑；
+     · 客户端的操作（行动按钮 / 面板选择）不本地执行，转成意图发回房主，
+       房主校验「确实是你的座位」后在自己的页面上模拟等价点击；
+     · 面板镜像直接抓房主 DOM（标题/选项/禁用态），所以刻印自选、分配页、
+       选目标等所有 showChoice 场景全部自动支持，未来加新面板也无需改补丁；
+     · 未连接（ws === null）时一切守卫放行，单机行为与原版完全一致。
+   配套中转服务器见 server.js（node server.js，端口 8080，需 npm install ws）。
+   =========================================================================== */
+(function(){
+  'use strict';
+
+  const $id = id => document.getElementById(id);
+
+  let netMode = 'off';          // 'off' | 'host' | 'client'
+  let ws = null;
+  let mySeat = -1;              // 客户端绑定的玩家位（0 起，房主恒为 0）
+  const seatOwner = {};         // 房主视角：seat -> true 表示该位归远端客户端
+  let logLen = 0;               // 客户端侧：已同步的日志条数
+  let dirty = false, syncTimer = 0, lastSyncAt = 0;
+
+  /* ---------------- 小工具 ---------------- */
+  function linkOpen(){ return ws && ws.readyState === 1; }
+
+  function withRemote(fn){
+    const old = window.__netRemoteExec;
+    window.__netRemoteExec = true;
+    try { return fn(); } finally { window.__netRemoteExec = old; }
+  }
+
+  let tipTimer = 0;
+  function tip(msg){
+    let el = $id('netTip');
+    if (!el){
+      el = document.createElement('div');
+      el.id = 'netTip';
+      el.style.cssText = 'position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:99;' +
+        'padding:9px 16px;border-radius:10px;font-size:12.5px;line-height:1.55;max-width:82vw;' +
+        'background:rgba(20,28,50,.97);border:1px solid rgba(56,240,216,.45);color:#c3d2f0;' +
+        'box-shadow:0 12px 40px -10px rgba(0,0,0,.9);opacity:0;transition:opacity .18s;' +
+        'pointer-events:none;text-align:center;';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.style.opacity = '1';
+    clearTimeout(tipTimer);
+    tipTimer = setTimeout(function () { el.style.opacity = '0'; }, 2400);
+  }
+
+  function setStatus(html){
+    const el = $id('netStatus');
+    if (el && typeof html === 'string') el.innerHTML = html;
+  }
+
+  function defaultWsUrl(){
+    const h = (location.protocol === 'file:') ? 'localhost' : (location.hostname || 'localhost');
+    const p = (location.protocol !== 'file:' && location.port) ? location.port : '8080';
+    return 'ws://' + h + ':' + p;
+  }
+  function guessJoinUrl(){
+    /* 只要页面是从 http:// 打开的（服务器托管），当前主机名就是房主地址；
+       file:// 双击打开时才需要手填房主 IP。 */
+    if (location.protocol !== 'file:' && location.hostname) return defaultWsUrl();
+    return 'ws://192.168.1.x:8080';
+  }
+
+  /* ---------------- 操作权判定 ----------------
+     isHumanTurn() 原本只判断「当前行动者是不是人类」——联机下两端都会为真：
+     客户端能在房主的回合行动（替房主打），房主也能在客户端的回合行动。
+     这里按玩家位收紧：谁的名字下有活人客户端，谁的操作权就归谁。
+       · 房主：玩家1 恒归自己；AI 与被控实体归自己（房主权威）；
+         已接入客户端的玩家位不归自己（防房主代打）；
+       · 客户端：只有自己的玩家位归自己。
+     ★ 单机兜底：ws === null（从未连接 / 断线回单机）时恒真，
+       覆写 isHumanTurn 不得影响单机。 */
+  function iControl(p){
+    if (!p) return false;
+    if (!ws) return true;
+    if (netMode === 'host'){
+      if (window.__netRemoteExec) return true;
+      return p.i === 0 || actorIsAI(p) || !seatOwner[p.i];
+    }
+    if (netMode === 'client') return p.i === mySeat;
+    return true;
+  }
+  const _isHumanTurn = isHumanTurn;
+  isHumanTurn = function(){
+    return _isHumanTurn() && iControl(cur());
+  };
+
+  /* ---------------- 状态序列化 ----------------
+     · 函数引用剥掉；Infinity（G.boxes 中心岛）JSON 会变 null，
+       用占位符保真，客户端 restore 还原。 */
+  function snapshot(){
+    return JSON.stringify(G, function (k, v){
+      if (typeof v === 'function') return undefined;
+      if (v === Infinity) return '__INF__';
+      if (v === -Infinity) return '__NINF__';
+      return v;
+    });
+  }
+  function restore(s){
+    return JSON.parse(s, function (k, v){
+      if (v === '__INF__') return Infinity;
+      if (v === '__NINF__') return -Infinity;
+      return v;
+    });
+  }
+
+  /* ---------------- UI 镜像（直接抓房主 DOM，覆盖所有面板） ---------------- */
+  function grabOpts(box){
+    if (!box) return [];
+    return Array.prototype.map.call(box.querySelectorAll(':scope > .opt'), function (b){
+      return { h: b.innerHTML, d: !!b.disabled };
+    });
+  }
+  function uiState(){
+    const ui = { choice: null, over: null };
+    const ch = $id('choice');
+    if (ch && ch.classList.contains('on')){
+      ui.choice = {
+        title: $id('cTitle').innerHTML,
+        cancel: !!ch.querySelector('#cOpts > .cancel'),
+        opts: grabOpts($id('cOpts'))
+      };
+    }
+    const ov = $id('over');
+    if (ov && !ov.classList.contains('hide')){
+      ui.over = { t: $id('winTxt').textContent, s: $id('winSub').innerHTML, c: $id('winTxt').style.color };
+    }
+    return ui;
+  }
+
+  /* ---------------- 发送 / 节流广播 ---------------- */
+  function netSend(obj){
+    if (!linkOpen()) return;
+    try { ws.send(JSON.stringify(obj)); } catch (_){ /* 忽略 */ }
+  }
+  function netMarkDirty(){
+    if (netMode !== 'host' || !G) return;
+    dirty = true;
+    if (syncTimer) return;
+    const wait = Math.max(0, 55 - (Date.now() - lastSyncAt));
+    syncTimer = setTimeout(function (){
+      syncTimer = 0;
+      if (!dirty) return;
+      dirty = false;
+      lastSyncAt = Date.now();
+      broadcast();
+    }, wait);
+  }
+  function broadcast(){
+    if (netMode !== 'host' || !G) return;
+    let payload;
+    try { payload = { t: 'state', g: snapshot(), ui: uiState() }; }
+    catch (_){ return; }
+    netSend(payload);
+  }
+
+  /* ---------------- 客户端：应用快照 ---------------- */
+  function rebuildLog(){
+    const box = $id('log');
+    if (!box || !G || !G.log) return;
+    const logs = G.log;
+    if (logs.length < logLen){ box.innerHTML = ''; logLen = 0; }
+    for (let i = logLen; i < logs.length; i++){
+      const d = document.createElement('div');
+      if (logs[i].cls) d.className = logs[i].cls;
+      d.textContent = logs[i].text;
+      box.appendChild(d);
+    }
+    logLen = logs.length;
+    const par = box.parentElement;
+    if (par) par.scrollTop = par.scrollHeight;
+  }
+
+  function retagCards(){
+    if (netMode === 'off') return;
+    const cards = document.querySelectorAll('#plist .pcard');
+    for (let i = 0; i < cards.length; i++){
+      const tag = cards[i].querySelector('.tag');
+      if (!tag) continue;
+      let label, cls;
+      if (netMode === 'host'){
+        if (i === 0){ label = 'YOU'; cls = 'you'; }
+        else if (seatOwner[i]){ label = '远程'; cls = 'you'; }
+        else { label = 'YOU'; cls = 'you'; }
+      } else {
+        label = (i === mySeat) ? 'YOU' : '队友';
+        cls = (i === mySeat) ? 'you' : 'ai';
+      }
+      tag.textContent = label;
+      tag.className = 'tag ' + cls;
+    }
+  }
+
+  function renderUi(ui){
+    ui = ui || {};
+    /* --- 选择面板（镜像房主 DOM，选择只回传序号） --- */
+    const ch = $id('choice');
+    if (ui.choice){
+      $id('cTitle').innerHTML = ui.choice.title;
+      const box = $id('cOpts');
+      box.innerHTML = '';
+      ui.choice.opts.forEach(function (o, idx){
+        const b = document.createElement('button');
+        b.className = 'opt';
+        b.innerHTML = o.h;
+        b.disabled = !!o.d;
+        b.onclick = function (){ netSend({ t: 'opt', idx: idx }); };
+        box.appendChild(b);
+      });
+      if (ui.choice.cancel){
+        const c = document.createElement('button');
+        c.className = 'cancel';
+        c.textContent = '取消';
+        c.onclick = function (){ netSend({ t: 'opt', idx: -1 }); };
+        box.appendChild(c);
+      }
+      ch.classList.add('on');
+      setChoosing(true);
+    } else if (ch && ch.classList.contains('on')){
+      ch.classList.remove('on');
+      setChoosing(false);
+    }
+    /* --- 结算面板 --- */
+    const ov = $id('over');
+    if (ui.over){
+      $id('winTxt').textContent = ui.over.t;
+      $id('winTxt').style.color = ui.over.c || '';
+      $id('winSub').innerHTML = ui.over.s;
+      ov.classList.remove('hide');
+    } else if (ov && !ov.classList.contains('hide')){
+      ov.classList.add('hide');
+    }
+  }
+
+  function applyState(msg){
+    if (netMode !== 'client' || !msg.g) return;
+    G = restore(msg.g);
+    const st = $id('setup');
+    if (st) st.classList.add('hide');
+    render();          /* 覆写后的 render：客户端分支 retag + updateWait，不广播 */
+    rebuildLog();
+    renderUi(msg.ui);
+    updateWait();
+    setStatus('联机中 · 你是玩家 ' + (mySeat + 1));
+  }
+
+  /* ---------------- 等待遮罩（纯视觉，轮到别人时盖住面板） ---------------- */
+  function updateWait(){
+    const bd = document.body;
+    if (!bd) return;
+    let want = false, txt = '';
+    if (G && netMode !== 'off' && G.phase === 'play'){
+      const i = seatOfActor();
+      if (i >= 0){
+        const mine = (netMode === 'client') ? (i === mySeat) : (i === 0 || !seatOwner[i]);
+        if (!mine){
+          want = true;
+          txt = choiceOpen()
+            ? '等待 玩家 ' + (i + 1) + ' 在自己的设备上选择…'
+            : '等待 玩家 ' + (i + 1) + ' 行动…';
+        }
+      }
+    }
+    /* ⚠ setAttribute 即使写相同值也会触发 MutationObserver，必须做 diff，
+       否则会陷入「广播 → 改 DOM → 观察者 → 再广播」死循环 */
+    if (!want){
+      if (bd.classList.contains('net-wait')) bd.classList.remove('net-wait');
+      return;
+    }
+    if (!bd.classList.contains('net-wait')) bd.classList.add('net-wait');
+    const el = $id('choice');
+    if (el && el.getAttribute('data-netwait') !== txt) el.setAttribute('data-netwait', txt);
+  }
+
+  /* ---------------- 房主：执行远端意图 ---------------- */
+  function seatOfActor(){
+    if (!G || G.phase !== 'play') return -1;
+    try { const p = cur(); return p ? p.i : -1; } catch (_){ return -1; }
+  }
+  function remoteChoiceWaiting(){
+    if (!choiceOpen()) return false;
+    const p = (G && G.phase === 'play') ? cur() : null;
+    return !!(p && p.i > 0 && !actorIsAI(p) && seatOwner[p.i]);
+  }
+
+  /* 客户端的行动按钮请求：模拟点击房主页面上对应按钮。
+     ⚠ 点击发生在房主侧，暴击 / 开箱等随机数只在房主产生，天然不会冲突。
+     ⚠ 该按钮此刻是 disabled 的（不是房主的回合），disabled 按钮 el.click()
+       不派发事件 —— 临时解除再点。规则层禁用两端渲染口径一致，不会绕过限制。 */
+  function hostRunAct(a){
+    const btn = document.querySelector('.abtn[data-a="' + a + '"]');
+    if (!btn) return;
+    withRemote(function (){
+      const wasDisabled = btn.disabled;
+      if (wasDisabled) btn.disabled = false;
+      btn.click();
+      if (btn.isConnected && wasDisabled) btn.disabled = true;
+    });
+  }
+
+  /* 客户端的面板选择请求：点击房主面板上对应序号的按钮（原回调在房主侧跑） */
+  function hostClickOpt(idx){
+    const box = $id('cOpts');
+    if (!box) return;
+    if (idx < 0){
+      const c = box.querySelector(':scope > .cancel');
+      if (c) withRemote(function (){ c.click(); });
+      return;
+    }
+    const b = box.querySelectorAll(':scope > .opt')[idx];
+    if (b && !b.disabled) withRemote(function (){ b.click(); });
+  }
+
+  /* ---------------- 消息分发 ---------------- */
+  function onHostMsg(m){
+    if (netMode !== 'host') return;
+    const seat = m.seat;
+    if (typeof seat !== 'number' || !seatOwner[seat]) return;   // 防伪造
+    if (m.t === 'act'){
+      if (!G || G.phase !== 'play') return;
+      const p = cur();
+      if (!p || p.i !== seat || actorIsAI(p)) return;           // 不是他的回合 → 丢弃
+      hostRunAct(m.a);
+    } else if (m.t === 'opt'){
+      if (!remoteChoiceWaiting()) return;
+      const p = cur();
+      if (!p || p.i !== seat) return;
+      hostClickOpt(m.idx);
+    }
+  }
+
+  function onClientMsg(m){
+    if (netMode !== 'client') return;
+    if (m.t === 'state') applyState(m);
+    else if (m.t === 'reset'){
+      G = null; logLen = 0;
+      const lb = $id('log');
+      if (lb) lb.innerHTML = '';
+      try { hideChoice(); } catch (_){}
+      $id('over').classList.add('hide');
+      $id('setup').classList.remove('hide');
+      updateWait();
+      setStatus('已连接房主 · 你是玩家 ' + (mySeat + 1) + '，等待其重新开局…');
+    }
+    else if (m.t === 'host_gone'){
+      netMode = 'off';
+      if (ws){ try { ws.onclose = null; ws.close(); } catch (_){} }
+      ws = null;
+      tip('房主已断开连接。');
+      setStatus('房主已断开。刷新页面可重新开始。');
+    }
+    else if (m.t === 'busy'){
+      tip(m.msg || '对局已开始，本局座位已固定，请等房主重开一局。');
+    }
+  }
+
+  /* ---------------- 连接 ---------------- */
+  function closeWs(){
+    if (ws){
+      try { ws.onclose = null; ws.close(); } catch (_){}
+      ws = null;
+    }
+  }
+
+  function connect(url, role){
+    closeWs();
+    let sock;
+    try { sock = new WebSocket(url); }
+    catch (err){ setStatus('地址无效：' + err.message); tip('地址无效，格式应为 ws://192.168.1.10:8080'); return; }
+    ws = sock;
+    setStatus('正在连接 ' + url + ' …');
+
+    sock.onopen = function (){ netSend({ t: 'hello', role: role }); };
+    sock.onmessage = function (ev){
+      let m;
+      try { m = JSON.parse(ev.data); } catch (_){ return; }
+      if (!m) return;
+      if (m.t === 'host_ok'){
+        netMode = 'host';
+        mySeat = 0;
+        (m.seats || []).forEach(function (s){ seatOwner[s] = true; });
+        if (m.seats && m.seats.length) ensureSeats(Math.max.apply(null, m.seats) + 1);
+        const showIp = (location.protocol === 'file:') ? '你的局域网IP' : (location.hostname || '你的IP');
+        const showPort = location.port || '8080';
+        setStatus('已作为房主开房。让队友浏览器打开 <b>http://' + showIp + ':' + showPort + '/</b>' +
+                  ' 点「加入房间…」；都进来了再点「开始游戏」。');
+        if (G) netMarkDirty();
+        return;
+      }
+      if (m.t === 'joined'){
+        netMode = 'client';
+        mySeat = m.seat;
+        clientSideUI();
+        setStatus('已加入房间 · 你是 <b>玩家 ' + (mySeat + 1) + '</b>，等房主点「开始游戏」，画面会自动同步。');
+        return;
+      }
+      if (m.t === 'peer_join'){
+        seatOwner[m.seat] = true;
+        if (G){
+          /* 对局已开始：本局座位已固定，新队友等下局 */
+          netSend({ t: 'busy', msg: '对局已开始，本局座位已固定。房主点「重新设置」或结算后，你将在下一局自动入座。' });
+        } else {
+          ensureSeats(m.seat + 1);
+          setStatus('已开房 · 当前 ' + (Object.keys(seatOwner).length + 1) + ' 人，等队友都进来后点「开始游戏」。');
+        }
+        return;
+      }
+      if (m.t === 'peer_leave'){
+        delete seatOwner[m.seat];
+        if (!G){
+          const n = Object.keys(seatOwner).length + 1;
+          setStatus('已开房 · 当前 ' + n + ' 人，等队友都进来后点「开始游戏」。');
+        } else {
+          tip('玩家 ' + (m.seat + 1) + ' 已掉线，座位暂由房主代管。');
+        }
+        if (typeof buildPconf === 'function'){ try { buildPconf(); } catch (_){} }
+        return;
+      }
+      if (m.t === 'err'){
+        netMode = 'off';
+        setStatus('连接被拒绝：' + (m.msg || '未知原因'));
+        tip(m.msg || '连接被拒绝');
+        closeWs();
+        return;
+      }
+      /* 以下是游戏消息 */
+      if (netMode === 'client') onClientMsg(m);
+      else if (netMode === 'host') onHostMsg(m);
+    };
+    sock.onclose = function (){
+      if (ws !== sock) return;
+      ws = null;
+      if (netMode === 'client'){
+        netMode = 'off';
+        setStatus('与房主的连接已断开。刷新页面可重新加入。');
+        tip('与房主的连接已断开。');
+      } else if (netMode === 'host'){
+        netMode = 'off';
+        for (const k in seatOwner) delete seatOwner[k];
+        setStatus('与服务器的连接已断开，回到单机模式。');
+        tip('与中转服务器的连接已断开，回到单机模式。');
+        if (typeof buildPconf === 'function'){ try { buildPconf(); } catch (_){} }
+        updateWait();
+      }
+    };
+    sock.onerror = function (){
+      if (netMode === 'off') setStatus('连接失败：请确认房主电脑已运行 node server.js，且地址端口正确。');
+    };
+  }
+
+  /* 客户端加入时扩位：人数不够自动把 cfgN 提上去（本作支持 2-6 人） */
+  function ensureSeats(n){
+    if (n > 6) n = 6;
+    if (typeof cfgN === 'number' && cfgN < n){
+      cfgN = n;
+      try { buildSeg(); syncModeUI(); syncMapUI(); } catch (_){}
+    }
+    try { buildPconf(); } catch (_){}
+  }
+
+  /* ---------------- 覆写：buildPconf（标注座位归属） ---------------- */
+  const _buildPconf = buildPconf;
+  buildPconf = function (){
+    _buildPconf();
+    const rows = ($id('pconf') || { children: [] }).children;
+    for (let i = 0; i < rows.length; i++){
+      const btn = rows[i].querySelector('button.mode');
+      if (!btn) continue;
+      if (netMode === 'host' && i === 0){
+        btn.textContent = '你（本机）';
+      } else if (seatOwner[i]){
+        rows[i].dataset.ai = '0';           // 远端座位必须是「人类」
+        btn.textContent = '远程玩家';
+        btn.className = 'mode human';
+      } else if (netMode === 'host'){
+        btn.textContent = (i === 0) ? '你（本机）' : '本机热座';
+      }
+    }
+  };
+
+  /* ---------------- 覆写：render（末尾触发同步 / 客户端修正标签） ---------------- */
+  const _render = render;
+  render = function (){
+    _render.apply(this, arguments);
+    if (netMode === 'host'){ retagCards(); updateWait(); netMarkDirty(); }
+    else if (netMode === 'client'){ retagCards(); updateWait(); }
+  };
+
+  /* ---------------- 同步钩子 ----------------
+     render 之外还有两类状态变化需要单独捕获：
+     · addLog：几乎所有行动都落一条日志；
+     · 面板/结算 DOM：showChoice、gameOver 都不经过 render。 */
+  const _addLog = addLog;
+  addLog = function (){
+    _addLog.apply(this, arguments);
+    if (netMode === 'host') netMarkDirty();
+  };
+
+  (function watchPanels(){
+    if (typeof MutationObserver !== 'function') return;
+    const obs = new MutationObserver(function (){
+      if (netMode === 'host') netMarkDirty();
+    });
+    ['choice', 'cOpts', 'cTitle', 'over', 'winTxt', 'winSub'].forEach(function (id){
+      const el = $id(id);
+      if (el) obs.observe(el, { attributes: true, childList: true, subtree: true, characterData: true });
+    });
+  })();
+
+  /* ---------------- 拦截点击（document 捕获阶段） ----------------
+     ⚠ 必须绑在 document 的捕获阶段：原监听绑定在按钮自身（目标阶段按注册
+     顺序触发），在按钮上再补一个监听是拦不住先注册的那个的。
+     · 客户端：行动按钮(.abtn)不本地执行，转成意图发回房主；
+     · 房主：等待远端玩家选择期间，面板按钮被盖住（防代打）。 */
+  document.addEventListener('click', function (e){
+    if (!linkOpen()) return;
+    const t = e.target;
+    if (netMode === 'client'){
+      const btn = (t && t.closest) ? t.closest('.abtn') : null;
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      netSend({ t: 'act', a: btn.dataset.a });
+    } else if (netMode === 'host'){
+      if (window.__netRemoteExec) return;          // 远端回传的模拟点击：放行
+      if (!remoteChoiceWaiting()) return;
+      if (t && t.closest && t.closest('#cOpts')){
+        e.preventDefault();
+        e.stopPropagation();
+        tip('等待玩家 ' + (seatOfActor() + 1) + ' 在自己的设备上选择…');
+      }
+    }
+  }, true);
+
+  /* ---------------- 返回主页面 / 重新设置：通知客户端一起回开局面板 ---------------- */
+  [['backBtn', 'reset'], ['resetBtn', 'reset']].forEach(function (pair){
+    const btn = $id(pair[0]);
+    if (btn && btn.onclick){
+      const original = btn.onclick;
+      btn.onclick = function (){
+        if (netMode === 'host') netSend({ t: pair[1] });
+        return original.apply(this, arguments);
+      };
+    }
+  });
+
+  /* ---------------- 客户端：开局 / 结算 / 重开按钮全由房主驱动 ---------------- */
+  function clientSideUI(){
+    const block = function (msg){ return function (e){ e.preventDefault(); tip(msg); }; };
+    const go = $id('goBtn');
+    if (go) go.addEventListener('click', block('「开始游戏」由房主操作，画面会自动同步。'), true);
+    const again = $id('againBtn');
+    if (again) again.addEventListener('click', block('「再来一局」由房主操作，画面会自动同步。'), true);
+    const reset = $id('resetBtn');
+    if (reset) reset.addEventListener('click', block('「重新设置」由房主操作。'), true);
+    const back = $id('backBtn');
+    if (back) back.addEventListener('click', block('「返回主页面」由房主操作。'), true);
+  }
+
+  /* ---------------- 联机入口（开局面板） ---------------- */
+  const hostBtn = $id('hostBtn');
+  const joinBtn = $id('joinBtn');
+  if (hostBtn) hostBtn.onclick = function (){
+    if (linkOpen() || (ws && ws.readyState === 0)){ tip('已经在连接中了。'); return; }
+    const url = prompt('中转服务器地址（房主本机默认即可）：', defaultWsUrl());
+    if (url) connect(url, 'host');
+  };
+  if (joinBtn) joinBtn.onclick = function (){
+    if (linkOpen() || (ws && ws.readyState === 0)){ tip('已经在连接中了。'); return; }
+    const url = prompt('输入房主的地址（房主电脑的局域网 IP）：', guessJoinUrl());
+    if (url) connect(url, 'client');
+  };
+})();
+
 </script>
 </body>
 </html>
